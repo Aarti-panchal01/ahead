@@ -78,8 +78,10 @@ function featureMasks(feature: FeatureKind, px: readonly Point[], W: number, H: 
       cy += px[i][1];
     }
     const centre: Point = [cx / eye.length, cy / eye.length];
-    fillPolygon(lidBand(px, upper, centre, LASH_COMPOSITE.upperOut * fw, LASH_COMPOSITE.inset * fw), W, H, hard);
-    fillPolygon(lidBand(px, lower, centre, LASH_COMPOSITE.lowerOut * fw, LASH_COMPOSITE.inset * fw), W, H, hard);
+    // The hard band is grown by the feather so the blurred mask still reaches ~1 on the lashes themselves.
+    const grow = LASH_COMPOSITE.feather * fw;
+    fillPolygon(lidBand(px, upper, centre, LASH_COMPOSITE.upperOut * fw + grow, LASH_COMPOSITE.inset * fw + grow / 2), W, H, hard);
+    fillPolygon(lidBand(px, lower, centre, LASH_COMPOSITE.lowerOut * fw + grow, LASH_COMPOSITE.inset * fw + grow / 2), W, H, hard);
     const grown = new Uint8Array(W * H), inside = new Uint8Array(W * H);
     fillPolygon(scaledPolygon(px, eye, LASH_COMPOSITE.ring), W, H, grown);
     fillPolygon(eye.map((i) => px[i]), W, H, inside);
