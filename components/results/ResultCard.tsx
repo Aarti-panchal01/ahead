@@ -84,15 +84,17 @@ interface Props extends ImageProps {
   matchOpen?: boolean;
   onToggleMatch?: () => void;
   match?: ReactNode;
+  /** Lets the results screen see when this card comes near the viewport (lib/client/visibility.ts). */
+  cardRef?: (el: HTMLElement | null) => void;
 }
 
 export default function ResultCard(props: Props) {
-  const { ranked, state, view, subject, label, whose, onDemand, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match } = props;
+  const { ranked, state, view, subject, label, whose, onDemand, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match, cardRef } = props;
   const { item } = ranked;
   const errored = state.phase === "error";
 
   return (
-    <article className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
+    <article ref={cardRef} className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
       <RenderImage ranked={ranked} state={state} view={view} subject={subject} />
       <div className={styles.body}>
         {label && (

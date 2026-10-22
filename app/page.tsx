@@ -6,16 +6,16 @@ import styles from "./landing.module.css";
 const TRIPTYCH = [
   { src: "/personas/P1A.jpg", caption: "Today", alt: "Sample person 1 today, with shoulder-length grey curls" },
   { src: "/personas/P1B.jpg", caption: "Hair gone", alt: "The same person with no hair" },
-  { src: "/api/fixtures/hero__P1B_browsB__W01", caption: "Wig and brows", alt: "The same person wearing long grey curls and soft brows, previewed by Ahead" },
+  { src: "/landing/hero__P1B_browsB__W01.jpg", caption: "Wig and brows", alt: "The same person wearing long grey curls and soft brows, previewed by Ahead" },
 ];
 
 export default function Landing() {
   return (
     <main className="stack-lg">
       <section aria-label="One person, three looks" className={styles.triptych}>
-        {TRIPTYCH.map((t) => (
+        {TRIPTYCH.map((t, i) => (
           <div key={t.caption} className={styles.panel}>
-            <AiImage src={t.src} alt={t.alt} width={821} height={1024} />
+            <AiImage src={t.src} alt={t.alt} width={821} height={1024} priority={i === 0} sizes="(max-width: 34rem) 31vw, 11rem" />
             <p className={styles.caption}>{t.caption}</p>
           </div>
         ))}

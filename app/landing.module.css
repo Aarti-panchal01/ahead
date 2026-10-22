@@ -17,4 +17,11 @@
 
 .panel:last-child .caption { color: var(--ink); font-weight: 700; }
 
-.headline { text-wrap: balance; }
+.headline {
+  font-family: var(--font-headline), Georgia, serif;
+  font-weight: 500;
+  font-size: 2.15rem;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
