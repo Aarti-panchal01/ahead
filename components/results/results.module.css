@@ -69,6 +69,7 @@
 }
 .chip { color: var(--accent); border: 1.5px solid var(--accent); }
 .chipNew { color: var(--ink); border: 1.5px dashed var(--ink-soft); }
+.chipNeutral { color: var(--ink-soft); border: 1.5px solid var(--line); }
 
 .pending {
   aspect-ratio: 821 / 1024;
@@ -110,13 +111,18 @@
   font-weight: 700;
 }
 
-.integrity { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.integrityDot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: none; }
+/* Dot on the first line; the text wraps under itself, not under the dot. */
+.integrity { display: grid; grid-template-columns: 10px 1fr; column-gap: 8px; align-items: start; font-weight: 700; }
+.integrityDot { width: 10px; height: 10px; margin-top: calc(0.75em - 5px); border-radius: 50%; background: currentColor; }
+.integrityText { margin: 0; }
+.integrityMore { display: block; margin-top: 4px; font-weight: 400; color: var(--ink-soft); font-size: 0.92em; }
 .ok { color: var(--integrity); }
 .warn { color: var(--warning); }
 
 .retry { margin-top: 10px; }
 .compareBtn { min-height: 48px; }
+.renderBtn { border-color: var(--accent); color: var(--accent); }
+.cardActions > * + * { margin-top: 8px; }
 
 .withBar { padding-bottom: 140px; }
 
@@ -148,3 +154,32 @@
 .compareCol > * + * { margin-top: 8px; }
 .compareName { font-size: 0.95rem; }
 .compareCol .integrity { font-size: 0.85rem; }
+
+/* Match card */
+.match { padding: 14px; border-radius: 12px; background: var(--bg); }
+.match > * + * { margin-top: 10px; }
+.matchPair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.matchCol { min-width: 0; }
+.matchCol > * + * { margin-top: 6px; }
+.matchSquare {
+  display: flex; align-items: center; justify-content: center; text-align: center; padding: 0;
+  width: 100%; aspect-ratio: 1; border-radius: 10px; object-fit: cover;
+  box-shadow: inset 0 0 0 1px var(--line); background: #e4e8e4;
+}
+.matchSquare figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
+.matchName { font-weight: 700; }
+.hex { font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+
+.browsRow > * + * { margin-top: 8px; }
+.browsBtn { border-color: var(--accent); }
+
+.panel { padding-top: 24px; border-top: 1px solid var(--line); }
+.panelHead { font-size: 1.25rem; }
+
+.field > * + * { margin-top: 6px; }
+.field label { display: block; font-weight: 700; }
+.field textarea {
+  display: block; width: 100%; padding: 10px 12px; border-radius: 10px; border: 2px solid var(--line);
+  background: var(--surface); color: var(--ink); font: inherit; font-size: 1rem; resize: vertical;
+}
+.field textarea:focus-visible { border-color: var(--ink); }

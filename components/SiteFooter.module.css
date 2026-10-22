@@ -1,0 +1,19 @@
+.foot {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 20px 16px calc(32px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.foot > * + * { margin-top: 8px; }
+
+.foot a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+}
+
+@media print { .foot { display: none; } }

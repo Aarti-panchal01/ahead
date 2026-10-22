@@ -1,0 +1,25 @@
+.field > * + * { margin-top: 6px; }
+.field label { display: block; font-weight: 700; }
+.field input {
+  display: block; width: 100%; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
+  border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit;
+}
+.field input:focus-visible { border-color: var(--ink); }
+
+.timeline { list-style: none; padding: 0; margin: 0; border-left: 3px solid var(--accent); }
+.step { display: grid; grid-template-columns: 7.2rem 1fr; gap: 12px; padding: 0 0 18px 14px; }
+.date { font-weight: 700; font-variant-numeric: tabular-nums; }
+.label { font-weight: 700; }
+.care { font-weight: 700; }
+
+.shortlist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.thumb figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
+.thumbName { margin-top: 6px; font-size: 0.92rem; }
+
+.approvals { list-style: none; padding: 0; margin: 0; }
+.approvals > li + li { margin-top: 16px; }
+.approval { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
+.approval > * + * { margin-top: 10px; }
+.render { display: block; width: 100%; border-radius: 12px; }
+
+.brief { white-space: pre-wrap; background: var(--surface); border-radius: 12px; padding: 12px 14px; }

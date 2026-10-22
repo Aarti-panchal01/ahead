@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { accentFor, applyAccent } from "@/lib/client/accent";
 import { getSample, type SampleId } from "@/lib/client/personas";
+import { endSession, resetSessionId } from "@/lib/client/session";
 import type { AccentColour, HairLossStage } from "@/lib/types";
 
 export type ChosenPhoto =
@@ -47,6 +48,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     applyAccent(document.documentElement.style, accent);
   }, [accent]);
+
+  // Leaving the page ends the session: its YouCam try-ons are deleted (POST /api/session/end, keepalive).
+  useEffect(() => {
+    // If the page comes back from the back/forward cache, later try-ons start a fresh session id.
+    const onHide = () => {
+      void endSession();
+      resetSessionId();
+    };
+    window.addEventListener("pagehide", onHide);
+    return () => window.removeEventListener("pagehide", onHide);
+  }, []);
 
   const value = useMemo(
     () => ({ consented, setConsented, photo, setPhoto, stage, setStage, accent }),

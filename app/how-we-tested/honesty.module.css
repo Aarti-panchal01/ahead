@@ -1,0 +1,15 @@
+.doc { overflow-wrap: anywhere; }
+.doc code { font-size: 0.9em; background: var(--surface); padding: 0 4px; border-radius: 4px; }
+.h { font-size: 1.3rem; padding-top: 12px; }
+.list { padding-left: 20px; margin: 0; }
+.list > li + li { margin-top: 8px; }
+
+.rows { list-style: none; padding: 0; margin: 0; }
+.rows > li + li { margin-top: 14px; }
+.row { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
+.row dl { margin: 0; }
+.row dl > div + div { margin-top: 10px; }
+.row dt { font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); }
+.row dd { margin: 2px 0 0; }
+.rowHead dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.rowHead dd { font-weight: 700; font-size: 1.05rem; }

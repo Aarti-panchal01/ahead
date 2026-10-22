@@ -22,7 +22,8 @@ export default function Landing() {
       </section>
 
       <section className="stack">
-        <h1>Try on your next hair, before you lose this one.</h1>
+        {/* Balanced so "one." never sits alone; the no-break space is the fallback where text-wrap is unsupported. */}
+        <h1 className={styles.headline}>Try on your next hair, before you lose this&nbsp;one.</h1>
         <p className="lede">
           See wigs and head wraps on your own photo, now and after your hair goes. Every preview is checked so it still
           looks like you.

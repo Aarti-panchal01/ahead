@@ -1,45 +1,84 @@
 // The four sample people (all AI-generated). A = with their hair, B = hair gone.
-// Hair colours are PRECOMPUTED, not sampled at runtime: the median of hand-picked hair-only boxes
-// on each A image (x, y, w, h in the 821x1024 file), checked by eye so no wall, skin or ear is inside.
-// Precomputing keeps the ranking stable and testable; a runtime sample of a sample person would
-// only re-measure a photo that never changes. A real photo is sampled in the browser (sampleColours).
+// Hair and brow colours, length and texture come from catalogue/personas.json (measured once on the A photos by
+// the lab, so the ranking stays stable and testable). A real photo is sampled in the browser (sampleColours).
+import raw from "@/catalogue/personas.json";
 import type { HairLossStage } from "@/lib/types";
+import type { HairLength, HairTexture } from "@/lib/rank";
 
 export type SampleId = "P1" | "P2" | "P3" | "P4";
+
+interface PersonaJson {
+  id: SampleId;
+  name: string;
+  hairColour: string;
+  browColour: string;
+  browDefault: string;
+  length: HairLength;
+  texture: HairTexture;
+}
 
 export interface SamplePerson {
   id: SampleId;
   label: string;
   /** Short plain description for alt text and the picker. */
   description: string;
+  /** Measured hair colour on the A photo, "#RRGGBB". */
   hair: string;
-  /** Hair-only boxes the colour was measured from (x, y, w, h). */
-  hairBoxes: [number, number, number, number][];
-  length: "pixie" | "chin" | "shoulder" | "long";
+  /** Measured brow colour on the A photo. */
+  brows: string;
+  /** The brow colour the brows render used (her own brow colour, about 10 L* darker). */
+  browDefault: string;
+  length: HairLength;
+  texture: HairTexture;
+  /**
+   * A hair-only square on the A photo (x, y, size in the 821x1024 file) for the match card.
+   * Picked by eye and checked as a crop: no skin, wall or ear inside.
+   */
+  hairCrop: [number, number, number];
 }
 
-export const SAMPLE_PEOPLE: SamplePerson[] = [
-  { id: "P1", label: "Sample person 1", description: "a woman with shoulder-length grey curls", hair: "#888585", hairBoxes: [[145, 320, 75, 220], [270, 150, 260, 70]], length: "shoulder" },
-  { id: "P2", label: "Sample person 2", description: "a woman with a straight ash-brown bob", hair: "#6E5A4A", hairBoxes: [[195, 250, 60, 360], [330, 165, 200, 50]], length: "shoulder" },
-  { id: "P3", label: "Sample person 3", description: "a woman with black coily hair", hair: "#1D1C21", hairBoxes: [[330, 135, 200, 70]], length: "chin" },
-  { id: "P4", label: "Sample person 4", description: "a woman with straight black hair to the shoulders", hair: "#191B21", hairBoxes: [[278, 340, 28, 300]], length: "shoulder" },
-];
+const EXTRA: Record<SampleId, { description: string; hairCrop: [number, number, number] }> = {
+  P1: { description: "a woman with long grey curls", hairCrop: [580, 440, 80] },
+  P2: { description: "a woman with a straight ash-brown bob", hairCrop: [170, 420, 90] },
+  P3: { description: "a woman with black coily hair", hairCrop: [400, 130, 80] },
+  P4: { description: "a woman with a straight black bob", hairCrop: [600, 520, 65] },
+};
+
+export const SAMPLE_PEOPLE: SamplePerson[] = (raw as PersonaJson[]).map((p) => ({
+  id: p.id,
+  label: p.name,
+  description: EXTRA[p.id].description,
+  hair: p.hairColour,
+  brows: p.browColour,
+  browDefault: p.browDefault,
+  length: p.length,
+  texture: p.texture,
+  hairCrop: EXTRA[p.id].hairCrop,
+}));
 
 export function getSample(id: string | null | undefined): SamplePerson | undefined {
   return SAMPLE_PEOPLE.find((p) => p.id === id);
 }
 
+export const PERSONA_SIZE = { width: 821, height: 1024 } as const;
+
 export const beforeImage = (id: SampleId) => `/personas/${id}A.jpg`;
 export const goneImage = (id: SampleId) => `/personas/${id}B.jpg`;
 
-/** The photo we show as "you" on the results screen. */
-export function heroImage(id: SampleId, stage: HairLossStage): string {
-  return stage === "gone" ? goneImage(id) : beforeImage(id);
+/** Her photo with hair gone and brows drawn at her own brow colour (makeup-vto, composited: skin unchanged). */
+export function browsImage(id: SampleId): string {
+  return id === "P1" ? "/api/fixtures/hero__P1B__browsB" : `/api/fixtures/rec__${id}B__browsB`;
+}
+
+/** The photo we show on the results screen. With hair gone, brows are on by default (see lib/client/brows.ts). */
+export function heroImage(id: SampleId, stage: HairLossStage, brows = false): string {
+  if (stage !== "gone") return beforeImage(id);
+  return brows ? browsImage(id) : goneImage(id);
 }
 
 /**
  * The face sent to the try-on API. Recordings exist for the B (hair gone) photos only, and a wig
- * covers the head either way, so every stage renders on B for now. Change here if A recordings land.
+ * covers the head either way, so every stage renders on B. Brows are added afterwards in the browser.
  */
 export function tryOnFace(id: SampleId): string {
   return `${id}B`;

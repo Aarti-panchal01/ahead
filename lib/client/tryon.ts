@@ -17,6 +17,8 @@ export interface TryOnOptions {
   now?: () => number;
   sleep?: (ms: number, signal?: AbortSignal) => Promise<void>;
   onRunning?: (elapsedMs: number) => void;
+  /** Extra request headers, e.g. the x-ahead-session id (lib/client/session.ts). */
+  headers?: Record<string, string>;
 }
 
 const defaultSleep = (ms: number, signal?: AbortSignal) =>
@@ -36,12 +38,12 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
   try {
     let init: RequestInit;
     if (typeof face === "string") {
-      init = { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ itemId, faceId: face }) };
+      init = { method: "POST", headers: { "Content-Type": "application/json", ...opts.headers }, body: JSON.stringify({ itemId, faceId: face }) };
     } else {
       const form = new FormData();
       form.set("itemId", itemId);
       form.set("selfie", face, "selfie.jpg");
-      init = { method: "POST", body: form };
+      init = { method: "POST", body: form, headers: { ...opts.headers } };
     }
     res = await f("/api/tryon", { ...init, signal: opts.signal });
   } catch {
@@ -68,4 +70,15 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
     opts.onRunning?.(elapsed);
     await sleep(opts.pollMs ?? POLL_MS, opts.signal);
   }
+}
+
+/**
+ * Where the browser loads a finished render from. Recordings are served by our own fixtures route. A live
+ * render goes through the same-origin proxy GET /api/result?id=<taskId>: its pixels are readable for the
+ * integrity check, and the YouCam URL never reaches the page.
+ */
+export function renderSrc(r: TryOnResult): string | undefined {
+  if (r.status !== "success") return undefined;
+  if (r.id.startsWith("mock:") || r.recording) return r.resultUrl;
+  return r.id ? `/api/result?id=${encodeURIComponent(r.id)}` : r.resultUrl;
 }

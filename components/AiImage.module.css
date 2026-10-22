@@ -23,3 +23,6 @@
   font-size: 0.8rem;
   line-height: 1.4;
 }
+
+.crop { aspect-ratio: 1; }
+.crop .img { position: absolute; max-width: none; height: auto; }
