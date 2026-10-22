@@ -22,7 +22,7 @@
   - **Feature freeze** is recorded in PLAN.md.
 
 ## Links
-- **Preview (live, tester code required, log in to Vercel):** https://try-ahead-4dguyetac-aarti-panchals-projects.vercel.app
+- **Preview (live, tester code required, log in to Vercel):** https://try-ahead-g3mmsd6jb-aarti-panchals-projects.vercel.app
 - **Production (still mock):** https://try-ahead.vercel.app
 
 ## Tests
@@ -32,7 +32,7 @@
 I used 2 overnight (the MCP test). The balance is **186**, which is 36 above the 150 reserve.
 
 ## Failed, skipped or worth knowing
-- **Planner bug, found and fixed overnight:** Groq sometimes sent empty values to the shortlist tool and its answer was thrown away; with Gemini overloaded (503), users then got the simple planner. Fixed: empty values are now accepted (3 new tests). Gemini's overload is on Google's side and is logged.
+- **Planner bug, found and fixed overnight:** Groq sometimes sent empty values to the shortlist tool and its answer was thrown away; with Gemini overloaded (503), users then got the simple planner. Fixed: empty values are now accepted (3 new tests). Gemini's overload is on Google's side and is logged. After the fix, Groq answered 1 of 3 later tries; the other 2 hit Groq's free-tier rate limit (my repeated tests used up the token budget) while Gemini was still overloaded. That's a quota limit, not a code bug: consider a paid Groq tier, or space out testing before the video.
 - **"Fail closed" wasn't needed:** TESTER_CODE is set in both Production and Preview, so I didn't build the unset-code fail-closed behaviour.
 - **No screenshot of the tester-code field.** It only appears in live mode with a code set, and I didn't spend units on a selfie try-on.
 - **Screenshots come from the local build.** Preview pages need a Vercel login.
