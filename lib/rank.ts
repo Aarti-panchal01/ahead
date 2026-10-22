@@ -2,7 +2,7 @@
 // Wigs: the 3 closest to the person's hair (colour distance plus a length penalty), then
 // 1 "something new": the furthest length from theirs, in the closest colour among the rest.
 // Wraps are not matched to hair; they are listed in colour order, closest first.
-import { deltaE2000, hexToLab } from "@/lib/client/stubs";
+import { deltaE2000, hexToLab } from "@/lib/client/image";
 import type { CatalogueItem, RankedItem } from "@/lib/types";
 
 export const LENGTHS = ["pixie", "chin", "shoulder", "long"] as const;

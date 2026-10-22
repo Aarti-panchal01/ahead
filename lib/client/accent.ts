@@ -1,6 +1,6 @@
 // The one bold thing (CLAUDE.md, Design): the user's hair colour becomes --accent across the app.
 import type { AccentColour } from "@/lib/types";
-import { accentFromHair } from "./stubs";
+import { accentFromHair } from "./image";
 
 interface StyleTarget { setProperty(name: string, value: string): void }
 

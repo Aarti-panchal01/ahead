@@ -1,0 +1,3 @@
+public/models/LICENSE-APACHE-2.0.txt -text
+public/models/*.task binary
+public/models/*.tflite binary

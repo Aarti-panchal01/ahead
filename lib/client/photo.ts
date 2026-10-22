@@ -1,6 +1,6 @@
 // Turns a camera frame or an uploaded file into an in-memory photo: an object URL plus the hair colour
 // sampled locally (0 units). Nothing is uploaded here.
-import { sampleColours } from "./stubs";
+import { sampleColours } from "./image";
 
 export interface LocalPhoto { url: string; hair?: string }
 
@@ -17,7 +17,7 @@ export async function photoFromSource(source: CanvasImageSource & { width: numbe
   let hair: string | undefined;
   if (ctx) {
     ctx.drawImage(source, 0, 0, w, h);
-    const s = sampleColours(ctx.getImageData(0, 0, w, h));
+    const s = await sampleColours(ctx.getImageData(0, 0, w, h)).catch(() => ({ hairPixels: 0, browPixels: 0 }) as { hair?: string; hairPixels: number; browPixels: number });
     if (s.hair && s.hairPixels >= MIN_HAIR_PIXELS) hair = s.hair;
   }
   return { url: URL.createObjectURL(blob), hair };

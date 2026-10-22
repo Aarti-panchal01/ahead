@@ -2,7 +2,6 @@
 // Never retries a create (it might have succeeded and cost units). Errors come back as a TryOnResult
 // with plain words in `message`, so the card never shows a broken image.
 import type { TryOnResult } from "@/lib/types";
-import { devFixture, devFixturesOn } from "./devFixtures";
 
 export const POLL_MS = 1500;
 /** Live renders take 9 to 30 s (docs/api-truth-table.md). After this we stop and say so. */
@@ -30,7 +29,6 @@ const failed = (id: string, errorCode: string, message?: string): TryOnResult =>
 
 /** face: a demo face id (e.g. "P1B") sent as JSON, or the user's own photo sent as multipart (live mode only). */
 export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnOptions = {}): Promise<TryOnResult> {
-  if (!opts.fetchFn && typeof face === "string" && devFixturesOn()) return devFixture(face, itemId); // DEV-ONLY, see devFixtures.ts
   const f = opts.fetchFn ?? fetch;
   const sleep = opts.sleep ?? defaultSleep;
   const now = opts.now ?? Date.now;

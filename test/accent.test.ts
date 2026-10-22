@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { accentFor, applyAccent } from "@/lib/client/accent";
 import { SAMPLE_PEOPLE } from "@/lib/client/personas";
-import { BACKGROUND, FALLBACK_ACCENT, contrastRatio } from "@/lib/client/stubs";
+import { BACKGROUND, FALLBACK_ACCENT, contrastRatio } from "@/lib/client/image";
 
 function fakeStyle() {
   const props: Record<string, string> = {};

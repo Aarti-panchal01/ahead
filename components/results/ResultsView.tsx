@@ -13,7 +13,7 @@ import { fetchMode } from "@/lib/client/mode";
 import { getSample, goneImage, tryOnFace } from "@/lib/client/personas";
 import { IDLE, nextRender, type RenderEvent, type RenderState } from "@/lib/client/renderState";
 import { parseStage } from "@/lib/client/routes";
-import { integrityCheck } from "@/lib/client/stubs";
+import { integrityCheck } from "@/lib/client/image";
 import { runTryOn } from "@/lib/client/tryon";
 import { rankCatalogue } from "@/lib/rank";
 import type { HairLossStage, RankedItem } from "@/lib/types";
