@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { LOCAL_TTL_DAYS, cleanDraft, createBrief, expiryLine, getBrief } from "@/lib/client/briefApi";
-import { CARE_TEAM_LINE, addDays, isPlanResponse, localPlan, requestPlan, withCareTeamLine } from "@/lib/client/planApi";
+import { CARE_TEAM_LINE, FALLBACK_LINE, addDays, byDate, isPlanResponse, localPlan, requestPlan, withCareTeamLine } from "@/lib/client/planApi";
 import type { PlanResponse, StylistBrief } from "@/lib/types";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -101,6 +101,16 @@ describe("plan client", () => {
     const p = localPlan({ stage: "not_yet", hairColour: "#232228", firstTreatmentDate: "2026-11-10" }, "2026-10-22");
     const text = [...p.timeline.flatMap((t) => [t.label, t.note ?? ""]), ...p.messages, p.brief].join(" ").toLowerCase();
     for (const w of ["cure", "prevent", "dose", "chemo", "medication", "diagnos", "symptom"]) expect(text).not.toContain(w);
+  });
+
+  it("accepts undated steps and keeps them after the dated ones", () => {
+    const steps = [{ label: "Any time" }, { date: "2026-11-10", label: "b" }, { date: "2026-10-22", label: "a" }];
+    expect(isPlanResponse({ ...server, timeline: steps })).toBe(true);
+    expect([...steps].sort(byDate).map((t) => t.label)).toEqual(["a", "b", "Any time"]);
+  });
+
+  it("says plainly when the simple planner was used", () => {
+    expect(FALLBACK_LINE).toBe("We used our simple planner because the AI planner was unavailable.");
   });
 
   it("adds the care-team line once", () => {

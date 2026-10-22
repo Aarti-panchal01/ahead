@@ -30,3 +30,7 @@ export type Whose = "her" | "your";
 export function lockLine(whose: Whose): string {
   return `Bring a lock of ${whose} hair to ${whose} stylist.`;
 }
+
+/** CLAUDE.md, Agent: the LLM gets only style choices and colours; the timeline is computed on our side. */
+export const PLANNER_PRIVACY_LINE =
+  "Our planning assistant never sees your photos, your treatment date or any health details. It gets only your style choices and colours; your timeline is worked out on our side.";

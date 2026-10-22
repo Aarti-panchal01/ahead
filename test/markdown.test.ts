@@ -1,6 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { createElement as h } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import HowWeTested from "@/app/how-we-tested/page";
+import { DELETION_LINE, PLANNER_PRIVACY_LINE } from "@/lib/client/copy";
 import { hairCropBox } from "@/lib/client/image";
 import { parseInline, parseMarkdown, splitRow } from "@/lib/client/markdown";
 
@@ -54,5 +58,15 @@ describe("hairCropBox (match card, own photo)", () => {
     const w = 200, h = 200, mask = new Uint8Array(w * h);
     for (let y = 0; y < 10; y++) for (let x = 0; x < 200; x++) mask[y * w + x] = 1;
     expect(hairCropBox(mask, w, h)).toBeNull();
+  });
+});
+
+describe("honesty page", () => {
+  const html = renderToStaticMarkup(h(HowWeTested));
+  it("renders all 18 truth-table rows, the deletion line and the planner privacy line", () => {
+    expect(html.match(/<li class="[^"]*row/g)?.length).toBeGreaterThanOrEqual(18);
+    expect(html).toContain(DELETION_LINE);
+    expect(html).toContain(PLANNER_PRIVACY_LINE.replace(/'/g, "&#x27;"));
+    expect(html).not.toMatch(/anthropic/i);
   });
 });

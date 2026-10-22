@@ -12,7 +12,7 @@ import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
 import { integrityCheck } from "@/lib/client/image";
 import { goneImage, tryOnFace } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
-import { CARE_TEAM_LINE, requestPlan, todayIso, withCareTeamLine } from "@/lib/client/planApi";
+import { CARE_TEAM_LINE, FALLBACK_LINE, requestPlan, todayIso, withCareTeamLine } from "@/lib/client/planApi";
 import { sessionHeaders } from "@/lib/client/session";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import type { IntegrityReport, PlanRequest, PlanResponse } from "@/lib/types";
@@ -116,6 +116,7 @@ export default function PlanView() {
 
       {plan && (
         <div className="stack-lg" aria-live="polite">
+          {plan.source === "fallback" && <p className="notice">{FALLBACK_LINE}</p>}
           {messages.length > 0 && (
             <section className="stack">
               {messages.map((m, i) => <p key={i}>{m}</p>)}
@@ -127,7 +128,7 @@ export default function PlanView() {
             <ol className={styles.timeline}>
               {plan.timeline.map((t, i) => (
                 <li key={i} className={styles.step}>
-                  <p className={styles.date}><time dateTime={t.date}>{shortDate(t.date)}</time></p>
+                  {t.date ? <p className={styles.date}><time dateTime={t.date}>{shortDate(t.date)}</time></p> : <p className={styles.date}>Any time</p>}
                   <div>
                     <p className={styles.label}>{t.label}</p>
                     {t.note && <p className="note">{t.note}</p>}
@@ -172,7 +173,6 @@ export default function PlanView() {
           </section>
 
           <p className="note">
-            {plan.source === "llm" ? "Written by our planning assistant from your answers." : "Our standard plan, made from your answers."}{" "}
             {plan.unitsUsed} of 30 try-on units used this session.
           </p>
         </div>

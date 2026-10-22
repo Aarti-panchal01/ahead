@@ -23,10 +23,19 @@ export function todayIso(now = new Date()): string {
   return `${y}-${m}-${d}`;
 }
 
+/** Dated steps in calendar order; undated steps keep their order, after the dated ones. */
+export function byDate(a: TimelineItem, b: TimelineItem): number {
+  if (a.date && b.date) return a.date.localeCompare(b.date);
+  return a.date ? -1 : b.date ? 1 : 0;
+}
+
+/** Plain words for the plan screen when the rule-based plan was used. */
+export const FALLBACK_LINE = "We used our simple planner because the AI planner was unavailable.";
+
 export function isPlanResponse(x: unknown): x is PlanResponse {
   const p = x as PlanResponse;
   return Boolean(
-    p && Array.isArray(p.timeline) && p.timeline.every((t) => t && typeof t.date === "string" && typeof t.label === "string")
+    p && Array.isArray(p.timeline) && p.timeline.every((t) => t && (t.date === undefined || typeof t.date === "string") && typeof t.label === "string")
       && Array.isArray(p.shortlist) && typeof p.brief === "string" && Array.isArray(p.messages)
       && (p.source === "llm" || p.source === "fallback") && typeof p.unitsUsed === "number",
   );
@@ -57,7 +66,7 @@ export function localPlan(req: PlanRequest, today: string): PlanResponse {
     t.push({ date: addDays(first, 7), label: "Have your wig or a wrap ready", note: "Hair loss mostly starts 1 to 3 weeks after the first treatment." });
     t.push({ date: addDays(first, 21), label: "Brows and lashes", note: "Eyebrows and eyelashes can fall out too. You can try brows on here." });
   }
-  t.sort((a, b) => a.date.localeCompare(b.date));
+  t.sort(byDate);
 
   const names = shortlist.map((id) => CATALOGUE.find((x) => x.id === id)?.name).filter(Boolean);
   const brief = [
