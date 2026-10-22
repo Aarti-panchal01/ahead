@@ -1,0 +1,39 @@
+{
+  "phase": "wrap",
+  "face": "P4B",
+  "ref": "H01",
+  "endpoint": "POST /s2s/v2.1/task/hair-transfer",
+  "payload_sent": {
+    "src_file_id": "<redacted>",
+    "ref_file_id": "<redacted>",
+    "hair_color": "ref"
+  },
+  "src_sent_size": [
+    821,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 219.0,
+  "latency_s": 8.8,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": null,
+      "results": {
+        "url": "<expired presigned url removed>"
+      },
+      "task_status": "success"
+    }
+  },
+  "status": "success",
+  "error_code": null,
+  "result": "rec__P4B__H01.jpg",
+  "balance_after": 217.0,
+  "units_charged": 2.0
+}

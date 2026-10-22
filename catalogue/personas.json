@@ -1,0 +1,6 @@
+[
+  {"id": "P1", "name": "Sample person 1", "images": {"before": "/personas/P1A.jpg", "gone": "/personas/P1B.jpg", "regrowth": "/personas/P1C.jpg"}, "hairColour": "#706D6B", "hairPixels": 155991, "browColour": "#63483B", "browDefault": "#4A3125", "browIntensity": 70, "length": "long", "texture": "curly", "AI-generated": true},
+  {"id": "P2", "name": "Sample person 2", "images": {"before": "/personas/P2A.jpg", "gone": "/personas/P2B.jpg", "regrowth": "/personas/P2C.jpg"}, "hairColour": "#655141", "hairPixels": 117595, "browColour": "#6D4C37", "browDefault": "#543521", "browIntensity": 70, "length": "chin", "texture": "straight", "AI-generated": true},
+  {"id": "P3", "name": "Sample person 3", "images": {"before": "/personas/P3A.jpg", "gone": "/personas/P3B.jpg", "regrowth": "/personas/P3C.jpg"}, "hairColour": "#1C1B1F", "hairPixels": 141374, "browColour": "#5B4133", "browDefault": "#432B1E", "browIntensity": 70, "length": "shoulder", "texture": "coily", "AI-generated": true},
+  {"id": "P4", "name": "Sample person 4", "images": {"before": "/personas/P4A.jpg", "gone": "/personas/P4B.jpg", "regrowth": "/personas/P4C.jpg"}, "hairColour": "#232228", "hairPixels": 80726, "browColour": "#604A40", "browDefault": "#48332A", "browIntensity": 70, "length": "chin", "texture": "straight", "AI-generated": true}
+]

@@ -1,0 +1,57 @@
+{
+  "phase": "browdef",
+  "face": "P4B",
+  "ref": "makeup:brows",
+  "endpoint": "POST /s2s/v2.0/task/makeup-vto",
+  "payload_sent": {
+    "src_file_id": "<redacted>",
+    "version": "1.0",
+    "effects": [
+      {
+        "category": "eyebrows",
+        "pattern": {
+          "type": "shape",
+          "name": "Arrow1",
+          "curvature": 0,
+          "thickness": 0,
+          "definition": 30
+        },
+        "palettes": [
+          {
+            "color": "#48332A",
+            "colorIntensity": 70,
+            "texture": "matte"
+          }
+        ]
+      }
+    ]
+  },
+  "src_sent_size": [
+    821,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 238.0,
+  "latency_s": 8.7,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": null,
+      "results": {
+        "url": "<expired presigned url removed>"
+      },
+      "task_status": "success"
+    }
+  },
+  "status": "success",
+  "error_code": null,
+  "result": "rec__P4B__browsB.jpg",
+  "balance_after": 237.0,
+  "units_charged": 1.0
+}
