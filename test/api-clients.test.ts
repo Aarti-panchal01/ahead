@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { LOCAL_TTL_DAYS, cleanDraft, createBrief, expiryLine, getBrief } from "@/lib/client/briefApi";
+import { cleanDraft, createBrief, expiryLine, getBrief } from "@/lib/client/briefApi";
 import { CARE_TEAM_LINE, FALLBACK_LINE, addDays, byDate, isPlanResponse, localPlan, requestPlan, withCareTeamLine } from "@/lib/client/planApi";
 import type { PlanResponse, StylistBrief } from "@/lib/types";
 
@@ -13,8 +13,8 @@ describe("brief client", () => {
 
   it("posts only clean fields and returns the server's brief", async () => {
     const f = answer(() => json(brief, 201));
-    const r = await createBrief({ items: ["W01", "W01", "nope"], hairColour: "#706d6b", notes: "  short  " }, f, NOW);
-    expect(r).toEqual({ ok: true, brief, local: false });
+    const r = await createBrief({ items: ["W01", "W01", "nope"], hairColour: "#706d6b", notes: "  short  " }, f);
+    expect(r).toEqual({ ok: true, brief });
     const [url, init] = calls(f)[0];
     expect(url).toBe("/api/brief");
     expect(JSON.parse(String(init.body))).toEqual({ items: ["W01"], hairColour: "#706D6B", notes: "short" });
@@ -26,16 +26,9 @@ describe("brief client", () => {
     expect(f).not.toHaveBeenCalled();
   });
 
-  it("falls back to a self-contained link while the route is missing, and reads it back", async () => {
-    const f = answer(() => new Response("", { status: 404 }));
-    const r = await createBrief({ items: ["W04", "H02"], hairColour: "#655141", browColour: "#6D4C37", notes: "Wears it tucked behind the ears" }, f, NOW);
-    expect(r.ok && r.local).toBe(true);
-    if (!r.ok) return;
-    expect(r.brief.id).toMatch(/^l-[A-Za-z0-9_-]+$/);
-    const back = await getBrief(r.brief.id, f, NOW);
-    expect(back).toMatchObject({ status: "ok", brief: { items: ["W04", "H02"], hairColour: "#655141", notes: "Wears it tucked behind the ears" } });
-    const later = new Date(NOW.getTime() + (LOCAL_TTL_DAYS + 1) * 86_400_000);
-    expect((await getBrief(r.brief.id, f, later)).status).toBe("expired");
+  it("never makes a brief without the server (no self-contained links)", async () => {
+    const r = await createBrief({ items: ["W04"] }, answer(() => new Response("", { status: 404 })));
+    expect(r.ok).toBe(false);
   });
 
   it("maps 404 and 410 to plain messages, and checks expiry itself", async () => {
