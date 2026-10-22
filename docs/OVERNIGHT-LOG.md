@@ -10,7 +10,7 @@ Steps (mark [x] when done):
 - [x] A3 tester code gate: server (platform) + UI (ui); SUBMISSION placeholder via docs agent (wave 3)
 - [x] A6 shadow note wording (ui); A5 UI wording + no bug/bias test (ui)
 - [x] Merge A: 496 tests, lint/typecheck/build green, pushed
-- [ ] B fresh preview: plan day-0 + sample cards = her; screenshots docs/screenshots/final/
-- [ ] C qa + docs agents (wave 3), merge green
+- [x] B preview https://try-ahead-kvznucayp-aarti-panchals-projects.vercel.app : 41/41 sample cards = her recording; plan wig-ready on treatment day (Groq answered); 16 screenshots in docs/screenshots/final/ (local mock build; preview is login-protected). Note: on this laptop CPU the per-card checks finish in ~60 s (sequential queue, plain + brows re-check); on GPU ~1 s each.
+- [~] C docs done (branch docs); qa running
 - [ ] D Gate 3: preview deploy, Lighthouse mobile landing + results, fix red, FEATURE FREEZE
 - [ ] Morning report docs/MORNING-REPORT.md
