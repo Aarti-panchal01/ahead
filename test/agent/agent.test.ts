@@ -116,6 +116,17 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
     expect(toolResults).toContain("free saved previews");
   });
 
+  it("sample person on the LLM path: the model's catalogue holds only her recorded items", async () => {
+    const gemini = mockModel();
+    const p = await runPlan({ stage: "gone", personaId: "P1", preferences: { wantsWraps: true } }, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini)] });
+    const sent = JSON.stringify(gemini.doGenerateCalls[0].prompt);
+    expect(sent).toContain('\\"id\\":\\"W01\\"');
+    expect(sent).not.toContain("W08");
+    expect(sent).not.toContain("W12");
+    const allowed = ["W01", "W02", "W03", "W04", "W05", "W06", "H01", "H02", "H03", "H04"];
+    expect(p.shortlist.every((id) => allowed.includes(id))).toBe(true);
+  });
+
   it("Gemini rate limited (429 RESOURCE_EXHAUSTED) -> Groq answers, Gemini tried once", async () => {
     const gemini = failingModel(rateLimited());
     const groq = mockModel();
@@ -165,6 +176,23 @@ describe("POST /api/agent/plan", () => {
     expect(bad.status).toBe(400);
     expect((await bad.json()).message).toMatch(/firstTreatmentDate/);
     expect((await post({ stage: "not_yet", hairColour: "brown" })).status).toBe(400);
+  });
+
+  it("today: the client's local date drives the timeline; malformed is a 400", async () => {
+    vi.stubEnv("GOOGLE_GENERATIVE_AI_API_KEY", "");
+    vi.stubEnv("GROQ_API_KEY", "");
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2026-10-22T23:30:00Z")); // already 23 Oct in Asia
+    try {
+      const r = await post({ stage: "not_yet", firstTreatmentDate: "2026-11-03", personaId: "P1", today: "2026-10-23" });
+      const p = (await r.json()) as PlanResponse;
+      expect(p.timeline[0]).toMatchObject({ date: "2026-10-23", label: "Choose your wig now" });
+      const utc = (await (await post({ stage: "not_yet", firstTreatmentDate: "2026-11-03", personaId: "P1" })).json()) as PlanResponse;
+      expect(utc.timeline[0].date).toBe("2026-10-22");
+    } finally {
+      vi.useRealTimers();
+    }
+    expect((await post({ stage: "not_yet", today: "23/10/2026" })).status).toBe(400);
   });
 
   it("without GOOGLE_GENERATIVE_AI_API_KEY or GROQ_API_KEY answers with the rule-based plan", async () => {

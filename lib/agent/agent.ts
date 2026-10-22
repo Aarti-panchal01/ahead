@@ -12,7 +12,7 @@
 // text goes through the claim linter before it leaves the server.
 import { generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
-import { CATALOGUE, getItem } from "@/lib/catalogue";
+import { getItem } from "@/lib/catalogue";
 import { LENGTHS } from "@/lib/rank";
 import type { PlanRequest, PlanResponse, TimelineItem } from "@/lib/types";
 import { draftBrief } from "./brief";
@@ -21,7 +21,7 @@ import { lintLines, lintText, stripHealthDetails } from "./claims";
 import { warnProviderFailure } from "./log";
 import { mcpCapabilities, type McpCapabilities } from "./mcp";
 import { PROVIDER_LINE, type PlannerModel, type ProviderName } from "./providers";
-import { getPersona, shortlistFor, type Shortlist } from "./shortlist";
+import { catalogueFor, getPersona, shortlistFor, type Shortlist } from "./shortlist";
 import { planTimeline } from "./timeline";
 import { proposeTryOns, TRYON_UNITS } from "./tryon";
 
@@ -93,7 +93,8 @@ export function modelBrief(req: PlanRequest): string {
   const persona = getPersona(req.personaId);
   const hair = req.hairColour ?? persona?.hairColour;
   const brows = persona?.browColour;
-  const catalogue = CATALOGUE.filter((x) => x.usableAsReference).map((x) => ({
+  // A sample person: only her recorded wigs and wraps. An own photo: the whole catalogue.
+  const catalogue = catalogueFor(req).filter((x) => x.usableAsReference).map((x) => ({
     id: x.id, kind: x.kind, name: x.name, colour: x.colour, length: x.length, texture: x.texture,
   }));
   return JSON.stringify({
@@ -153,7 +154,8 @@ async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: Pla
       description: "Plain stylist brief for the chosen ids: hair colour, bring a lock of hair, brow colour, notes.",
       inputSchema: z.object({ itemIds: z.array(z.string()).max(6), notes: z.string().max(300).optional() }),
       execute: async ({ itemIds, notes }) => {
-        const ids = itemIds.filter((id) => getItem(id));
+        const visible = new Set(catalogueFor(req).map((x) => x.id));
+        const ids = itemIds.filter((id) => visible.has(id) && getItem(id));
         const allNotes = [safeNotes(req), stripHealthDetails(notes)].filter(Boolean).join(" ");
         state.brief = draftBrief({ itemIds: ids, hairColour: current().hairColour, browColour: browFor(req), notes: allNotes });
         return { brief: state.brief };

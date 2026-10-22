@@ -13,9 +13,23 @@ export interface Persona {
   browDefault: string;
   length: string;
   texture: string;
+  /** The wigs and wraps this sample person has saved recordings for: her whole catalogue. */
+  recordedWigs: string[];
+  recordedWraps: string[];
 }
 export const PERSONAS = personasRaw as unknown as Persona[];
 export const getPersona = (id?: string) => PERSONAS.find((p) => p.id === id);
+
+/**
+ * The catalogue this person may see. A sample person: ONLY her recorded wigs and wraps (every try-on is a saved
+ * recording, so nothing else can be shown). An own photo: the whole catalogue.
+ */
+export function catalogueFor(req: Pick<PlanRequest, "personaId">, catalogue: CatalogueItem[] = CATALOGUE): CatalogueItem[] {
+  const persona = getPersona(req.personaId);
+  if (!persona) return catalogue;
+  const ids = new Set([...persona.recordedWigs, ...persona.recordedWraps]);
+  return catalogue.filter((x) => ids.has(x.id));
+}
 
 /** Wraps listed when the person asks for them. */
 export const WRAPS_IN_SHORTLIST = 2;
@@ -35,7 +49,7 @@ export interface Shortlist {
 const isLength = (s?: string): s is HairLength => !!s && (LENGTHS as readonly string[]).includes(s);
 const isTexture = (s?: string): s is HairTexture => !!s && (TEXTURES as readonly string[]).includes(s);
 
-export function shortlistFor(req: PlanRequest, opts: ShortlistOptions = {}, catalogue: CatalogueItem[] = CATALOGUE): Shortlist {
+export function shortlistFor(req: PlanRequest, opts: ShortlistOptions = {}, catalogue: CatalogueItem[] = catalogueFor(req)): Shortlist {
   const persona = getPersona(req.personaId);
   const hair = req.hairColour ?? persona?.hairColour;
   const wantLength = opts.length ?? req.preferences?.length;

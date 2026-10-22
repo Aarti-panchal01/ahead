@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { findClaims } from "@/lib/agent/claims";
 import { CARE_TEAM_LINE, ORDER_DAYS_BEFORE, parseIsoDate, planTimeline } from "@/lib/agent/timeline";
+import { timelineNow } from "@/lib/agent/validate";
 
 const now = new Date("2026-10-22T15:00:00Z");
 const rows = (first?: string, at = now) =>
@@ -90,5 +91,17 @@ describe("plan_timeline", () => {
         expect(findClaims(text)).toEqual([]);
       }
     }
+  });
+});
+
+describe("timelineNow (client local today)", () => {
+  const server = new Date("2026-10-22T23:30:00Z");
+  it("uses the client's date within one day of the server's UTC date", () => {
+    expect(timelineNow("2026-10-23", server).toISOString().slice(0, 10)).toBe("2026-10-23");
+    expect(timelineNow("2026-10-21", server).toISOString().slice(0, 10)).toBe("2026-10-21");
+    expect(timelineNow("2026-10-22", server).toISOString().slice(0, 10)).toBe("2026-10-22");
+  });
+  it("falls back to the server's UTC date when missing, invalid or implausible", () => {
+    for (const t of [undefined, "", "2026-02-30", "2026-10-30", "1999-01-01"]) expect(timelineNow(t, server)).toBe(server);
   });
 });

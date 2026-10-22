@@ -68,7 +68,7 @@ export function planTimeline({ stage, firstTreatmentDate, now = new Date() }: Ti
       items.push({
         date: toIso(first),
         label: "Have your wig or wrap ready",
-        note: "Your first treatment day. Having it ready now means you choose calmly, before hair loss starts.",
+        note: "Your first treatment day. Having it ready before hair loss starts means no rush later.",
       });
       items.push({
         date: toIso(start),
@@ -77,7 +77,7 @@ export function planTimeline({ stage, firstTreatmentDate, now = new Date() }: Ti
       });
     } else {
       items.push({ label: `Order your wig at least ${ORDER_DAYS_BEFORE} days before your first treatment`, note: RETURNS_NOTE });
-      items.push({ label: "Have your wig or wrap ready by your first treatment", note: "Having it ready early means you choose calmly, before hair loss starts." });
+      items.push({ label: "Have your wig or wrap ready by your first treatment", note: "Having it ready before hair loss starts means no rush later." });
       items.push({
         label: `Hair loss often starts ${WINDOW_START_DAY} to ${WINDOW_END_DAY} days after the first treatment`,
         note: `Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment (${SOURCE}).`,
