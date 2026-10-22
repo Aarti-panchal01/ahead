@@ -28,6 +28,8 @@ export async function waitForChecked(page: Page, count = 4): Promise<string[]> {
   const lines: string[] = [];
   for (let i = 0; i < count; i++) {
     const card = cards(page).nth(i);
+    // Lower cards load their image and run their check only near the viewport (lazy loading), so scroll to each.
+    await card.scrollIntoViewIfNeeded();
     await expect(card.getByRole("img", { name: /wearing the/i }).first()).toBeVisible();
     const line = card.getByText(INTEGRITY_RE);
     await expect(line).toBeVisible({ timeout: 120_000 });
