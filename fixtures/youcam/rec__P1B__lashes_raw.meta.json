@@ -1,0 +1,30 @@
+{
+  "payload_sent": {
+    "src_file_id": "<redacted>",
+    "version": "1.0",
+    "effects": [
+      {
+        "category": "skin_smooth",
+        "skinSmoothStrength": 0,
+        "skinSmoothColorIntensity": 0
+      },
+      {
+        "category": "eyelashes",
+        "pattern": {
+          "name": "Natural1"
+        },
+        "palettes": [
+          {
+            "color": "#2B1D16",
+            "colorIntensity": 80
+          }
+        ]
+      }
+    ]
+  },
+  "status": "success",
+  "error_code": null,
+  "units_charged": 1.0,
+  "latency_s": 11.2,
+  "result": "P1B__lashes_raw.jpg"
+}

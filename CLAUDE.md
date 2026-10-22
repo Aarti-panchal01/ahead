@@ -23,7 +23,9 @@ client, never logged.
 - Never use built-in hair templates (colour unreliable). Never use the
   hat or scarf APIs (they replace the person).
 - Makeup-vto (brows, lashes, 1 unit) lightens the whole face by about
-  +5 L* on every skin tone. ALWAYS composite only the feature region
+  +5 L* on every skin tone because it smooths skin at 50 by default:
+  ALWAYS send {"category":"skin_smooth","skinSmoothStrength":0,
+  "skinSmoothColorIntensity":0} (truth table row 20). ALWAYS composite only the feature region
   back onto the original (landmark mask, feathered, global shift
   removed). Brow defaults: colour sampled from the user's own brows
   (landmark brow region), made about 10 L* darker (same hue),
