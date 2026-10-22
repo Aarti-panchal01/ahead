@@ -1,6 +1,7 @@
 // The consult agent: PlanRequest -> PlanResponse.
-// LLM path: Vercel AI SDK generateText calling local tools, Gemini first, then Groq (lib/agent/providers.ts).
-// Fallback: the same tools run rule-based when neither key is set or both providers fail (source "fallback").
+// LLM path: Vercel AI SDK generateText calling local tools, Groq first, then Gemini (lib/agent/providers.ts),
+// each aborted at 6 s. Fallback: the same tools run rule-based when neither key is set or both providers fail
+// (source "fallback"), so the worst case is about 12 s.
 //
 // Privacy (hard rule, enforced here and in test/agent/privacy.test.ts): the model never sees photos, the
 // treatment date, the hair-loss stage or any health detail. The timeline is computed locally, outside the
@@ -25,8 +26,8 @@ import { catalogueFor, getPersona, shortlistFor, type Shortlist } from "./shortl
 import { planTimeline } from "./timeline";
 import { proposeTryOns, TRYON_UNITS } from "./tryon";
 
-/** Per provider. Two providers must fit inside the route's 60 s. */
-export const LLM_TIMEOUT_MS = 25_000;
+/** Per provider, the whole tool loop included: the request is aborted at 6 s and the next provider is tried. */
+export const LLM_TIMEOUT_MS = 6_000;
 export const MAX_STEPS = 6;
 export const MAX_MESSAGES = 4;
 

@@ -43,6 +43,18 @@ export function rateLimited() {
   });
 }
 
+/** Groq's rate-limit answer: HTTP 429, rate_limit_exceeded. */
+export function groqRateLimited() {
+  return new APICallError({
+    message: "Rate limit reached for model openai/gpt-oss-120b.",
+    url: "https://api.groq.com/openai/v1/chat/completions",
+    requestBodyValues: {},
+    statusCode: 429,
+    responseBody: JSON.stringify({ error: { code: "rate_limit_exceeded", type: "tokens" } }),
+    isRetryable: true,
+  });
+}
+
 /** Never answers; rejects when the agent's timeout aborts the call. */
 export function hangingModel() {
   return new MockLanguageModelV3({

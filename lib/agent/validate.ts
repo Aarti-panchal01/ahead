@@ -22,10 +22,7 @@ export const PlanRequestSchema = z.object({
   today: z.string().refine((s) => parseIsoDate(s) !== null, "today must be a real date, YYYY-MM-DD").optional(),
 });
 
-/** PlanRequest plus the optional client-local `today` (until lib/types.ts carries it). */
-export type PlanRequestIn = PlanRequest & { today?: string };
-
-export type ParseResult = { ok: true; value: PlanRequestIn } | { ok: false; message: string };
+export type ParseResult = { ok: true; value: PlanRequest } | { ok: false; message: string };
 
 /**
  * The timeline's "now": the client's local date when it is plausible (within one day of the server's UTC date,
@@ -47,7 +44,7 @@ export function parsePlanRequest(body: unknown): ParseResult {
     body = b;
   }
   const r = PlanRequestSchema.safeParse(body);
-  if (r.success) return { ok: true, value: r.data as PlanRequestIn };
+  if (r.success) return { ok: true, value: r.data as PlanRequest };
   const first = r.error.issues[0];
   return { ok: false, message: first ? `${first.path.join(".") || "body"}: ${first.message}` : "Invalid request" };
 }

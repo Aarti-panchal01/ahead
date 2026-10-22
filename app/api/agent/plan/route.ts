@@ -10,7 +10,7 @@ import { parsePlanRequest, timelineNow } from "@/lib/agent/validate";
 import { sessionId } from "@/lib/youcam/http";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 30;
 
 export async function POST(req: Request) {
   const sid = sessionId(req);
@@ -19,7 +19,6 @@ export async function POST(req: Request) {
   const parsed = parsePlanRequest(body);
   if (!parsed.ok) return NextResponse.json({ errorCode: "bad_request", message: parsed.message }, { status: 400 });
   warnMissingKeys();
-  const { today, ...request } = parsed.value;
-  const plan = await runPlan(request, { sessionId: sid, models: plannerModels(), now: timelineNow(today) });
+  const plan = await runPlan(parsed.value, { sessionId: sid, models: plannerModels(), now: timelineNow(parsed.value.today) });
   return NextResponse.json(plan);
 }
