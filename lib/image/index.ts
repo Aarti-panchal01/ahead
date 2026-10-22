@@ -54,6 +54,7 @@ export { BROW_COMPOSITE, LASH_COMPOSITE, compositeFeature, compositeFeatureDetai
 export { HAIR_CLASS, SKIN_CLASSES, browDefault, coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
 export { BROW_APPLY, EYE_LEFT, EYE_RIGHT, applyBrows, applyBrowsDetailed, fitSimilarity, type BrowsApplied, type Similarity } from "./brows";
 export {
+  MEDIAPIPE_NOISE,
   MEDIAPIPE_VERSION,
   MEDIAPIPE_WASM_BASE,
   MODEL_BASE,
@@ -63,6 +64,7 @@ export {
   compositeFeatureInBrowser,
   getModels,
   loadPixels,
+  quietMediaPipe,
   readFace,
   sampleColoursInBrowser,
   toDataUrl,

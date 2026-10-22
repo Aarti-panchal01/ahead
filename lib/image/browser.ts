@@ -1,258 +1,131 @@
-// Thin browser adapter for the image lab: MediaPipe Tasks Vision (FaceLandmarker + ImageSegmenter hair class) produces
-// landmarks and hair masks; the pure core (integrity.ts, composite.ts, sample.ts) does the maths; this file turns the
-// corrected pixels into data URLs. Zero YouCam units: everything runs on the device.
-//
-// Assets: WASM from the jsdelivr CDN at the pinned package version; models served by the app from /models
-// (public/models, Apache-2.0, licence alongside). Browser-only: call from client components. Nothing here runs at
-// import time, so importing it from shared code is safe.
+// The image lab in the browser. The heavy work (MediaPipe Tasks Vision and the pixel maths) runs in a module Web
+// Worker (worker.ts) so the page stays responsive; when workers or OffscreenCanvas are missing, or the worker fails to
+// start or dies, the same engine runs on the main thread instead. Results are identical either way.
+// Browser-only: call from client components. Nothing here runs at import time, so importing it from shared code is safe.
 
-import type { FaceLandmarker, ImageSegmenter } from "@mediapipe/tasks-vision";
 import type { FeatureKind, IntegrityReport, SampledColours } from "@/lib/types";
-import { compositeFeature } from "./composite";
-import { integrityCheck, type IntegrityOptions } from "./integrity";
-import type { Landmarks } from "./landmarks";
-import { channelsOf, resizeMask, type RawImage } from "./raw";
-import { applyBrows } from "./brows";
-import { coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
+import * as engine from "./engine";
+import type { AssetPaths, CheckOptions, FaceRead, ImageSource } from "./engine";
+import { WorkerGone, createLabClient, type LabClient, type Op, type Port, type Request } from "./worker-protocol";
 
-/** Must equal the exact version of @mediapipe/tasks-vision in package.json (a test checks this). */
-export const MEDIAPIPE_VERSION = "1.0.1";
-export const MEDIAPIPE_WASM_BASE = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${MEDIAPIPE_VERSION}/wasm`;
-export const MODEL_BASE = "/models";
-/** Refuse decode bombs. */
-export const MAX_PIXELS = 40_000_000;
+export {
+  MAX_PIXELS,
+  MEDIAPIPE_NOISE,
+  MEDIAPIPE_VERSION,
+  MEDIAPIPE_WASM_BASE,
+  MODEL_BASE,
+  getModels,
+  loadPixels,
+  quietMediaPipe,
+  toDataUrl,
+  type AssetPaths,
+  type FaceRead,
+  type ImageSource,
+} from "./engine";
 
-export interface AssetPaths {
-  wasmBase?: string;
-  modelBase?: string;
-  /**
-   * "GPU" (default) runs both models on WebGL, about 10x faster than "CPU" on a laptop and what keeps a check under
-   * 1.5 s on a mid-range phone; if the GPU delegate cannot start, the CPU is used. Only the first getModels call counts.
-   */
-  delegate?: "GPU" | "CPU";
+let client: Promise<LabClient | null> | null = null;
+let worker: Worker | null = null;
+
+/** Workers can run the lab when they have module workers, OffscreenCanvas and createImageBitmap. */
+function workerSupported(): boolean {
+  return typeof window !== "undefined" && typeof Worker !== "undefined" && typeof OffscreenCanvas !== "undefined" && typeof createImageBitmap !== "undefined";
 }
 
-interface Models {
-  landmarker: FaceLandmarker;
-  segmenter: ImageSegmenter;
-  /** The delegate the models actually run on. */
-  delegate: "GPU" | "CPU";
-}
-let models: Promise<Models> | null = null;
-
-/** Load (once) the WASM fileset and both models: GPU delegate when available, else CPU. */
-export function getModels(paths: AssetPaths = {}): Promise<Models> {
-  if (typeof window === "undefined") return Promise.reject(new Error("The image lab models run only in a browser"));
-  models ??= (async () => {
-    const { FaceLandmarker, FilesetResolver, ImageSegmenter } = await import("@mediapipe/tasks-vision");
-    const files = await FilesetResolver.forVisionTasks(paths.wasmBase ?? MEDIAPIPE_WASM_BASE);
-    const base = paths.modelBase ?? MODEL_BASE;
-    const load = (delegate: "GPU" | "CPU") =>
-      Promise.all([
-        FaceLandmarker.createFromOptions(files, {
-          baseOptions: { modelAssetPath: `${base}/face_landmarker.task`, delegate },
-          runningMode: "IMAGE",
-          numFaces: 1,
-        }),
-        ImageSegmenter.createFromOptions(files, {
-          baseOptions: { modelAssetPath: `${base}/selfie_multiclass_256x256.tflite`, delegate },
-          runningMode: "IMAGE",
-          outputCategoryMask: true,
-          outputConfidenceMasks: false,
-        }),
-      ]);
-    if ((paths.delegate ?? "GPU") === "GPU") {
-      try {
-        const [landmarker, segmenter] = await load("GPU");
-        return { landmarker, segmenter, delegate: "GPU" as const };
-      } catch {
-        // No WebGL2 (or a blocked GPU): fall back to the CPU below.
-      }
+/** Start the worker once and load its models; null means "use the main thread". */
+function getClient(paths: AssetPaths): Promise<LabClient | null> {
+  if (!workerSupported()) return Promise.resolve(null);
+  client ??= (async () => {
+    let w: Worker;
+    try {
+      w = new Worker(new URL("./worker.ts", import.meta.url), { type: "module", name: "image-lab" });
+    } catch {
+      return null;
     }
-    const [landmarker, segmenter] = await load("CPU");
-    return { landmarker, segmenter, delegate: "CPU" as const };
+    const c = createLabClient(w as unknown as Port, location.href);
+    const die = (reason: string, cause?: unknown) => {
+      // Not an error for the user: the same work now runs on the main thread. Logged for whoever is debugging.
+      console.info(`Image lab: ${reason}; running on the main thread instead.`, cause instanceof Error ? cause.message : (cause ?? ""));
+      c.fail(reason);
+      w.terminate();
+      if (worker === w) worker = null;
+      client = Promise.resolve(null); // from now on, the main thread
+    };
+    w.onerror = (e) => {
+      e.preventDefault?.();
+      die("The image worker stopped");
+    };
+    w.onmessageerror = () => die("The image worker sent a message we could not read");
+    try {
+      await c.call("init", [], absolute(paths));
+    } catch (e) {
+      die("The image worker could not load its models", e);
+      return null;
+    }
+    worker = w;
+    return c;
   })();
-  models.catch(() => {
-    models = null; // a failed load (offline, 404) can be retried
-  });
-  return models;
+  return client;
 }
 
-/** Free the models (e.g. when leaving the try-on screen). */
+/** The worker may run from a blob: URL (Next bundles it that way), so it gets absolute asset URLs. */
+function absolute<T extends AssetPaths>(paths: T): T {
+  const abs = (u: string) => new URL(u, location.href).href;
+  return { ...paths, modelBase: abs(paths.modelBase ?? engine.MODEL_BASE), wasmBase: abs(paths.wasmBase ?? engine.MEDIAPIPE_WASM_BASE) };
+}
+
+/** Run `op` in the worker, or `local` on the main thread when the worker is unavailable or has died. */
+async function run<T>(op: Op, sources: (ImageSource | FaceRead)[], options: Request["options"], local: () => Promise<T>): Promise<T> {
+  const c = await getClient(options);
+  if (!c) return local();
+  try {
+    return (await c.call(op, sources, absolute(options))) as T;
+  } catch (e) {
+    if (e instanceof WorkerGone) return local();
+    throw e;
+  }
+}
+
+/** Free the models and stop the worker (e.g. when leaving the try-on screen). */
 export async function closeModels(): Promise<void> {
-  const m = models;
-  models = null;
-  if (!m) return;
-  const { landmarker, segmenter } = await m;
-  landmarker.close();
-  segmenter.close();
+  worker?.terminate();
+  worker = null;
+  client = null;
+  await engine.closeModels();
 }
-
-type AnyCanvas = HTMLCanvasElement | OffscreenCanvas;
-type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
-
-function makeCanvas(width: number, height: number): AnyCanvas {
-  if (typeof OffscreenCanvas !== "undefined") return new OffscreenCanvas(width, height);
-  const c = document.createElement("canvas");
-  c.width = width;
-  c.height = height;
-  return c;
-}
-
-function ctx2d(c: AnyCanvas): Ctx2D {
-  const ctx = c.getContext("2d", { willReadFrequently: true, colorSpace: "srgb" }) as Ctx2D | null;
-  if (!ctx) throw new Error("This browser has no 2D canvas");
-  return ctx;
-}
-
-/** Anything the browser can draw, or a URL (same-origin, data:, blob:, or CORS-enabled). */
-export type ImageSource = Blob | ImageBitmap | HTMLImageElement | HTMLCanvasElement | ImageData | string;
-
-/** Decode to sRGB RGBA pixels with EXIF orientation applied. */
-export async function loadPixels(src: ImageSource): Promise<RawImage & { data: Uint8ClampedArray }> {
-  if (typeof src === "string") {
-    const res = await fetch(src);
-    if (!res.ok) throw new Error("That image could not be loaded. Try again.");
-    src = await res.blob();
-  }
-  if (typeof ImageData !== "undefined" && src instanceof ImageData) return { data: src.data, width: src.width, height: src.height };
-  const owned = src instanceof Blob;
-  const bmp = owned ? await createImageBitmap(src as Blob, { imageOrientation: "from-image" }) : (src as ImageBitmap | HTMLImageElement | HTMLCanvasElement);
-  try {
-    const w = "naturalWidth" in bmp ? bmp.naturalWidth : bmp.width;
-    const h = "naturalHeight" in bmp ? bmp.naturalHeight : bmp.height;
-    if (!w || !h) throw new Error("That file could not be read as an image. Try a JPG or PNG photo.");
-    if (w * h > MAX_PIXELS) throw new Error("That photo is too large. Try one under 40 megapixels.");
-    const c = makeCanvas(w, h);
-    const ctx = ctx2d(c);
-    ctx.drawImage(bmp, 0, 0);
-    const id = ctx.getImageData(0, 0, w, h);
-    return { data: id.data, width: w, height: h };
-  } finally {
-    if (owned) (bmp as ImageBitmap).close();
-  }
-}
-
-function toImageData(img: RawImage): ImageData {
-  const n = img.width * img.height;
-  const ch = channelsOf(img);
-  const rgba = new Uint8ClampedArray(n * 4);
-  if (ch === 4) rgba.set(img.data);
-  else
-    for (let i = 0; i < n; i++) {
-      rgba[i * 4] = img.data[i * 3];
-      rgba[i * 4 + 1] = img.data[i * 3 + 1];
-      rgba[i * 4 + 2] = img.data[i * 3 + 2];
-      rgba[i * 4 + 3] = 255;
-    }
-  return new ImageData(rgba, img.width, img.height);
-}
-
-/** Encode pixels as a data URL (JPEG by default; the corrected render is a photo). */
-export async function toDataUrl(img: RawImage, type = "image/jpeg", quality = 0.92): Promise<string> {
-  const c = makeCanvas(img.width, img.height);
-  ctx2d(c).putImageData(toImageData(img), 0, 0);
-  if ("toDataURL" in c) return c.toDataURL(type, quality);
-  const blob = await c.convertToBlob({ type, quality });
-  return await new Promise<string>((resolve, reject) => {
-    const r = new FileReader();
-    r.onload = () => resolve(String(r.result));
-    r.onerror = () => reject(r.error ?? new Error("Could not encode the image"));
-    r.readAsDataURL(blob);
-  });
-}
-
-/** What MediaPipe found in one image. */
-export interface FaceRead {
-  image: RawImage & { data: Uint8ClampedArray };
-  /** 478 normalised points [x, y, z], or null when no face was found. */
-  landmarks: Landmarks | null;
-  /** 0/1 hair mask at the image size. */
-  hairMask: Uint8Array;
-  /** 0/1 mask of everything that is not skin (hair, a wrap, background) at the image size; applyBrows never paints it. */
-  coverMask: Uint8Array;
-}
-
-/** selfie-multiclass category mask at the image size. */
-function categoriesOf(segmenter: ImageSegmenter, data: ImageData): Uint8Array {
-  const seg = segmenter.segment(data);
-  try {
-    const cm = seg.categoryMask;
-    if (!cm) throw new Error("The segmenter returned no category mask");
-    const raw = cm.getAsUint8Array();
-    return cm.width === data.width && cm.height === data.height ? Uint8Array.from(raw) : resizeMask(raw, cm.width, cm.height, data.width, data.height);
-  } finally {
-    seg.close();
-  }
-}
-
-const isFaceRead = (src: unknown): src is FaceRead => typeof src === "object" && src !== null && "hairMask" in src && "coverMask" in src;
 
 /**
  * Landmarks + hair and cover masks for a photo (one segmentation, one landmark pass). Read each photo once and pass
  * the result on: the user's photo to every checkRender, the brows photo to every applyBrowsInBrowser, and a render to
- * both checkRender and applyBrowsInBrowser.
+ * both checkRender and applyBrowsInBrowser. (Photos given by URL are also remembered by the worker.)
  */
 export async function readFace(src: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<FaceRead> {
-  if (isFaceRead(src)) return src;
-  const image = await loadPixels(src);
-  const { landmarker, segmenter } = await getModels(paths);
-  const data = toImageData(image);
-  const cats = categoriesOf(segmenter, data);
-  const face = landmarker.detect(data).faceLandmarks[0];
-  const landmarks = face && face.length ? face.map((p) => [p.x, p.y, p.z]) : null;
-  return { image, landmarks, hairMask: hairMaskFromCategories(cats), coverMask: coverMaskFromCategories(cats) };
+  if (engine.isFaceRead(src)) return src;
+  return run("readFace", [src], paths, () => engine.readFace(src, paths));
 }
 
 /**
- * The integrity check on a YouCam render, in the browser. `original` is the exact photo sent to YouCam (for a full
- * look, the brow-composited photo); pass FaceReads to avoid reading a photo twice. The corrected image is a data URL.
+ * The integrity check on a YouCam render. `original` is the exact photo sent to YouCam (for a full look, the
+ * brow-composited photo). The corrected image is a data URL.
  */
-export async function checkRender(
-  original: ImageSource | FaceRead,
-  result: ImageSource | FaceRead,
-  options: Pick<IntegrityOptions, "threshold"> & AssetPaths = {},
-): Promise<IntegrityReport> {
-  const o = await readFace(original, options);
-  let r: RawImage, resultHair: Uint8Array;
-  if (isFaceRead(result)) {
-    r = result.image;
-    resultHair = result.hairMask;
-  } else {
-    // The render's landmarks are not needed here (the original's are used), so only segment it.
-    r = await loadPixels(result);
-    const { segmenter } = await getModels(options);
-    resultHair = hairMaskFromCategories(categoriesOf(segmenter, toImageData(r)));
-  }
-  const rep = integrityCheck(o.image, r, o.landmarks, { threshold: options.threshold, hairMasks: { original: o.hairMask, result: resultHair } });
-  const { correctedImage, ...rest } = rep;
-  return correctedImage ? { ...rest, correctedImage: await toDataUrl(correctedImage) } : rest;
+export async function checkRender(original: ImageSource | FaceRead, result: ImageSource | FaceRead, options: CheckOptions = {}): Promise<IntegrityReport> {
+  return run("checkRender", [original, result], options, () => engine.checkRender(original, result, options));
 }
 
-/** Paste only the feature (brows) of a makeup-vto render back onto the original. Returns a data URL. */
+/** Paste only the feature (brows or lashes) of a makeup-vto render back onto the original. Returns a data URL. */
 export async function compositeFeatureInBrowser(original: ImageSource | FaceRead, result: ImageSource, feature: FeatureKind, paths: AssetPaths = {}): Promise<string> {
-  const o = await readFace(original, paths);
-  if (!o.landmarks) throw new Error("We could not find a face in your photo. Try a brighter, front-facing photo.");
-  const r = await loadPixels(result);
-  return toDataUrl(compositeFeature(o.image, r, feature, o.landmarks));
+  return run("compositeFeature", [original, result], { ...paths, feature }, () => engine.compositeFeatureInBrowser(original, result, feature, paths));
 }
 
 /**
  * Brows on a wig or wrap render (on by default when the user's hair is gone). `render` is a hair-transfer result made
  * from the bald photo; `brows` is the user's brows photo (the compositeFeatureInBrowser result on that bald photo).
- * Pass the brows photo's FaceRead to read it once for every render. Hair or a wrap over a brow is never painted over.
- * Returns a data URL at the render's size.
+ * Hair or a wrap over a brow is never painted over. Returns a data URL at the render's size.
  */
 export async function applyBrowsInBrowser(render: ImageSource | FaceRead, brows: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<string> {
-  const b = await readFace(brows, paths);
-  if (!b.landmarks) throw new Error("We could not find a face in the brows photo. Try the brows step again.");
-  const r = await readFace(render, paths);
-  if (!r.landmarks) throw new Error("We could not find a face in this try-on, so the brows were not added.");
-  return toDataUrl(applyBrows(r.image, b.image, r.landmarks, b.landmarks, r.coverMask));
+  return run("applyBrows", [render, brows], paths, () => engine.applyBrowsInBrowser(render, brows, paths));
 }
 
 /** Hair and brow colour from the user's own photo (0 units). */
 export async function sampleColoursInBrowser(photo: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<SampledColours> {
-  const p = await readFace(photo, paths);
-  return sampleColours(p.image, p.landmarks, p.hairMask);
+  return run("sampleColours", [photo], paths, () => engine.sampleColoursInBrowser(photo, paths));
 }
