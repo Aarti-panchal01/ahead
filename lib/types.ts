@@ -1,4 +1,4 @@
-// Shared types for Still Me. Server routes, the YouCam client and the UI all speak these.
+// Shared types for Ahead. Server routes, the YouCam client and the UI all speak these.
 
 export type CatalogueKind = "wig" | "wrap";
 
@@ -18,6 +18,8 @@ export interface CatalogueItem {
   reference: "on-model" | "mannequin" | "flat";
   /** False when YouCam cannot use this photo as a reference (see docs/api-truth-table.md). */
   usableAsReference: boolean;
+  /** Wigs only: the demo persona this wig was chosen for. */
+  matches?: "P1" | "P2" | "P3" | "P4";
   "AI-generated": true;
 }
 

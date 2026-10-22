@@ -6,7 +6,8 @@ const atkinson = Atkinson_Hyperlegible({ variable: "--font-body", subsets: ["lat
 const newsreader = Newsreader({ variable: "--font-headline", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Still Me",
+  title: "Ahead",
+  applicationName: "Ahead",
   description: "Try on your next hair, before you lose this one.",
 };
 

@@ -54,7 +54,7 @@ export async function upload(bytes: Buffer, name: string): Promise<string> {
 }
 
 // ---------- ledger and cache (per server instance; /tmp on Vercel) ----------
-const DIR = path.join(os.tmpdir(), "still-me");
+const DIR = path.join(os.tmpdir(), "ahead");
 const LEDGER = path.join(DIR, "ledger.json");
 interface Ledger { spent: number; calls: { at: string; feature: string; taskId: string; units: number }[] }
 export function readLedger(): Ledger {

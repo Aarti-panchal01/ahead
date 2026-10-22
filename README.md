@@ -1,8 +1,8 @@
-# Still Me
+# Ahead
 
 Try on your next hair, before you lose this one.
 
-Still Me is for people facing treatment-related hair loss. Try wigs and head wraps on your own photo, before and after the hair goes, and every result is checked so it is still you. Built on the YouCam API for the YouCam API Skin AI & eCommerce VTO Hackathon (eCommerce VTO track).
+Ahead is for people facing treatment-related hair loss. Try wigs and head wraps on your own photo, before and after the hair goes, and every result is checked so it is still you. Built on the YouCam API for the YouCam API Skin AI & eCommerce VTO Hackathon (eCommerce VTO track).
 
 **Status:** Ring 1 foundation (see `PLAN.md`). Cosmetic previews only: style and colour, not cap fit, density or comfort. No medical claims.
 
