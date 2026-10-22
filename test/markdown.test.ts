@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import HowWeTested from "@/app/how-we-tested/page";
-import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE } from "@/lib/client/copy";
+import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE, SMOOTHING_LINE } from "@/lib/client/copy";
 import { hairCropBox } from "@/lib/client/image";
 import { parseInline, parseMarkdown, splitRow } from "@/lib/client/markdown";
 
@@ -68,6 +68,7 @@ describe("honesty page", () => {
     expect(html).toContain(DELETION_LINE);
     expect(html).toContain(PLANNER_PRIVACY_LINE.replace(/'/g, "&#x27;"));
     expect(html).toContain(PLANNER_UNITS_LINE);
+    expect(html).toContain(SMOOTHING_LINE.replace(/'/g, "&#x27;"));
     expect(html).not.toMatch(/anthropic/i);
   });
 });

@@ -14,6 +14,7 @@ import { goneImage, tryOnFace } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
 import { CARE_TEAM_LINE, FALLBACK_LINE, planMessages, planSteps, requestPlan, todayIso } from "@/lib/client/planApi";
 import { sessionHeaders } from "@/lib/client/session";
+import { testerHeaders } from "@/lib/client/tester";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import type { IntegrityReport, PlanRequest, PlanResponse } from "@/lib/types";
 import styles from "./plan.module.css";
@@ -38,7 +39,7 @@ function ApprovalStep({ itemId, units, photo, isSample }: { itemId: string; unit
     setA({ phase: "running" });
     try {
       const face = photo.kind === "sample" ? tryOnFace(photo.id) : await downscaleForUpload(photo.url);
-      const r = await runTryOn(item.id, face, { headers: sessionHeaders() });
+      const r = await runTryOn(item.id, face, { headers: { ...sessionHeaders(), ...(photo.kind === "own" ? testerHeaders() : {}) } });
       const src = renderSrc(r);
       if (r.status !== "success" || !src) return setA({ phase: "error", message: r.message ?? "That didn't work. Try again in a minute." });
       const original = photo.kind === "sample" ? goneImage(photo.id) : photo.url;

@@ -38,3 +38,7 @@ export const PLANNER_PRIVACY_LINE =
 /** CLAUDE.md, Agent guardrails: 30 units max per session, and the user approves every paid step. */
 export const PLANNER_UNITS_LINE =
   "The planning assistant can spend at most 30 YouCam units per visit, and only after you tap to approve each try-on.";
+
+/** Owner's wording: the skin change in the truth table was YouCam's default skin smoothing, measured and turned off. */
+export const SMOOTHING_LINE =
+  "Where the table mentions skin coming out lighter, that was YouCam's default skin smoothing. We measured it, turned it off, and verify it on every render with the skin tone check.";
