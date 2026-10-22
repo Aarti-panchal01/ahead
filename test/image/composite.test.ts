@@ -3,8 +3,8 @@ import { compositeFeature, compositeFeatureDetailed } from "@/lib/image/composit
 import { INTEGRITY_THRESHOLD, measureSkin } from "@/lib/image/integrity";
 import { rgbToLab, deltaE2000 } from "@/lib/image/colour";
 import { resize, type RawImage } from "@/lib/image/raw";
-import type { Landmarks } from "@/lib/image/landmarks";
-import { loadImage, loadLandmarks } from "./helpers";
+import { LID_UPPER_LEFT, LID_UPPER_RIGHT, toPixels, type Landmarks } from "@/lib/image/landmarks";
+import { loadImage, loadLandmarks, seamScore } from "./helpers";
 
 // hero__P1B = bald original; browsB_raw = makeup-vto brow render (whole face lighter); browsB = the Python-fixed one.
 let original: RawImage, raw: RawImage, pythonFixed: RawImage, lm: Landmarks;
@@ -72,9 +72,61 @@ describe("compositeFeature brows (port of brow_composite.py)", () => {
     expect(sum / n).toBeLessThan(1); // different resampler and JPEG, same result
   });
 
-  it("refuses lashes for now and needs landmarks", () => {
-    expect(() => compositeFeature(original, raw, "lashes", lm)).toThrow(/not supported yet/);
+  it("needs landmarks and a known feature", () => {
     expect(() => compositeFeature(original, raw, "brows", [])).toThrow();
+    expect(() => compositeFeature(original, raw, "lips" as never, lm)).toThrow(/Unknown feature/);
   });
 });
 
+describe("compositeFeature lashes (thin band along the lids)", () => {
+  // No lash render recorded yet: the raw makeup-vto brow render stands in for "whole face lighter", and a synthetic
+  // render adds dark lash strokes above the upper lids on top of a +6 lightening.
+  it("takes only a thin band around the eyes: cheeks, nose bridge and chin come back to about 0", () => {
+    const { image, mask, shift } = compositeFeatureDetailed(original, raw, "lashes", lm);
+    for (const s of shift) expect(s).toBeGreaterThan(3);
+    for (const r of measureSkin(original, image, lm)) expect(r.deltaE2000).toBeLessThan(0.5);
+    const px = toPixels(lm, raw.width, raw.height);
+    const eyeTop = Math.min(...[159, 386].map((i) => px[i][1])), eyeBottom = Math.max(...[145, 374].map((i) => px[i][1]));
+    const fw = Math.hypot(px[234][0] - px[454][0], px[234][1] - px[454][1]);
+    let area = 0;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] <= 0.01) continue;
+      area++;
+      const y = Math.floor(i / raw.width);
+      expect(y).toBeGreaterThan(eyeTop - 0.1 * fw);
+      expect(y).toBeLessThan(eyeBottom + 0.09 * fw);
+    }
+    expect(area).toBeGreaterThan(0.001 * mask.length);
+    expect(area).toBeLessThan(0.02 * mask.length); // thinner than the brows
+  });
+
+  it("keeps synthetic lash strokes and drops the global lightening", async () => {
+    const o = await loadImage("public/personas/P1B.jpg");
+    const l = loadLandmarks("P1B").landmarks;
+    const W = o.width, H = o.height, px = toPixels(l, W, H);
+    const fw = Math.hypot(px[234][0] - px[454][0], px[234][1] - px[454][1]);
+    const r = new Uint8ClampedArray(o.data.length);
+    for (let i = 0; i < r.length; i++) r[i] = o.data[i] + 6;
+    const strokes: number[] = [];
+    for (const lid of [LID_UPPER_LEFT, LID_UPPER_RIGHT])
+      for (const k of lid.slice(2, -2)) {
+        const [x, y] = px[k];
+        for (let d = 1; d <= Math.round(0.025 * fw); d++) {
+          const i = (Math.round(y) - d) * W + Math.round(x);
+          strokes.push(i);
+          for (let c = 0; c < 3; c++) r[i * 3 + c] = 20;
+        }
+      }
+    const { image } = compositeFeatureDetailed(o, { data: r, width: W, height: H }, "lashes", l);
+    for (const i of strokes) expect(image.data[i * 3]).toBeLessThan(45);
+    for (const m of measureSkin(o, image, l)) expect(m.deltaE2000).toBeLessThan(0.3);
+  });
+
+  it("no visible seam on the lash band", () => {
+    const { image, mask } = compositeFeatureDetailed(original, raw, "lashes", lm);
+    const s = seamScore(image, [raw, resize(original, raw.width, raw.height)], mask);
+    expect(s.n).toBeGreaterThan(500);
+    expect(s.p999).toBeLessThan(3);
+    expect(s.max).toBeLessThan(6);
+  });
+});

@@ -50,7 +50,7 @@ export {
   type IntegrityCoreReport,
   type IntegrityOptions,
 } from "./integrity";
-export { BROW_COMPOSITE, compositeFeature, compositeFeatureDetailed, type FeatureComposite } from "./composite";
+export { BROW_COMPOSITE, LASH_COMPOSITE, compositeFeature, compositeFeatureDetailed, type FeatureComposite } from "./composite";
 export { HAIR_CLASS, SKIN_CLASSES, browDefault, coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
 export { BROW_APPLY, EYE_LEFT, EYE_RIGHT, applyBrows, applyBrowsDetailed, fitSimilarity, type BrowsApplied, type Similarity } from "./brows";
 export {

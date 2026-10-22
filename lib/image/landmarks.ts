@@ -13,6 +13,12 @@ export const BROW_RIGHT = [300, 293, 334, 296, 336, 285, 295, 282, 283, 276] as 
 /** Upper edge of each brow, used as the top of the inner-face paste mask. */
 export const BROW_TOP = [70, 63, 105, 66, 107, 336, 296, 334, 293, 300] as const;
 
+/** Eyelid lines (FACEMESH eye contours), each running from one eye corner to the other. */
+export const LID_UPPER_LEFT = [33, 246, 161, 160, 159, 158, 157, 173, 133] as const;
+export const LID_LOWER_LEFT = [33, 7, 163, 144, 145, 153, 154, 155, 133] as const;
+export const LID_UPPER_RIGHT = [263, 466, 388, 387, 386, 385, 384, 398, 362] as const;
+export const LID_LOWER_RIGHT = [263, 249, 390, 373, 374, 380, 381, 382, 362] as const;
+
 export const CHEEK_LEFT = 50;
 export const CHEEK_RIGHT = 280;
 export const NOSE_BRIDGE = 6;
