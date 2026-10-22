@@ -56,6 +56,55 @@ export interface IntegrityRegionResult {
 export interface IntegrityReport {
   status: "unchanged" | "corrected" | "failed";
   regions: IntegrityRegionResult[];
-  /** Shown on the result card, e.g. "Your skin tone is unchanged." */
+  /** Shown on the result card, e.g. "Skin tone check: unchanged". */
   plainText: string;
+  /** Present when status is "corrected": the image to show instead of the raw render (data URL or object URL). */
+  correctedImage?: string;
+  /** Measured after the correction, same regions. */
+  after?: IntegrityRegionResult[];
+}
+
+// ---------- shared across lab, ui, platform and consult (only the orchestrator edits this file) ----------
+
+/** The user's answer to "Has your hair loss started?". The length detector can't tell bald from short, so we ask. */
+export type HairLossStage = "not_yet" | "started" | "gone";
+
+/** Features makeup-vto can draw that we composite back onto the original. */
+export type FeatureKind = "brows" | "lashes";
+
+/** Colours read locally from the user's photo (0 units). Hex "#RRGGBB". */
+export interface SampledColours {
+  hair?: string;
+  brows?: string;
+  /** Pixels the sample is based on; low counts mean "not enough hair/brow to read". */
+  hairPixels: number;
+  browPixels: number;
+}
+
+/** UI accent derived from the hair colour, already adjusted to pass 4.5:1 on the background. */
+export interface AccentColour {
+  hex: string;
+  /** The measured hair colour before any contrast adjustment. */
+  source?: string;
+  contrast: number;
+  fallback: boolean;
+}
+
+/** A catalogue item ranked for one person. */
+export interface RankedItem {
+  item: CatalogueItem;
+  /** ΔE2000 between the user's hair colour and the item colour (lower is closer). */
+  colourDistance: number;
+  reason: "closest" | "something_new";
+}
+
+/** Demo people. A = before hair loss, B = bald, C = regrowth. */
+export type PersonaId = `P${1 | 2 | 3 | 4}${"A" | "B" | "C"}`;
+
+/** Live-mode budget state, as returned by platform to the UI. */
+export interface UnitStatus {
+  mode: "mock" | "live";
+  /** True when the daily cap or the judging reserve is reached: recordings are served, clearly labelled. */
+  servingRecordings: boolean;
+  remainingToday?: number;
 }
