@@ -3,6 +3,7 @@
 // Never runs a paid step: try-ons come back in pendingApproval and run only via POST /api/agent/approve.
 import { NextResponse } from "next/server";
 import { runPlan } from "@/lib/agent/agent";
+import { warnMissingKeys } from "@/lib/agent/log";
 import { plannerModels } from "@/lib/agent/providers";
 import { APPROVE_MESSAGES } from "@/lib/agent/tryon";
 import { parsePlanRequest } from "@/lib/agent/validate";
@@ -17,6 +18,7 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const parsed = parsePlanRequest(body);
   if (!parsed.ok) return NextResponse.json({ errorCode: "bad_request", message: parsed.message }, { status: 400 });
+  warnMissingKeys();
   const plan = await runPlan(parsed.value, { sessionId: sid, models: plannerModels() });
   return NextResponse.json(plan);
 }

@@ -18,6 +18,7 @@ import type { PlanRequest, PlanResponse, TimelineItem } from "@/lib/types";
 import { draftBrief } from "./brief";
 import { SESSION_CAP_UNITS, setPending, unitsUsed, type PendingStep } from "./budget";
 import { lintLines, lintText, stripHealthDetails } from "./claims";
+import { warnProviderFailure } from "./log";
 import { mcpCapabilities, type McpCapabilities } from "./mcp";
 import { PROVIDER_LINE, type PlannerModel, type ProviderName } from "./providers";
 import { getPersona, shortlistFor, type Shortlist } from "./shortlist";
@@ -107,6 +108,8 @@ export function modelBrief(req: PlanRequest): string {
     catalogue,
   });
 }
+
+const modelIdOf = (m: PlannerModel) => (typeof m.model === "string" ? m.model : m.model.modelId);
 
 /** Text lines from the model, cleaned. */
 export function toLines(text: string): string[] {
@@ -205,8 +208,9 @@ export async function runPlan(req: PlanRequest, ctx: PlanContext): Promise<PlanR
       const r = await llmParts(req, used, ctx, m);
       answered = { name: m.name, ...r };
       break;
-    } catch {
-      // Error, timeout, rate limit (429 / RESOURCE_EXHAUSTED) or an empty answer: try the next provider.
+    } catch (e) {
+      // Error, timeout, rate limit (429 / RESOURCE_EXHAUSTED) or an empty answer: log why (sanitized), try the next.
+      warnProviderFailure(m.name, modelIdOf(m), e);
     }
   }
 
