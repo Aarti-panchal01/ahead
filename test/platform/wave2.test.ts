@@ -6,10 +6,11 @@ import { POST as briefPost } from "@/app/api/brief/route";
 import { GET as briefGet } from "@/app/api/brief/[id]/route";
 import { GET as resultRoute } from "@/app/api/result/route";
 import { GET as statusRoute } from "@/app/api/status/route";
+import { POST as tryonRoute } from "@/app/api/tryon/route";
 import { deleteTask } from "@/lib/youcam/client";
 import { endNote } from "@/lib/youcam/session";
 import { BRIEF_TTL_S, getBrief } from "@/lib/store/briefs";
-import { markEnded, recordCall, trackSession, isEnded, cachePut, cacheGet } from "@/lib/youcam/safety";
+import { effectiveReserve, limits, markEnded, recordCall, trackSession, isEnded, cachePut, cacheGet } from "@/lib/youcam/safety";
 import { fakeYoucam, freshStore, jpeg } from "./helpers";
 
 const SID = "session-abc123";
@@ -253,5 +254,40 @@ describe("GET /api/status never throws", () => {
   it("works with the in-memory store", async () => {
     setStore(new MemoryStore());
     expect((await statusRoute()).status).toBe(200);
+  });
+});
+
+describe("AHEAD_RESERVE_UNITS can only raise the judging reserve", () => {
+  it("unset, empty, invalid and lower values keep 150", () => {
+    expect(effectiveReserve(undefined)).toBe(150);
+    for (const v of ["", "  ", "abc", "100", "-5", "NaN", "149"]) expect(effectiveReserve(v)).toBe(150);
+    expect(effectiveReserve("100000")).toBe(100000);
+    expect(effectiveReserve("151")).toBe(151);
+  });
+  it("limits() reads the env", () => {
+    expect(limits().reserve).toBe(150);
+    vi.stubEnv("AHEAD_RESERVE_UNITS", "100");
+    expect(limits().reserve).toBe(150);
+    vi.stubEnv("AHEAD_RESERVE_UNITS", "100000");
+    expect(limits().reserve).toBe(100000);
+  });
+  it("a high reserve refuses a selfie try-on with the plain message and no create, and status reports reserve", async () => {
+    vi.stubEnv("YOUCAM_MODE", "live");
+    vi.stubEnv("AHEAD_RESERVE_UNITS", "100000");
+    const fy = fakeYoucam(300);
+    const form = new FormData();
+    form.set("itemId", "W08");
+    form.set("selfie", new File([new Uint8Array(await jpeg())], "me.jpg", { type: "image/jpeg" }));
+    const r = await tryonRoute(new Request("http://x/api/tryon", { method: "POST", body: form }));
+    expect(r.status).toBe(503);
+    expect(await r.json()).toMatchObject({ errorCode: "reserve", message: "Live try-on is paused to keep units for judging. The demo still works." });
+    expect(fy.creates()).toBe(0);
+    expect(await (await statusRoute()).json()).toMatchObject({ mode: "live", servingRecordings: true, reason: "reserve" });
+  });
+  it("a lower value does not weaken the reserve", async () => {
+    vi.stubEnv("YOUCAM_MODE", "live");
+    vi.stubEnv("AHEAD_RESERVE_UNITS", "10");
+    fakeYoucam(150);
+    expect(await (await statusRoute()).json()).toMatchObject({ servingRecordings: true, reason: "reserve" });
   });
 });

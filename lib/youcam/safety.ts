@@ -10,10 +10,15 @@ const num = (v: string | undefined, d: number) => {
   const n = Number(v);
   return v !== undefined && v !== "" && Number.isFinite(n) && n >= 0 ? n : d;
 };
+/** AHEAD_RESERVE_UNITS can only raise the reserve: max(150, value). Invalid, empty or lower values are ignored. */
+export function effectiveReserve(raw: string | undefined = process.env.AHEAD_RESERVE_UNITS): number {
+  const n = raw !== undefined && raw.trim() !== "" ? Number(raw) : NaN;
+  return Number.isFinite(n) ? Math.max(RESERVE_UNITS, n) : RESERVE_UNITS;
+}
 export const limits = () => ({
   dailyCap: num(process.env.AHEAD_DAILY_UNIT_CAP, 20),
   ipPerHour: num(process.env.AHEAD_IP_LIMIT_PER_HOUR, 10),
-  reserve: RESERVE_UNITS,
+  reserve: effectiveReserve(),
 });
 
 const DAY_S = 86400;
