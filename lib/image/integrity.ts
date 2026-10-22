@@ -23,7 +23,7 @@ import {
   channelsOf,
   clipHalfPlane,
   convexHull,
-  gaussianBlur,
+  gaussianBlurBox,
   median,
   rampPolygon,
   resize,
@@ -188,15 +188,23 @@ export function innerFaceMask(landmarks: Landmarks, width: number, height: numbe
 
   if (hairMask) {
     if (hairMask.length !== width * height) throw new Error("The hair mask must be the size of the render");
-    const hair = new Float32Array(hairMask.length);
-    for (let i = 0; i < hair.length; i++) hair[i] = hairMask[i] ? 1 : 0;
-    const soft = gaussianBlur(hair, width, height, Math.max(0.5, PASTE.hairBlur * fw));
-    // soft is 0.5 on a straight hair edge and falls off outside it: full paste at soft 0, none from soft 0.25 up.
-    for (let i = 0; i < alpha.length; i++) {
-      if (!(alpha[i] > 0)) continue;
-      const t = Math.min(1, soft[i] * 4);
-      alpha[i] *= 1 - t * t * (3 - 2 * t);
+    // Blur only over the paste polygon's box (alpha is 0 outside it).
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of poly) {
+      x0 = Math.min(x0, x);
+      y0 = Math.min(y0, y);
+      x1 = Math.max(x1, x);
+      y1 = Math.max(y1, y);
     }
+    const soft = gaussianBlurBox(hairMask, width, height, Math.max(0.5, PASTE.hairBlur * fw), { x0: x0 - 1, y0: y0 - 1, x1: x1 + 2, y1: y1 + 2 });
+    // soft is 0.5 on a straight hair edge and falls off outside it: full paste at soft 0, none from soft 0.25 up.
+    for (let y = 0; y < soft.h; y++)
+      for (let x = 0; x < soft.w; x++) {
+        const i = (y + soft.y0) * width + x + soft.x0;
+        if (!(alpha[i] > 0)) continue;
+        const t = Math.min(1, soft.data[y * soft.w + x] * 4);
+        alpha[i] *= 1 - t * t * (3 - 2 * t);
+      }
   }
   return alpha;
 }
