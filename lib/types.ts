@@ -122,7 +122,8 @@ export interface UnitStatus {
 
 /** One step on the cosmetic planning timeline. Dates are ISO "YYYY-MM-DD". Never medical advice. */
 export interface TimelineItem {
-  date: string;
+  /** Absent for steps without a calendar date (no treatment date given, or the closing care-team line). */
+  date?: string;
   label: string;
   note?: string;
 }

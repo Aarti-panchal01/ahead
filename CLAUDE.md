@@ -96,7 +96,14 @@ result card shows the check result.
   -> integrity check in the browser -> timeline + match card + brief.
 - Guardrails in code: 30 units max per session, user approves before
   any paid step, claim linter on all agent text.
-- Vercel AI SDK with its MCP client.
+- Vercel AI SDK with its MCP client. LLM order: Gemini (@ai-sdk/google,
+  GOOGLE_GENERATIVE_AI_API_KEY, a free-tier Flash model with tool calling),
+  then Groq (@ai-sdk/groq, GROQ_API_KEY) if Gemini errors or is rate
+  limited, then the rule-based plan, and the UI says so plainly. No
+  Anthropic key is used.
+- Privacy: never send photos, the treatment date, the hair-loss stage or
+  any health detail to any LLM. The timeline is computed locally; the
+  model gets only style preferences, sampled colours and the catalogue.
 
 ## User research
 Quote people only with permission, first name and role only, never
