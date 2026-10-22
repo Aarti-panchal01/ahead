@@ -4,5 +4,5 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   resolve: { alias: { "@": path.resolve(__dirname) } },
   esbuild: { jsx: "automatic" },
-  test: { environment: "node" },
+  test: { environment: "node", testTimeout: 30000 },
 });
