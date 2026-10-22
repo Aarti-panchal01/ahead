@@ -23,20 +23,27 @@ interface ImageProps {
   state: RenderState;
   view: CardView;
   subject: Subject;
+  /** True while the card is far below the fold: hold the image back so the top card's image loads first (LCP). */
+  deferImage?: boolean;
 }
 
-export function RenderImage({ ranked, state, view, subject }: ImageProps) {
+export function RenderImage({ ranked, state, view, subject, deferImage }: ImageProps) {
   const { item } = ranked;
   const who = subject.isSample ? subject.name : "You";
+  if (view.src && deferImage) {
+    return <div className={styles.pending} aria-hidden="true" />;
+  }
   if (view.src) {
     const what = `${item.name.toLowerCase()}${item.kind === "wig" ? " wig" : ""}`;
     const alt = `${who} wearing the ${what}${view.withBrows ? ", with brows" : ""}`;
+    // Keyed by src: the brows or corrected version is a new <img>, not the same element with its src swapped to a
+    // data: URL. That keeps the page's LCP image tied to its real request (Lighthouse can't time a data: URL).
     return subject.isSample ? (
-      <AiImage src={view.src} alt={alt} width={821} height={1024} className={styles.render} />
+      <AiImage key={view.src} src={view.src} alt={alt} width={821} height={1024} className={styles.render} />
     ) : (
-      <figure className={styles.render}>
+      <figure key={view.src} className={styles.render}>
         {/* eslint-disable-next-line @next/next/no-img-element -- render of the user's own photo, same-origin */}
-        <img src={view.src} alt={alt} />
+        <img src={view.src} alt={alt} decoding="async" />
       </figure>
     );
   }
@@ -84,16 +91,20 @@ interface Props extends ImageProps {
   matchOpen?: boolean;
   onToggleMatch?: () => void;
   match?: ReactNode;
+  /** See ImageProps.deferImage. */
+  deferImage?: boolean;
+  /** Lets the results screen see when this card comes near the viewport (lib/client/visibility.ts). */
+  cardRef?: (el: HTMLElement | null) => void;
 }
 
 export default function ResultCard(props: Props) {
-  const { ranked, state, view, subject, label, whose, onDemand, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match } = props;
+  const { ranked, state, view, subject, deferImage, label, whose, onDemand, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match, cardRef } = props;
   const { item } = ranked;
   const errored = state.phase === "error";
 
   return (
-    <article className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
-      <RenderImage ranked={ranked} state={state} view={view} subject={subject} />
+    <article ref={cardRef} className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
+      <RenderImage ranked={ranked} state={state} view={view} subject={subject} deferImage={deferImage} />
       <div className={styles.body}>
         {label && (
           <p className={label === "close" || label === "colour" ? styles.chip : label === "new" ? styles.chipNew : styles.chipNeutral}>

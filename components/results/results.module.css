@@ -5,7 +5,7 @@
   align-items: start;
 }
 
-.header h2 { font-size: 1.3rem; }
+.header h1 { font-size: 1.3rem; }
 
 .headerPhoto figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
 

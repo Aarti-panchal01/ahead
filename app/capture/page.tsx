@@ -98,7 +98,7 @@ export default function Capture() {
   return (
     <main className="stack-lg">
       <Link href="/" className="back">Back to the start</Link>
-      <h2>Take one photo</h2>
+      <h1>Take one photo</h1>
 
       {consented ? (
         <section className="stack" aria-label="Your photo">
@@ -162,7 +162,7 @@ export default function Capture() {
           {SAMPLE_PEOPLE.map((p) => (
             <li key={p.id}>
               <button type="button" className={styles.sample} onClick={() => pickSample(p.id)} aria-label={`Choose ${p.label}, ${p.description} (AI-generated)`}>
-                <AiImage src={beforeImage(p.id)} alt={`${p.label}, ${p.description}`} width={821} height={1024} />
+                <AiImage src={beforeImage(p.id)} alt={`${p.label}, ${p.description}`} width={821} height={1024} sizes="(max-width: 34rem) 46vw, 16rem" />
                 <span className={styles.sampleName}>{p.label}</span>
               </button>
             </li>

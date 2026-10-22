@@ -10,16 +10,20 @@ interface Props {
   photo: ChosenPhoto;
   stage?: HairLossStage;
   compact?: boolean;
+  /** The first visible hero image of the screen (eager, high priority). */
+  priority?: boolean;
+  /** Rendered width for srcset. */
+  sizes?: string;
   /** Sample person with hair gone: show her brows photo (brows drawn at her own brow colour, skin unchanged). */
   brows?: boolean;
 }
 
-export default function YourPhoto({ photo, stage = "not_yet", compact, brows }: Props) {
+export default function YourPhoto({ photo, stage = "not_yet", compact, brows, priority, sizes }: Props) {
   const cls = `${styles.photo} ${compact ? styles.compact : ""}`;
   if (photo.kind === "sample") {
     const p = getSample(photo.id);
     const now = stage === "gone" ? `${p?.label ?? "Sample person"} with her hair gone${brows ? ", with brows drawn on" : ""}` : `${p?.label ?? "Sample person"}, ${p?.description ?? ""}`;
-    return <AiImage src={heroImage(photo.id, stage, brows)} alt={now} width={821} height={1024} className={cls} />;
+    return <AiImage src={heroImage(photo.id, stage, brows)} alt={now} width={821} height={1024} className={cls} priority={priority} sizes={sizes} />;
   }
   return (
     <figure className={cls}>

@@ -4,7 +4,7 @@ import Link from "next/link";
 export default function NeedPhoto() {
   return (
     <main className="stack-lg">
-      <h2>Choose a photo first</h2>
+      <h1>Choose a photo first</h1>
       <p className="lede">Nothing is kept between visits, so we need a photo again. Take one, or pick a sample person.</p>
       <Link href="/capture" className="btn btn-primary">Choose a photo</Link>
     </main>

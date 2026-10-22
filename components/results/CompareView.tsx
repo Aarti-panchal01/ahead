@@ -19,7 +19,7 @@ interface Props {
 export default function CompareView({ pair, states, views, subject, onClose }: Props) {
   return (
     <section className="stack" aria-labelledby="compare-h">
-      <h2 id="compare-h">Side by side</h2>
+      <h1 id="compare-h">Side by side</h1>
       <div className={styles.compare}>
         {pair.map((r) => {
           const v = views[r.item.id];

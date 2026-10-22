@@ -22,6 +22,7 @@ import { downscaleForUpload } from "@/lib/client/photo";
 import { IDLE, nextRender, type RenderEvent, type RenderState } from "@/lib/client/renderState";
 import { parseStage } from "@/lib/client/routes";
 import { endSession, resetSessionId, sessionHeaders } from "@/lib/client/session";
+import { NearViewport, afterImagePainted } from "@/lib/client/visibility";
 import { forgetCode, needsTesterCode, storedCode, testerHeaders, type StatusWithTester } from "@/lib/client/tester";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import { matchLabel, rankCatalogue } from "@/lib/rank";
@@ -82,6 +83,10 @@ export default function ResultsView() {
   const [matchOpen, setMatchOpen] = useState<string>();
   const [comparing, setComparing] = useState(false);
   const started = useRef(new Set<string>());
+  const [near] = useState(() => new NearViewport("200px"));
+  useEffect(() => () => near.disconnect(), [near]);
+  // Cards that have come within 200 px of the viewport show their image; the top card always does.
+  const [nearKeys, setNearKeys] = useState<ReadonlySet<string>>(new Set());
   const upload = useRef<{ url: string; blob: Promise<Blob> }>(null);
   const alive = useRef(true);
   useEffect(() => {
@@ -152,6 +157,12 @@ export default function ResultsView() {
       dispatch(key, { type: "result", result });
       if (result.status !== "success" || !src) return;
 
+      // The heavy on-device work waits for the first paint, and (except for the top card) until the card is
+      // near the viewport. The render itself is already showing. Same checks, same order, just later.
+      await afterImagePainted(() => near.element(key)?.querySelector("img"));
+      const top = r === ranking.wigs[0] || r === ranking.wraps[0];
+      if (!top) await near.whenNear(key);
+
       const original = photo.kind === "sample" ? goneImage(photo.id) : photo.url;
       dispatch(key, { type: "checked", report: await integrityCheck(original, src) });
 
@@ -165,10 +176,21 @@ export default function ResultsView() {
         setLayer(key, { status: "done", image: browed, report: await integrityCheck(browsUrl, browed) });
       }
     },
-    [photo, faceKey, stage, dispatch, setLayer, ownUpload],
+    [photo, faceKey, stage, dispatch, setLayer, ownUpload, ranking, near],
   );
 
   const visible = tab === "wigs" ? ranking.wigs : ranking.wraps;
+
+  useEffect(() => {
+    let live = true;
+    for (const r of visible) {
+      const key = `${faceKey}:${r.item.id}`;
+      void near.whenNear(key).then(() => {
+        if (live) setNearKeys((s) => (s.has(key) ? s : new Set(s).add(key)));
+      });
+    }
+    return () => { live = false; };
+  }, [visible, faceKey, near]);
 
   // Start renders by themselves once per face, never again on a re-render or a tab switch (units).
   // Sample people: every visible card. Own photo, live: only the #1 wig.
@@ -223,9 +245,9 @@ export default function ResultsView() {
       <Link href="/stage" className="back">Change my answer</Link>
 
       <section className={styles.header}>
-        <div className={styles.headerPhoto}><YourPhoto photo={photo} stage={stage} brows={withBrows && browsOn} /></div>
+        <div className={styles.headerPhoto}><YourPhoto photo={photo} stage={stage} brows={withBrows && browsOn} priority sizes="(max-width: 34rem) 32vw, 11rem" /></div>
         <div className="stack">
-          <h2>{sample ? `Matches for ${sample.label.toLowerCase()}` : "Your matches"}</h2>
+          <h1>{sample ? `Matches for ${sample.label.toLowerCase()}` : "Your matches"}</h1>
           <p className={styles.swatchRow}>
             {hair && <span className={styles.swatch} aria-hidden="true" />}
             <span className="note">{hairLine(photo, stage, hair)}</span>
@@ -276,12 +298,14 @@ export default function ResultsView() {
       </div>
 
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className={styles.cards}>
-        {visible.map((r) => {
+        {visible.map((r, i) => {
           const isWig = r.item.kind === "wig";
           const id = r.item.id;
           return (
             <ResultCard
               key={`${faceKey}:${id}`}
+              cardRef={near.ref(`${faceKey}:${id}`)}
+              deferImage={i > 0 && !nearKeys.has(`${faceKey}:${id}`)}
               ranked={r}
               state={stateOf(id)}
               view={viewOf(id)}

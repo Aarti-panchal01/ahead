@@ -8,7 +8,7 @@ import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE, SMOOTHING_LINE
 import { parseInline, parseMarkdown, type Block } from "@/lib/client/markdown";
 import styles from "./honesty.module.css";
 
-export const metadata: Metadata = { title: "How we tested · Ahead" };
+export const metadata: Metadata = { title: "How we tested" };
 export const dynamic = "force-static";
 
 function Text({ text }: { text: string }) {
@@ -65,7 +65,7 @@ export default function HowWeTested() {
     <main className="stack-lg">
       <Link href="/" className="back">Back to the start</Link>
       <section className="stack">
-        <h2>How we tested this</h2>
+        <h1>How we tested this</h1>
         <p className="lede">
           Before building Ahead we tested the YouCam API ourselves on AI-generated faces and wigs. This is what it
           actually did, including what failed and what we changed because of it.

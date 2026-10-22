@@ -105,7 +105,7 @@ export default function PlanView() {
     <main className="stack-lg">
       <Link href="/results" className="back">Back to the matches</Link>
       <section className="stack">
-        <h2>Plan around the treatment dates</h2>
+        <h1>Plan around the treatment dates</h1>
         <p className="lede">A simple calendar for trying on and choosing. It is about looks only, not about treatment.</p>
       </section>
 
@@ -151,7 +151,7 @@ export default function PlanView() {
                   const it = getItem(id);
                   return it ? (
                     <li key={id}>
-                      <AiImage src={it.image} alt={`Our model wearing the ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.thumb} />
+                      <AiImage src={it.image} alt={`Our model wearing the ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.thumb} sizes="(max-width: 34rem) 46vw, 16rem" />
                       <p className={styles.thumbName}>{it.name}</p>
                     </li>
                   ) : null;

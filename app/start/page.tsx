@@ -13,7 +13,7 @@ export default function Consent() {
   return (
     <main className="stack-lg">
       <Link href="/" className="back">Back to the start</Link>
-      <h2>Before you take a photo</h2>
+      <h1>Before you take a photo</h1>
       <ul className={styles.lines}>
         {CONSENT_LINES.map((l) => <li key={l}>{l}</li>)}
       </ul>

@@ -29,11 +29,11 @@ export default function Stage() {
   return (
     <main className="stack-lg">
       <Link href="/capture" className="back">Choose a different photo</Link>
-      <YourPhoto photo={photo} compact />
+      <YourPhoto photo={photo} compact priority />
       <form onSubmit={submit} className="stack-lg">
         <fieldset className={styles.set}>
           <legend className={styles.legend}>
-            <h2>Has your hair loss started?</h2>
+            <h1>Has your hair loss started?</h1>
           </legend>
           <p className="note">{WHY_WE_ASK}</p>
           <div className={styles.options}>

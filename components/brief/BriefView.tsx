@@ -29,11 +29,11 @@ export default function BriefView({ id }: { id: string }) {
     return () => { live = false; };
   }, [id]);
 
-  if (!res) return <main><p className="note" role="status">Loading the brief</p></main>;
+  if (!res) return <main className="stack"><h1>Stylist brief</h1><p className="note" role="status">Loading the brief</p></main>;
   if (res.status !== "ok") {
     return (
       <main className="stack-lg">
-        <h2>{res.status === "expired" ? "This brief has expired" : "Brief not found"}</h2>
+        <h1>{res.status === "expired" ? "This brief has expired" : "Brief not found"}</h1>
         <p className="lede">{res.message}</p>
         <Link href="/" className="btn btn-quiet">Go to Ahead</Link>
       </main>
@@ -45,7 +45,7 @@ export default function BriefView({ id }: { id: string }) {
   return (
     <main className={`stack-lg ${styles.brief}`}>
       <section className="stack">
-        <h2>Stylist brief</h2>
+        <h1>Stylist brief</h1>
         <p className="lede">Wigs and wraps chosen with Ahead, with the colours to match.</p>
         <p className="note">{expiryLine(brief.expiresAt)}</p>
       </section>
@@ -64,7 +64,7 @@ export default function BriefView({ id }: { id: string }) {
         <ul className={styles.items}>
           {items.map((it) => (
             <li key={it.id} className={styles.item}>
-              <AiImage src={it.image} alt={`Our model wearing the ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.itemPhoto} />
+              <AiImage src={it.image} alt={`Our model wearing the ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.itemPhoto} sizes="(max-width: 34rem) 36vw, 12rem" />
               <div className={styles.itemBody}>
                 <p className={styles.itemName}>{it.name}</p>
                 <p className="note">{it.kind === "wig" ? `Wig, ${it.length}, ${it.texture}` : `Wrap, ${it.texture}`}</p>
