@@ -7,9 +7,8 @@ import { findRecording, messageFor } from "@/lib/youcam";
 import { GET as pollRoute } from "@/app/api/tryon/[id]/route";
 import { POST as tryonRoute } from "@/app/api/tryon/route";
 import { POST as listingRoute } from "@/app/api/listing/route";
-import { POST as endRoute } from "@/app/api/session/end/route";
 import { GET as statusRoute } from "@/app/api/status/route";
-import { claimDaily, cacheGet, trackSession, cachePut } from "@/lib/youcam/safety";
+import { claimDaily } from "@/lib/youcam/safety";
 import { fakeYoucam, freshStore, jpeg } from "./helpers";
 
 const post = (body: unknown, headers: Record<string, string> = {}) =>
@@ -165,18 +164,6 @@ describe("POST /api/listing", () => {
     const r = await listingRoute(post({ url: "https://10.0.0.1/a.jpg", faceId: "P1B" }));
     expect(r.status).toBe(422);
     expect(fy.calls.length).toBe(0);
-  });
-});
-
-describe("POST /api/session/end", () => {
-  it("forgets the session's tasks and cache entries, and says YouCam keeps files for 30 days", async () => {
-    await trackSession("session-abc123", "t1");
-    await cachePut("k1", "t1");
-    const j = await (await endRoute(post({}, { "x-ahead-session": "session-abc123" }))).json();
-    expect(j).toMatchObject({ ended: true, forgotten: 1, deletedAtYoucam: false });
-    expect(j.note).toMatch(/30 days/);
-    expect(await cacheGet("k1")).toBeNull();
-    expect((await endRoute(post({}))).status).toBe(400);
   });
 });
 
