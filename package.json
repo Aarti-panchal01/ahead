@@ -11,12 +11,17 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/google": "3.0.131",
+    "@ai-sdk/groq": "3.0.72",
+    "@ai-sdk/mcp": "1.0.92",
     "@mediapipe/tasks-vision": "1.0.1",
     "@upstash/redis": "1.39.0",
+    "ai": "6.0.302",
     "next": "15.5.20",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "sharp": "^0.34.4"
+    "sharp": "^0.34.4",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

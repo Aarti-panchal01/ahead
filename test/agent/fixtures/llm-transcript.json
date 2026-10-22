@@ -1,0 +1,51 @@
+{
+  "note": "Scripted tool-call transcript in the LanguageModelV3 doGenerate shape, replayed by the mocked Gemini and Groq models. Step 3 includes one medical sentence on purpose so the claim linter is exercised. The timeline is not a model tool: it is computed locally.",
+  "steps": [
+    {
+      "content": [
+        {
+          "type": "tool-call",
+          "toolCallId": "call_1",
+          "toolName": "shortlist",
+          "input": "{\"wantsWraps\":true}"
+        }
+      ],
+      "finishReason": {
+        "unified": "tool-calls",
+        "raw": "tool_calls"
+      }
+    },
+    {
+      "content": [
+        {
+          "type": "tool-call",
+          "toolCallId": "call_3",
+          "toolName": "try_on",
+          "input": "{\"itemIds\":[\"W01\",\"W02\",\"W03\",\"W99\"]}"
+        },
+        {
+          "type": "tool-call",
+          "toolCallId": "call_4",
+          "toolName": "draft_brief",
+          "input": "{\"itemIds\":[\"W01\",\"W02\"],\"notes\":\"Prefers a soft fringe.\"}"
+        }
+      ],
+      "finishReason": {
+        "unified": "tool-calls",
+        "raw": "tool_calls"
+      }
+    },
+    {
+      "content": [
+        {
+          "type": "text",
+          "text": "Here are three wigs close to your own colour, plus a new look.\n- Each try-on waits for your OK before anything runs.\nThis wig will prevent hair loss worries. Previews show style and colour, not cap fit, density or comfort."
+        }
+      ],
+      "finishReason": {
+        "unified": "stop",
+        "raw": "stop"
+      }
+    }
+  ]
+}
