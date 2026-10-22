@@ -58,8 +58,8 @@ result card shows the check result.
 - Every preview says: style and colour preview, not cap fit, density
   or comfort.
 - Privacy: consent before the camera, nothing stored after the session,
-  YouCam tasks deleted at the end (verify the delete endpoint in the
-  docs), images never logged. Stylist brief links expire.
+  YouCam tasks deleted at the end with POST /s2s/v2.0/task/delete
+  (verified 22 Oct, 0 units), images never logged. Stylist brief links expire.
 - All demo people and catalogue items are AI-generated and labelled
   in the UI and README. Every persona or catalogue image renders through
   components/AiImage.tsx, which always shows an "AI-generated" label.
