@@ -68,6 +68,8 @@ export interface IntegrityReport {
   correctedImage?: string;
   /** Measured after the correction, same regions. */
   after?: IntegrityRegionResult[];
+  /** Regions left out, e.g. a cheek in the shadow of the new hair. Shown to the user in plain words. */
+  skippedRegions?: IntegrityRegion[];
 }
 
 // ---------- shared across lab, ui, platform and consult (only the orchestrator edits this file) ----------
@@ -114,4 +116,52 @@ export interface UnitStatus {
   servingRecordings: boolean;
   remainingToday?: number;
   reason?: "daily_cap" | "reserve" | "unavailable";
+}
+
+// ---------- Wave 2 contracts ----------
+
+/** One step on the cosmetic planning timeline. Dates are ISO "YYYY-MM-DD". Never medical advice. */
+export interface TimelineItem {
+  date: string;
+  label: string;
+  note?: string;
+}
+
+/** POST /api/agent/plan request (consult agent). */
+export interface PlanRequest {
+  stage: HairLossStage;
+  /** First chemo or radiation treatment date, if the user gives one. */
+  firstTreatmentDate?: string;
+  personaId?: "P1" | "P2" | "P3" | "P4";
+  /** Sampled hair colour "#RRGGBB" (own photo) when there is no persona. */
+  hairColour?: string;
+  preferences?: { length?: string; texture?: string; wantsWraps?: boolean; notes?: string };
+}
+
+/** POST /api/agent/plan response. */
+export interface PlanResponse {
+  timeline: TimelineItem[];
+  /** Catalogue ids, best first. */
+  shortlist: string[];
+  /** Plain-text stylist brief draft. */
+  brief: string;
+  /** Short plain-language lines for the plan screen. */
+  messages: string[];
+  /** "llm" when the language model answered, "fallback" for the deterministic path. */
+  source: "llm" | "fallback";
+  /** Units this session has spent, out of the 30-unit session cap. */
+  unitsUsed: number;
+  /** Paid steps waiting for the user's approval (nothing paid runs without it). */
+  pendingApproval?: { tool: "try_on"; itemId: string; units: number }[];
+}
+
+/** A stylist brief stored for a short time (no accounts, no photos stored). */
+export interface StylistBrief {
+  id: string;
+  createdAt: string;
+  expiresAt: string;
+  items: string[];
+  hairColour?: string;
+  browColour?: string;
+  notes?: string;
 }
