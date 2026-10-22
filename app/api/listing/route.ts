@@ -3,13 +3,12 @@
 // Live: starts hair-transfer with the listing as the reference; poll GET /api/tryon/[id] (error_no_face is the honest refusal).
 // Mock: no live call. Returns { status: "needs_live", message, exampleTaskId } where exampleTaskId replays the
 // recorded no-one-wearing-it refusal (poll /api/tryon/<id>?for=listing).
-import fs from "node:fs";
 import { NextResponse } from "next/server";
 import { findRecording, messageFor, mockTaskId, mode } from "@/lib/youcam";
 import { clientIp, fail, failFrom, readBody, sessionId } from "@/lib/youcam/http";
 import { prepareUpload } from "@/lib/youcam/images";
 import { fetchRemoteImage, parsePublicUrl } from "@/lib/youcam/remote";
-import { demoFacePath, isDemoFace } from "@/lib/youcam/sources";
+import { isDemoFace } from "@/lib/youcam/sources";
 
 export const runtime = "nodejs";
 
@@ -28,7 +27,8 @@ export async function POST(req: Request) {
   }
   if (!selfie && !isDemoFace(faceId)) return fail("no_photo", 400);
 
-  if (mode() === "mock") {
+  // Demo faces never go live (any mode): only an uploaded selfie can spend units.
+  if (mode() === "mock" || !selfie) {
     const rec = findRecording("F1", "W5");
     return NextResponse.json({
       status: "needs_live", mode: "mock", errorCode: "needs_live", message: messageFor("needs_live"),
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
   const { startHairTransfer, servesRecording } = await import("@/lib/youcam/tryon");
   try {
     const ref = listingFile ?? (await prepareUpload(await fetchRemoteImage(url)));
-    const src = selfie ?? (await prepareUpload(fs.readFileSync(demoFacePath(faceId))));
+    const src = selfie;
     const r = await startHairTransfer({ src, ref, ip: clientIp(req), sessionId: sessionId(req), kind: "listing" });
     if (r.ok) {
       return NextResponse.json({ id: r.taskId, mode: "live", kind: "listing", createdAt: new Date().toISOString(), pollUrl: `/api/tryon/${encodeURIComponent(r.taskId)}` });
