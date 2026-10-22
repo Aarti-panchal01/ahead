@@ -1,0 +1,132 @@
+{
+  "duplicates_removed": {
+    "Gemini_Generated_Image_pgon4hpgon4hpgon (1).png": "exact copy of Gemini_Generated_Image_pgon4hpgon4hpgon.png (same MD5)"
+  },
+  "missing_ids": [],
+  "images": {
+    "Natural Gray-Touched Studio Headshot.png": {
+      "id": "F1",
+      "path": "faces/F1.jpg",
+      "size": "1086x1448",
+      "md5": "969e9804475deb86a4f060f7d63a59f9",
+      "flags": []
+    },
+    "Serene Natural Afro Studio Portrait.png": {
+      "id": "F2",
+      "path": "faces/F2.jpg",
+      "size": "1086x1448",
+      "md5": "0cedee3478d491dd2a0a31de1263a520",
+      "flags": []
+    },
+    "Natural Gray-Streaked Professional Portrait.png": {
+      "id": "F3",
+      "path": "faces/F3.jpg",
+      "size": "1086x1448",
+      "md5": "48358352df5936b2a14ce12451da2afb",
+      "flags": [
+        "long hair runs off the bottom edge (head fully in frame)"
+      ]
+    },
+    "Professional Neutral Headshot.png": {
+      "id": "F4",
+      "path": "faces/F4.jpg",
+      "size": "1086x1448",
+      "md5": "bb6270a7f27a09ac78b3165b4b82c82c",
+      "flags": []
+    },
+    "Minimalist Studio Portrait of a Woman.png": {
+      "id": "F5",
+      "path": "faces/F5.jpg",
+      "size": "1086x1448",
+      "md5": "eb08d3fc695ab28758b6e8cc81cb78e8",
+      "flags": [
+        "buzz cut, not bald: OK"
+      ]
+    },
+    "Gemini_Generated_Image_w3g9f7w3g9f7w3g9.png": {
+      "id": "W1",
+      "path": "wigs/W1.jpg",
+      "size": "1792x2400",
+      "md5": "aff20806fe56e8c56a66ac37736de309",
+      "flags": [
+        "Gemini sparkle mark bottom-right",
+        "bob reaches nearer the shoulders than the chin"
+      ]
+    },
+    "Gemini_Generated_Image_k39j71k39j71k39j.png": {
+      "id": "W2",
+      "path": "wigs/W2.jpg",
+      "size": "1792x2400",
+      "md5": "cfbc3e06b1d1d747a52a17bff07ad61d",
+      "flags": [
+        "Gemini sparkle mark bottom-right",
+        "background light grey, not pure white",
+        "hair ends near the bottom edge"
+      ]
+    },
+    "Gemini_Generated_Image_6z366d6z366d6z36.png": {
+      "id": "W3",
+      "path": "wigs/W3.jpg",
+      "size": "1792x2400",
+      "md5": "c01b4c7730914b849cab659cb55fa9a1",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    },
+    "Gemini_Generated_Image_pgon4hpgon4hpgon.png": {
+      "id": "W4",
+      "path": "wigs/W4.jpg",
+      "size": "1792x2400",
+      "md5": "8759d8ff3cc0421b6236e9bd1abe33b2",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    },
+    "Gemini_Generated_Image_i7nvbdi7nvbdi7nv.png": {
+      "id": "W5",
+      "path": "wigs/W5.jpg",
+      "size": "1792x2400",
+      "md5": "d3dce009886fe9062f65f10b6821abbd",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    },
+    "Gemini_Generated_Image_2owcr92owcr92owc.png": {
+      "id": "W6",
+      "path": "wigs/W6.jpg",
+      "size": "1792x2400",
+      "md5": "ff8fd589e349afec0d3b28a1ee14c149",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    },
+    "Gemini_Generated_Image_hk8p3hhk8p3hhk8p.png": {
+      "id": "W7",
+      "path": "wigs/W7.jpg",
+      "size": "1792x2400",
+      "md5": "5fe0fbe15c248284108847133a35607a",
+      "flags": [
+        "Gemini sparkle mark bottom-right",
+        "looks flat from above (part at the top, spread out), but please confirm"
+      ]
+    },
+    "Gemini_Generated_Image_ijrjzxijrjzxijrj.png": {
+      "id": "H1",
+      "path": "headwear/H1.jpg",
+      "size": "1792x2400",
+      "md5": "c614d1871b048e43acf731a9a5df9159",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    },
+    "Gemini_Generated_Image_g41icrg41icrg41i.png": {
+      "id": "H2",
+      "path": "headwear/H2.jpg",
+      "size": "1792x2400",
+      "md5": "8405c5b381859329ec47d08d7ee1ead7",
+      "flags": [
+        "Gemini sparkle mark bottom-right"
+      ]
+    }
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "phase": "p10",
+  "face": "F3",
+  "ref": "analysis:hairlength",
+  "endpoint": "POST /s2s/v2.0/task/hair-length-detection",
+  "payload_sent": {
+    "src_file_id": "<redacted>"
+  },
+  "src_sent_size": [
+    768,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 295.0,
+  "latency_s": 20.5,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": "unknown_internal_error",
+      "error_message": "failed to get hair detection result for hairLengthDetection: Protocol error (Runtime.callFunctionOn): Promise was collected",
+      "results": null,
+      "task_status": "error"
+    }
+  },
+  "status": "error",
+  "error_code": "unknown_internal_error",
+  "balance_after": 295.0,
+  "units_charged": 0.0
+}

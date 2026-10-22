@@ -1,0 +1,39 @@
+{
+  "phase": "p10",
+  "face": "F5",
+  "ref": "analysis:hairlength",
+  "endpoint": "POST /s2s/v2.0/task/hair-length-detection",
+  "payload_sent": {
+    "src_file_id": "<redacted>"
+  },
+  "src_sent_size": [
+    768,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 293.0,
+  "latency_s": 8.8,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": null,
+      "results": {
+        "hair_length": {
+          "term": "above the ears"
+        },
+        "timed": 4468
+      },
+      "task_status": "success"
+    }
+  },
+  "status": "success",
+  "error_code": null,
+  "balance_after": 291.0,
+  "units_charged": 2.0
+}

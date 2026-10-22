@@ -1,0 +1,23 @@
+{
+  "saved_at": "2026-10-22T18:22:53.385005",
+  "source": "Aarti, P10 message 22 Oct",
+  "type": {
+    "F2": "4 (coily)"
+  },
+  "length": {
+    "F1": "medium",
+    "F2": "short",
+    "F3": "long",
+    "F4": "short",
+    "F5": "above ear",
+    "F6": "none (bald)",
+    "F7": "medium"
+  },
+  "added": {
+    "G1": {
+      "type": "1 (straight)",
+      "saved_at": "2026-10-22T18:28:23.654778",
+      "note": "new fair woman, front + R + L; earlier labels unchanged"
+    }
+  }
+}

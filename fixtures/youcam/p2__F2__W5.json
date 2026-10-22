@@ -1,0 +1,37 @@
+{
+  "phase": "p2",
+  "face": "F2",
+  "ref": "W5",
+  "endpoint": "POST /s2s/v2.1/task/hair-transfer",
+  "payload_sent": {
+    "src_file_id": "<redacted>",
+    "ref_file_id": "<redacted>",
+    "hair_color": "ref"
+  },
+  "src_sent_size": [
+    768,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 357.0,
+  "latency_s": 12.7,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": "error_no_face",
+      "error_message": "No face was detected in the source image, or the face is too small.",
+      "results": null,
+      "task_status": "error"
+    }
+  },
+  "status": "error",
+  "error_code": "error_no_face",
+  "balance_after": 357.0,
+  "units_charged": 0.0
+}

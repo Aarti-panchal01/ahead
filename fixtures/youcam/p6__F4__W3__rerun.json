@@ -1,0 +1,39 @@
+{
+  "phase": "p6",
+  "face": "F4",
+  "ref": "W3",
+  "endpoint": "POST /s2s/v2.1/task/hair-transfer",
+  "payload_sent": {
+    "src_file_id": "<redacted>",
+    "ref_file_id": "<redacted>",
+    "hair_color": "ref"
+  },
+  "src_sent_size": [
+    768,
+    1024
+  ],
+  "http_create": 200,
+  "create": {
+    "status": 200,
+    "data": {
+      "task_id": "<redacted>"
+    }
+  },
+  "balance_before": 345.0,
+  "latency_s": 20.4,
+  "final": {
+    "status": 200,
+    "data": {
+      "error": null,
+      "results": {
+        "url": "<expired presigned url removed>"
+      },
+      "task_status": "success"
+    }
+  },
+  "status": "success",
+  "error_code": null,
+  "result": "p6__F4__W3__rerun.jpg",
+  "balance_after": 343.0,
+  "units_charged": 2.0
+}

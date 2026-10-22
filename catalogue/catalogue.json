@@ -1,0 +1,12 @@
+[
+  { "id": "W1", "kind": "wig", "name": "Chin-length bob, warm medium brown", "image": "/catalogue/W1.jpg", "colour": "#7A4A2A", "length": "chin", "texture": "straight", "reference": "on-model", "usableAsReference": true, "AI-generated": true },
+  { "id": "W2", "kind": "wig", "name": "Long loose waves, dark brown with caramel", "image": "/catalogue/W2.jpg", "colour": "#3B2A20", "length": "long", "texture": "wavy", "reference": "on-model", "usableAsReference": true, "AI-generated": true },
+  { "id": "W3", "kind": "wig", "name": "Layered pixie, ash blonde with grey", "image": "/catalogue/W3.jpg", "colour": "#B8B2A6", "length": "pixie", "texture": "straight", "reference": "on-model", "usableAsReference": true, "AI-generated": true },
+  { "id": "W4", "kind": "wig", "name": "Shoulder-length curls, black", "image": "/catalogue/W4.jpg", "colour": "#1A1716", "length": "shoulder", "texture": "curly", "reference": "on-model", "usableAsReference": true, "AI-generated": true },
+  { "id": "W5", "kind": "wig", "name": "Shoulder-length straight, chestnut (mannequin photo)", "image": "/catalogue/W5.jpg", "colour": "#6B3E22", "length": "shoulder", "texture": "straight", "reference": "mannequin", "usableAsReference": false, "AI-generated": true },
+  { "id": "W6", "kind": "wig", "name": "Short curls, grey-blonde (mannequin photo)", "image": "/catalogue/W6.jpg", "colour": "#A99F90", "length": "chin", "texture": "curly", "reference": "mannequin", "usableAsReference": false, "AI-generated": true },
+  { "id": "W7", "kind": "wig", "name": "Bob, chestnut (flat photo)", "image": "/catalogue/W7.jpg", "colour": "#6A3D22", "length": "chin", "texture": "straight", "reference": "flat", "usableAsReference": false, "AI-generated": true },
+  { "id": "W8", "kind": "wrap", "name": "Dusty rose head wrap", "image": "/catalogue/W8.jpg", "colour": "#C9888F", "length": "n/a", "texture": "head wrap", "reference": "on-model", "usableAsReference": true, "AI-generated": true },
+  { "id": "H1", "kind": "wrap", "name": "Dusty rose cotton head wrap (mannequin photo)", "image": "/catalogue/H1.jpg", "colour": "#C98B8F", "length": "n/a", "texture": "head wrap", "reference": "mannequin", "usableAsReference": false, "AI-generated": true },
+  { "id": "H2", "kind": "wrap", "name": "Charcoal knit beanie (mannequin photo)", "image": "/catalogue/H2.jpg", "colour": "#4A4A4A", "length": "n/a", "texture": "beanie", "reference": "mannequin", "usableAsReference": false, "AI-generated": true }
+]

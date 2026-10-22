@@ -1,0 +1,119 @@
+[
+  {
+    "face": "F6",
+    "raw_shift_rgb": [
+      13.0,
+      12.0,
+      10.0
+    ],
+    "forehead": {
+      "L_orig": 67.3,
+      "dL_raw": 5.0,
+      "dL_fixed": 0.0
+    },
+    "cheek_l": {
+      "L_orig": 80.5,
+      "dL_raw": 4.1,
+      "dL_fixed": 0.0
+    },
+    "cheek_r": {
+      "L_orig": 42.0,
+      "dL_raw": 4.3,
+      "dL_fixed": 0.0
+    },
+    "scalp": {
+      "L_orig": 61.3,
+      "dL_raw": 4.8,
+      "dL_fixed": 0.0
+    },
+    "brow_core_L": {
+      "orig": 57.5,
+      "raw": 57.0,
+      "fixed": 52.7
+    }
+  },
+  {
+    "face": "F1",
+    "raw_shift_rgb": [
+      10.0,
+      10.0,
+      9.0
+    ],
+    "forehead": {
+      "L_orig": 80.3,
+      "dL_raw": 4.6,
+      "dL_fixed": 0.0
+    },
+    "cheek_l": {
+      "L_orig": 74.4,
+      "dL_raw": 5.0,
+      "dL_fixed": 0.0
+    },
+    "cheek_r": {
+      "L_orig": 70.2,
+      "dL_raw": 5.0,
+      "dL_fixed": 0.0
+    },
+    "brow_core_L": {
+      "orig": 63.0,
+      "raw": 62.5,
+      "fixed": 59.1
+    }
+  },
+  {
+    "face": "F2",
+    "raw_shift_rgb": [
+      4.0,
+      2.0,
+      0.0
+    ],
+    "forehead": {
+      "L_orig": 71.3,
+      "dL_raw": 4.8,
+      "dL_fixed": 0.0
+    },
+    "cheek_l": {
+      "L_orig": 64.5,
+      "dL_raw": 4.2,
+      "dL_fixed": 0.0
+    },
+    "cheek_r": {
+      "L_orig": 60.0,
+      "dL_raw": 4.4,
+      "dL_fixed": 0.0
+    },
+    "brow_core_L": {
+      "orig": 44.5,
+      "raw": 47.0,
+      "fixed": 45.8
+    }
+  },
+  {
+    "face": "F3",
+    "raw_shift_rgb": [
+      8.0,
+      7.0,
+      6.0
+    ],
+    "forehead": {
+      "L_orig": 75.7,
+      "dL_raw": 4.9,
+      "dL_fixed": 0.0
+    },
+    "cheek_l": {
+      "L_orig": 73.2,
+      "dL_raw": 4.5,
+      "dL_fixed": 0.0
+    },
+    "cheek_r": {
+      "L_orig": 69.8,
+      "dL_raw": 4.6,
+      "dL_fixed": 0.0
+    },
+    "brow_core_L": {
+      "orig": 54.3,
+      "raw": 54.8,
+      "fixed": 52.2
+    }
+  }
+]
