@@ -8,15 +8,17 @@ import { findRecording, messageFor, mockTaskId, mode } from "@/lib/youcam";
 import { clientIp, fail, failFrom, readBody, sessionId } from "@/lib/youcam/http";
 import { prepareUpload } from "@/lib/youcam/images";
 import { fetchRemoteImage, parsePublicUrl } from "@/lib/youcam/remote";
+import { testerGate } from "@/lib/youcam/tester";
 import { isDemoFace } from "@/lib/youcam/sources";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  let faceId = "", selfie: Buffer | null = null, listingFile: Buffer | null = null, url = "";
+  let testerCode: string | null = null, faceId = "", selfie: Buffer | null = null, listingFile: Buffer | null = null, url = "";
   try {
     const body = await readBody(req);
     faceId = body.get("faceId") ?? "";
+    testerCode = body.get("testerCode");
     url = body.get("listingUrl") ?? body.get("url") ?? "";
     selfie = await body.file("selfie");
     listingFile = await body.file("listing");
@@ -35,6 +37,9 @@ export async function POST(req: Request) {
       ...(rec ? { exampleTaskId: mockTaskId(rec), exampleNote: "A recorded example of a listing photo with no one wearing the wig." } : {}),
     });
   }
+
+  const denied = testerGate(req, { get: () => testerCode });
+  if (denied) return denied;
 
   const { startHairTransfer, servesRecording } = await import("@/lib/youcam/tryon");
   try {

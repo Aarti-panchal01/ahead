@@ -54,6 +54,8 @@ const MESSAGES: Record<string, string> = {
   not_an_image_url: "That link doesn't lead to a photo. Paste a link to the listing photo itself, or upload it.",
   fetch_failed: "We couldn't load a photo from that link. Try uploading the photo instead.",
   needs_live: "Listing previews need live mode. The live preview is switched off in this demo, so you're seeing a recorded example.",
+  tester_code: "Live try-on on your own photo needs a tester code. You can still try our sample people and match wigs to your hair colour.",
+  tester_rate_limit: "Too many code attempts. Try again in an hour.",
   brief_not_found: "This brief has expired or the link is wrong.",
   bad_brief: "That brief couldn't be saved. Check the items and colours and try again.",
   brief_rate_limit: "You've made several briefs this hour. Try again a bit later.",

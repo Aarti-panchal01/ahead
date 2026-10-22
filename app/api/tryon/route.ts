@@ -10,14 +10,16 @@ import { getItem } from "@/lib/catalogue";
 import type { TryOnJob } from "@/lib/types";
 import { findRecording, mockTaskId, mode } from "@/lib/youcam";
 import { clientIp, fail, failFrom, readBody, sessionId } from "@/lib/youcam/http";
+import { testerGate } from "@/lib/youcam/tester";
 import { isDemoFace } from "@/lib/youcam/sources";
 
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
-  let itemId = "", faceId = "", selfie: Buffer | null = null;
+  let itemId = "", faceId = "", selfie: Buffer | null = null, testerCode: string | null = null;
   try {
     const body = await readBody(req);
+    testerCode = body.get("testerCode");
     itemId = body.get("itemId") ?? "";
     faceId = body.get("faceId") ?? "";
     selfie = await body.file("selfie");
@@ -38,6 +40,10 @@ export async function POST(req: Request) {
     if (!rec) return fail("no_recording");
     return NextResponse.json({ ...job, mode: "mock", id: mockTaskId(rec), recording: true });
   }
+
+  // Live on an uploaded selfie: needs the tester code when TESTER_CODE is set (before any YouCam call).
+  const denied = testerGate(req, { get: () => testerCode });
+  if (denied) return denied;
 
   // Live. Photos with no person wearing the item fail with error_no_face (0 units), so don't send them.
   if (!item.usableAsReference) return fail("error_no_face");
