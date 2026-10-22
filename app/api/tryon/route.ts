@@ -1,54 +1,57 @@
 // POST /api/tryon: start a wig or wrap try-on and return its task id. The browser polls GET /api/tryon/[id].
-// Body: JSON { itemId, faceId } (a demo face, F1..F7) or multipart { itemId, selfie }.
+// Body: JSON { itemId, faceId } or multipart { itemId, selfie } (faceId is a demo face: F1..F7, P1A..P4C, P1B_browsB).
+// Header x-ahead-session (optional) lets POST /api/session/end forget this session's tasks.
+// Live mode: when the daily cap or the judging reserve is reached, a matching recording is served and labelled
+// ({ recording: true, mode: "mock" }); otherwise a plain message.
 import fs from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { getItem } from "@/lib/catalogue";
 import type { TryOnJob } from "@/lib/types";
-import { findRecording, messageFor, mockTaskId, mode } from "@/lib/youcam";
+import { findRecording, mockTaskId, mode } from "@/lib/youcam";
+import { clientIp, fail, failFrom, readBody, sessionId } from "@/lib/youcam/http";
+import { demoFacePath, isDemoFace } from "@/lib/youcam/sources";
 
 export const runtime = "nodejs";
-const FACE = /^F[1-7]$/;
-
-function fail(code: string, status = 422) {
-  return NextResponse.json({ errorCode: code, message: messageFor(code) }, { status });
-}
 
 export async function POST(req: Request) {
   let itemId = "", faceId = "", selfie: Buffer | null = null;
-  if ((req.headers.get("content-type") ?? "").includes("multipart/form-data")) {
-    const form = await req.formData();
-    itemId = String(form.get("itemId") ?? "");
-    const f = form.get("selfie");
-    if (f && typeof f !== "string") selfie = Buffer.from(await f.arrayBuffer());
-  } else {
-    const body = await req.json().catch(() => ({}));
-    itemId = String(body.itemId ?? "");
-    faceId = String(body.faceId ?? "");
+  try {
+    const body = await readBody(req);
+    itemId = body.get("itemId") ?? "";
+    faceId = body.get("faceId") ?? "";
+    selfie = await body.file("selfie");
+  } catch (e) {
+    return failFrom(e);
   }
   const item = getItem(itemId);
   if (!item) return fail("unknown_item", 400);
-  if (!selfie && !FACE.test(faceId)) return fail("no_photo", 400);
+  if (!selfie && !isDemoFace(faceId)) return fail("no_photo", 400);
 
   const m = mode();
   const job: TryOnJob = { id: "", itemId, mode: m, createdAt: new Date().toISOString() };
 
   if (m === "mock") {
-    const rec = faceId ? findRecording(faceId, itemId) : null;
+    const rec = !selfie && faceId ? findRecording(faceId, itemId) : null;
     if (!rec) return fail("no_recording");
-    return NextResponse.json({ ...job, id: mockTaskId(rec) });
+    return NextResponse.json({ ...job, id: mockTaskId(rec), recording: true });
   }
 
   // Live. Photos with no person wearing the item fail with error_no_face (0 units), so don't send them.
   if (!item.usableAsReference) return fail("error_no_face");
-  const { createHairTransfer, prepare, YoucamError } = await import("@/lib/youcam/client");
+  const { startHairTransfer, servesRecording } = await import("@/lib/youcam/tryon");
+  const { prepare } = await import("@/lib/youcam/client");
   try {
-    const src = await prepare(selfie ?? fs.readFileSync(path.join(process.cwd(), "assets", "ai", "faces", `${faceId}.jpg`)));
+    const src = selfie ?? (await prepare(fs.readFileSync(demoFacePath(faceId))));
     const ref = await prepare(fs.readFileSync(path.join(process.cwd(), "public", item.image)));
-    const { taskId } = await createHairTransfer(src, ref);
-    return NextResponse.json({ ...job, id: taskId });
+    const r = await startHairTransfer({ src, ref, ip: clientIp(req), sessionId: sessionId(req) });
+    if (r.ok) return NextResponse.json({ ...job, id: r.taskId });
+    const rec = !selfie && faceId && servesRecording(r.reason) ? findRecording(faceId, itemId) : null;
+    if (rec) {
+      return NextResponse.json({ ...job, mode: "mock", id: mockTaskId(rec), recording: true, reason: r.reason, message: r.message });
+    }
+    return NextResponse.json({ errorCode: r.code, message: r.message }, { status: r.status });
   } catch (e) {
-    if (e instanceof YoucamError) return fail(e.code, e.code === "reserve" ? 503 : 502);
-    return fail("create_failed", 502);
+    return failFrom(e);
   }
 }
