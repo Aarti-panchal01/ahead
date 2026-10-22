@@ -10,6 +10,8 @@ Ahead is for people facing treatment-related hair loss. Try wigs and head wraps 
 
 All demo people, test faces and catalogue wigs and wraps in this repo are AI-generated (Google Gemini). No real person appears in any image here.
 
+All people and products shown are AI-generated (Gemini). Visible Gemini marks were cropped for layout; Google's invisible SynthID watermark is preserved.
+
 ## Run it
 
 ```bash

@@ -58,7 +58,8 @@ result card shows the check result.
   YouCam tasks deleted at the end (verify the delete endpoint in the
   docs), images never logged. Stylist brief links expire.
 - All demo people and catalogue items are AI-generated and labelled
-  in the UI and README.
+  in the UI and README. Every persona or catalogue image renders through
+  components/AiImage.tsx, which always shows an "AI-generated" label.
 - Global framing: no country-specific insurance or charity claims in
   the core flow.
 - First-time user must get the value in 30 seconds: one selfie, then

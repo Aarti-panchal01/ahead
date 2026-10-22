@@ -12,17 +12,18 @@
         "Gemini sparkle mark bottom-right",
         "hair reads mostly grey (salt and pepper) rather than black with grey streaks",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P1B": {
-      "original": "Gemini_Generated_Image_lf0ptwlf0ptwlf0p.png",
+      "original": "Gemini_Generated_Image_h7kg2hh7kg2hh7kg.png",
       "md5_10": "7cc9580528",
       "asset": "assets/personas/P1B.jpg",
       "web": "/personas/P1B.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "face consistent across A, B, C"
-      ]
+        "replacement image, 22 Oct"
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P1C": {
       "original": "Gemini_Generated_Image_cyp23vcyp23vcyp2.png",
@@ -32,7 +33,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P2A": {
       "original": "Gemini_Generated_Image_qkjughqkjughqkju.png",
@@ -42,7 +44,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P2B": {
       "original": "Gemini_Generated_Image_9ui8209ui8209ui8.png",
@@ -52,7 +55,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P2C": {
       "original": "Gemini_Generated_Image_ob3v60ob3v60ob3v.png",
@@ -62,7 +66,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P3A": {
       "original": "Gemini_Generated_Image_9jl74c9jl74c9jl7.png",
@@ -73,7 +78,8 @@
         "Gemini sparkle mark bottom-right",
         "hair is closer to chin/shoulder than fully shoulder-length",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P3B": {
       "original": "Gemini_Generated_Image_m3ce0m3ce0m3ce0m.png",
@@ -83,7 +89,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P3C": {
       "original": "Gemini_Generated_Image_l18vnxl18vnxl18v.png",
@@ -93,7 +100,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P4A": {
       "original": "Gemini_Generated_Image_9n6xae9n6xae9n6x.png",
@@ -103,7 +111,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P4B": {
       "original": "Gemini_Generated_Image_4nmwqy4nmwqy4nmw.png",
@@ -113,7 +122,8 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "P4C": {
       "original": "Gemini_Generated_Image_hfp7t3hfp7t3hfp7.png",
@@ -123,41 +133,41 @@
       "flags": [
         "Gemini sparkle mark bottom-right",
         "face consistent across A, B, C"
-      ]
+      ],
+      "sparkle_crop": "bottom 165 px"
     },
     "W01": {
-      "original": "Gemini_Generated_Image_t9w6bgt9w6bgt9w6.png",
+      "original": "Gemini_Generated_Image_ezrmyxezrmyxezrm (1).png",
       "md5_10": "609623fd0f",
       "asset": "assets/catalogue/wigs/W01.jpg",
       "web": "/catalogue/W01.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "same AI model in all 16 catalogue photos; she does not resemble any persona"
+        "replacement image, 22 Oct"
       ],
-      "colour": "#261F1E"
+      "colour": "#7D736F",
+      "sparkle_crop": "bottom 165 px"
     },
     "W02": {
-      "original": "Gemini_Generated_Image_p0szobp0szobp0sz.png",
+      "original": "Gemini_Generated_Image_ezrmyxezrmyxezrm (2).png",
       "md5_10": "47e1c7fb2a",
       "asset": "assets/catalogue/wigs/W02.jpg",
       "web": "/catalogue/W02.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "same AI model in all 16 catalogue photos; she does not resemble any persona",
-        "source had white bands top and bottom (rows 0-299, 2100-2399); cropped off in the copy (1792x1800)"
+        "replacement image, 22 Oct"
       ],
-      "colour": "#231F21"
+      "colour": "#262121",
+      "sparkle_crop": "bottom 165 px"
     },
     "W03": {
-      "original": "Gemini_Generated_Image_8loahh8loahh8loa.png",
+      "original": "Gemini_Generated_Image_ezrmyxezrmyxezrm.png",
       "md5_10": "1403d495e9",
       "asset": "assets/catalogue/wigs/W03.jpg",
       "web": "/catalogue/W03.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "same AI model in all 16 catalogue photos; she does not resemble any persona"
+        "replacement image, 22 Oct"
       ],
-      "colour": "#544642"
+      "colour": "#5F514C",
+      "sparkle_crop": "bottom 165 px"
     },
     "W04": {
       "original": "Gemini_Generated_Image_87rwcb87rwcb87rw.png",
@@ -168,7 +178,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#655046"
+      "colour": "#655046",
+      "sparkle_crop": "bottom 165 px"
     },
     "W05": {
       "original": "Gemini_Generated_Image_2sf13w2sf13w2sf1.png",
@@ -179,7 +190,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#A39A99"
+      "colour": "#A39A99",
+      "sparkle_crop": "bottom 165 px"
     },
     "W06": {
       "original": "Gemini_Generated_Image_1dkxs1dkxs1dkxs1.png",
@@ -190,30 +202,30 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#AF855E"
+      "colour": "#AF855E",
+      "sparkle_crop": "bottom 165 px"
     },
     "W07": {
-      "original": "Gemini_Generated_Image_5myzgj5myzgj5myz.png",
+      "original": "Gemini_Generated_Image_wtfd3fwtfd3fwtfd.png",
       "md5_10": "42a94a6a40",
       "asset": "assets/catalogue/wigs/W07.jpg",
       "web": "/catalogue/W07.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "coily wig worn by a fair-skinned model (fine for hair-transfer, hair colour comes from the wig)",
-        "same AI model in all 16 catalogue photos; she does not resemble any persona"
+        "replacement image, 22 Oct"
       ],
-      "colour": "#141215"
+      "colour": "#1B191C",
+      "sparkle_crop": "portrait crop x=782..2022 of 2816x1536, centred on her face"
     },
     "W08": {
-      "original": "Gemini_Generated_Image_ze0ykuze0ykuze0y.png",
+      "original": "Gemini_Generated_Image_l3mci2l3mci2l3mc.png",
       "md5_10": "f8f50ba806",
       "asset": "assets/catalogue/wigs/W08.jpg",
       "web": "/catalogue/W08.jpg",
       "flags": [
-        "Gemini sparkle mark bottom-right",
-        "same AI model in all 16 catalogue photos; she does not resemble any persona"
+        "replacement image, 22 Oct"
       ],
-      "colour": "#312420"
+      "colour": "#31201E",
+      "sparkle_crop": "portrait crop x=856..2008 of 2816x1536"
     },
     "W09": {
       "original": "Gemini_Generated_Image_og7xhog7xhog7xho.png",
@@ -224,7 +236,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#392822"
+      "colour": "#392822",
+      "sparkle_crop": "bottom 165 px"
     },
     "W10": {
       "original": "Gemini_Generated_Image_yrj85myrj85myrj8.png",
@@ -236,7 +249,8 @@
         "source had 300 px white bands top and bottom; cropped off in the copy (1792x1801)",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#1B191B"
+      "colour": "#1B191B",
+      "sparkle_crop": "none needed (sparkle went with the white band already cropped)"
     },
     "W11": {
       "original": "Gemini_Generated_Image_jjy68cjjy68cjjy6.png",
@@ -247,7 +261,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#282426"
+      "colour": "#282426",
+      "sparkle_crop": "bottom 165 px"
     },
     "W12": {
       "original": "Gemini_Generated_Image_sbhv2vsbhv2vsbhv.png",
@@ -258,7 +273,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#503329"
+      "colour": "#503329",
+      "sparkle_crop": "bottom 165 px"
     },
     "H01": {
       "original": "Gemini_Generated_Image_3viicr3viicr3vii.png",
@@ -269,7 +285,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#B8868A"
+      "colour": "#B8868A",
+      "sparkle_crop": "bottom 165 px"
     },
     "H02": {
       "original": "Gemini_Generated_Image_lw3bb2lw3bb2lw3b.png",
@@ -281,7 +298,8 @@
         "turban comes with a matching neck wrap; hair-transfer may only carry the head part",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#242538"
+      "colour": "#242538",
+      "sparkle_crop": "bottom 165 px"
     },
     "H03": {
       "original": "Gemini_Generated_Image_i4a9myi4a9myi4a9.png",
@@ -292,7 +310,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#695A3E"
+      "colour": "#695A3E",
+      "sparkle_crop": "bottom 165 px"
     },
     "H04": {
       "original": "Gemini_Generated_Image_746gad746gad746g.png",
@@ -303,7 +322,8 @@
         "Gemini sparkle mark bottom-right",
         "same AI model in all 16 catalogue photos; she does not resemble any persona"
       ],
-      "colour": "#4A4751"
+      "colour": "#4A4751",
+      "sparkle_crop": "bottom 165 px"
     }
   }
 }
