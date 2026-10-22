@@ -14,3 +14,4 @@ Steps (mark [x] when done):
 - [x] C docs + qa merged: 505 unit tests, 16 e2e (mobile + desktop), axe no serious/critical, claim linter 0 hits, CI + uptime workflows
 - [~] D Lighthouse before: landing perf 80 (LCP 5.0 s), results perf 36 (TBT 26 s, TTI 29 s, console errors, CLS culprits); a11y 100 both. Fixing: lab -> Web Worker + silence MediaPipe logs; ui -> lazy checks, 640px images, sizes. Then merge, preview, FEATURE FREEZE
 - [ ] Morning report docs/MORNING-REPORT.md
+- [x] D1 lab Web Worker merged: results TBT 27 s -> 0.05-0.18 s (Lighthouse mobile), console errors gone, outputs identical; 512 unit + 16/16 e2e green (4.2 min); pushed
