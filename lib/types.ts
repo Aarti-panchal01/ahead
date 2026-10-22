@@ -31,6 +31,10 @@ export interface TryOnJob {
   itemId: string;
   mode: "mock" | "live";
   createdAt: string;
+  /** True when this is a saved recording rather than a fresh YouCam render (mock mode, cap or reserve reached). */
+  recording?: boolean;
+  /** Why a recording was served instead of a live call, e.g. "daily_cap", "reserve". */
+  reason?: string;
 }
 
 export interface TryOnResult {
@@ -43,6 +47,8 @@ export interface TryOnResult {
   /** Plain words for the user: what happened and what to do next. */
   message?: string;
   unitsCharged?: number;
+  /** True when the result is a saved recording, labelled as such in the UI. */
+  recording?: boolean;
 }
 
 export type IntegrityRegion = "cheek_left" | "cheek_right" | "nose_bridge" | "chin";
@@ -107,4 +113,5 @@ export interface UnitStatus {
   /** True when the daily cap or the judging reserve is reached: recordings are served, clearly labelled. */
   servingRecordings: boolean;
   remainingToday?: number;
+  reason?: "daily_cap" | "reserve" | "unavailable";
 }
