@@ -111,7 +111,7 @@ export default function ResultCard(props: Props) {
             {matchLabelText(label, whose)}
           </p>
         )}
-        <h3 id={`n-${item.id}`}>{item.name}</h3>
+        <h2 id={`n-${item.id}`} className="h3">{item.name}</h2>
         {onDemand && state.phase === "idle" && (
           <button type="button" className={`btn btn-quiet ${styles.renderBtn}`} onClick={onRender}>Show me in this one</button>
         )}

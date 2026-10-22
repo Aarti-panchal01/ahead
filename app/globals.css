@@ -39,7 +39,7 @@ h1, h2, h3 { margin: 0; line-height: 1.2; }
 /* Every screen starts with an <h1> (accessibility); it looks like the old screen heading. Newsreader is for the
    landing headline only (app/landing.module.css). */
 h1, h2 { font-size: 1.5rem; font-weight: 700; }
-h3 { font-size: 1.05rem; font-weight: 700; }
+h3, .h3 { font-size: 1.05rem; font-weight: 700; }
 
 p { margin: 0; }
 

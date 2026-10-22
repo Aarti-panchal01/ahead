@@ -15,3 +15,6 @@ Freeze: no new features 2 days before the Oct 30 target. Then video,
   screenshots, writeup, social share, submit.
 Cut order if behind: Ring 3 items last-to-first, then lashes.
 Must ship: Ring 1 + match card + honesty page.
+
+## FEATURE FREEZE (from 23 Oct 2026, overnight Gate 3)
+No new features. Only fixes, the video, screenshots, the write-up, social posts and submission.

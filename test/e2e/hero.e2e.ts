@@ -25,7 +25,7 @@ test("hero flow: consent, sample person, results with checks, brows, wraps, comp
   await expect(page.getByText("Shown on our model")).toHaveCount(0);
   await expect(page.getByText(/isn.t recorded/i)).toHaveCount(0);
   await expect(page.getByText("Getting her preview ready.")).toHaveCount(0);
-  for (let i = 0; i < 4; i++) await expect(cards(page).nth(i).getByRole("heading", { level: 3 })).not.toBeEmpty();
+  for (let i = 0; i < 4; i++) await expect(cards(page).nth(i).getByRole("heading", { level: 2 })).not.toBeEmpty();
 
   // Brows toggle says what it does, and flips.
   await expect(page.getByRole("button", { name: "Show without brows" })).toBeVisible();
@@ -113,7 +113,7 @@ test("P3: no straight wig is labelled 'Close to her hair'", async ({ page }) => 
   let straight = 0;
   for (let i = 0; i < 4; i++) {
     const card = cards(page).nth(i);
-    const name = (await card.getByRole("heading", { level: 3 }).innerText()).trim();
+    const name = (await card.getByRole("heading", { level: 2 }).innerText()).trim();
     if (texture.get(name) !== "straight") continue;
     straight++;
     await expect(card.getByText(/^Close to her hair$/)).toHaveCount(0);

@@ -12,6 +12,7 @@ Steps (mark [x] when done):
 - [x] Merge A: 496 tests, lint/typecheck/build green, pushed
 - [x] B preview https://try-ahead-kvznucayp-aarti-panchals-projects.vercel.app : 41/41 sample cards = her recording; plan wig-ready on treatment day (Groq answered); 16 screenshots in docs/screenshots/final/ (local mock build; preview is login-protected). Note: on this laptop CPU the per-card checks finish in ~60 s (sequential queue, plain + brows re-check); on GPU ~1 s each.
 - [x] C docs + qa merged: 505 unit tests, 16 e2e (mobile + desktop), axe no serious/critical, claim linter 0 hits, CI + uptime workflows
-- [~] D Lighthouse before: landing perf 80 (LCP 5.0 s), results perf 36 (TBT 26 s, TTI 29 s, console errors, CLS culprits); a11y 100 both. Fixing: lab -> Web Worker + silence MediaPipe logs; ui -> lazy checks, 640px images, sizes. Then merge, preview, FEATURE FREEZE
+- [x] D Lighthouse before: landing perf 80 (LCP 5.0 s), results perf 36 (TBT 26 s, TTI 29 s, console errors, CLS culprits); a11y 100 both. Fixing: lab -> Web Worker + silence MediaPipe logs; ui -> lazy checks, 640px images, sizes. Then merge, preview, FEATURE FREEZE
 - [ ] Morning report docs/MORNING-REPORT.md
 - [x] D1 lab Web Worker merged: results TBT 27 s -> 0.05-0.18 s (Lighthouse mobile), console errors gone, outputs identical; 512 unit + 16/16 e2e green (4.2 min); pushed
+- [x] D2 ui perf + h1/titles merged; e2e helper scrolls lazy cards; card titles h2 (heading order). Lighthouse mobile after: landing 94/100/100/100, results 90/100/100/100 (TBT 90 ms, CLS 0). 523 unit + 16/16 e2e green. FEATURE FREEZE recorded in PLAN.md
