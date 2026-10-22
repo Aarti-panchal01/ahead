@@ -46,12 +46,18 @@ describe("ResultCard", () => {
     expect(html).toContain(PREVIEW_DISCLAIMER);
   });
 
-  it("a sample card never says a combination isn't recorded: it quietly shows the item on our model", () => {
+  it("a sample card only ever shows her: a genuine failure is a plain error, never our model", () => {
     const html = card(noRecording);
-    expect(html).not.toContain("recorded");
-    expect(html).toContain('src="/catalogue/W01.jpg"');
-    expect(html).toContain("Shown on our model");
+    expect(html).not.toContain("/catalogue/W01.jpg");
+    expect(html).not.toContain("Shown on our model");
+    expect(html).toContain('role="alert"');
     expect(html).not.toContain("Try this one again");
+  });
+
+  it("a sample card before its render starts shows a placeholder, not our model", () => {
+    const html = card(IDLE);
+    expect(html).toContain("Getting her preview ready.");
+    expect(html).not.toContain("/catalogue/W01.jpg");
   });
 
   it("offers one retry after a YouCam error", () => {

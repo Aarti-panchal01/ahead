@@ -77,8 +77,9 @@ describe("plan client", () => {
   it("local plan: dated steps from the facts, sorted, ending with the care-team line", () => {
     const p = localPlan({ stage: "not_yet", personaId: "P1", firstTreatmentDate: "2026-11-10" }, "2026-10-22");
     expect(isPlanResponse(p)).toBe(true);
-    expect(p.timeline.map((t) => t.date)).toEqual(["2026-10-22", "2026-11-03", "2026-11-10", "2026-11-17", "2026-12-01"]);
-    expect(p.timeline.find((t) => t.date === "2026-11-17")?.note).toBe("Hair loss mostly starts 1 to 3 weeks after the first treatment.");
+    expect(p.timeline.map((t) => t.date)).toEqual(["2026-10-22", "2026-11-03", "2026-11-10", "2026-12-01"]);
+    // The wig is ready ON the first treatment date, not after it.
+    expect(p.timeline.find((t) => t.date === "2026-11-10")?.label).toBe("Have your wig or a wrap ready");
     expect(p.messages.at(-1)).toBe(CARE_TEAM_LINE);
     expect(p.shortlist[0]).toBe("W01");
     expect(p.brief).toMatch(/lock of my hair/);

@@ -34,3 +34,7 @@ export function lockLine(whose: Whose): string {
 /** CLAUDE.md, Agent: the LLM gets only style choices and colours; the timeline is computed on our side. */
 export const PLANNER_PRIVACY_LINE =
   "Our planning assistant never sees your photos, your treatment date or any health details. It gets only your style choices and colours; your timeline is worked out on our side.";
+
+/** CLAUDE.md, Agent guardrails: 30 units max per session, and the user approves every paid step. */
+export const PLANNER_UNITS_LINE =
+  "The planning assistant can spend at most 30 YouCam units per visit, and only after you tap to approve each try-on.";

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CATALOGUE } from "@/lib/catalogue";
 import { SAMPLE_PEOPLE, getSample } from "@/lib/client/personas";
-import { CLOSE_DELTA_E, matchLabel, matchLabelText, rankCatalogue } from "@/lib/rank";
+import { CLOSE_DELTA_E, matchLabel, matchLabelText, rankCatalogue, texturesClose } from "@/lib/rank";
 import type { CatalogueItem } from "@/lib/types";
 
 const wig = (id: string, colour: string, length: string, extra: Partial<CatalogueItem> = {}): CatalogueItem => ({
@@ -60,20 +60,18 @@ describe("rankCatalogue", () => {
     expect(r.wraps[0].item.id).toBe("H02"); // navy turban is nearest to black hair
   });
 
-  // Owner's required matches (ranking over ALL wigs, no curation, no id special-casing).
+  // Owner's required matches: a sample person ranks only among her own recordings (no id special-casing).
   const top = (id: string) => {
     const p = getSample(id)!;
-    return rankCatalogue(CATALOGUE, { hair: p.hair, length: p.length, texture: p.texture });
+    return rankCatalogue(CATALOGUE, { hair: p.hair, length: p.length, texture: p.texture, pool: { wigs: p.recordedWigs, wraps: p.recordedWraps } });
   };
-  it("P1 (grey, long, curly) ranks W01 first", () => expect(top("P1").wigs[0].item.id).toBe("W01"));
-  it("P2 (ash brown, chin, straight) ranks W04 first", () => expect(top("P2").wigs[0].item.id).toBe("W04"));
-  it("P3 (black, shoulder, coily) ranks W07 first", () => expect(top("P3").wigs[0].item.id).toBe("W07"));
-  it("P4 (black, chin, straight) ranks W10 or W11 first", () => expect(["W10", "W11"]).toContain(top("P4").wigs[0].item.id));
 
-  it.each(SAMPLE_PEOPLE)("$id: 3 closest + 1 something new of a different length", (p) => {
+  it.each(SAMPLE_PEOPLE)("$id: 3 closest + 1 something new of a different length, all from her recordings", (p) => {
     const r = top(p.id);
     expect(r.wigs.map((x) => x.reason)).toEqual(["closest", "closest", "closest", "something_new"]);
     expect(r.wigs[3].item.length).not.toBe(p.length);
+    expect(r.wigs.every((x) => p.recordedWigs.includes(x.item.id))).toBe(true);
+    expect(r.wraps.map((x) => x.item.id).sort()).toEqual([...p.recordedWraps].sort());
     expect(r.usedShape).toBe(true);
   });
 
@@ -97,34 +95,72 @@ describe("rankCatalogue", () => {
 });
 
 describe("match labels", () => {
-  const r = (colourDistance: number, reason: "closest" | "something_new" = "closest") => ({ item: CATALOGUE[0], colourDistance, reason });
-  it("says close only under the threshold", () => {
-    expect(matchLabel(r(CLOSE_DELTA_E - 0.1), true)).toBe("close");
-    expect(matchLabel(r(CLOSE_DELTA_E), true)).toBe("neutral");
-    expect(matchLabel(r(14), true)).toBe("neutral");
+  const W = (texture: string) => CATALOGUE.find((x) => x.kind === "wig" && x.texture === texture)!;
+  const r = (colourDistance: number, texture = "straight", reason: "closest" | "something_new" = "closest") => ({ item: W(texture), colourDistance, reason });
+  const straightHair = { hair: "#202020", texture: "straight" };
+
+  it("close needs colour under the threshold AND a close texture", () => {
+    expect(matchLabel(r(CLOSE_DELTA_E - 0.1), straightHair)).toBe("close");
+    expect(matchLabel(r(CLOSE_DELTA_E), straightHair)).toBe("neutral");
+    expect(matchLabel(r(1, "wavy"), straightHair)).toBe("close");
+    expect(matchLabel(r(1, "curly"), straightHair)).toBe("neutral");
+    expect(matchLabel(r(1, "coily"), straightHair)).toBe("neutral");
   });
-  it("never says close without a hair colour", () => expect(matchLabel(r(0), false)).toBe("neutral"));
-  it("keeps something new", () => expect(matchLabel(r(1, "something_new"), true)).toBe("new"));
+  it("texture neighbours: one step along straight-wavy-curly-coily, never straight vs coily", () => {
+    expect(texturesClose("curly", "coily")).toBe(true);
+    expect(texturesClose("wavy", "curly")).toBe(true);
+    expect(texturesClose("straight", "curly")).toBe(false);
+    expect(texturesClose("straight", "coily")).toBe(false);
+    expect(texturesClose("coily", "straight")).toBe(false);
+    expect(texturesClose(undefined, "straight")).toBe(false);
+  });
+  it("never says close without a hair colour", () => expect(matchLabel(r(0), { texture: "straight" })).toBe("neutral"));
+  it("an own photo (no texture) can only be close in colour", () => {
+    expect(matchLabel(r(2), { hair: "#202020" })).toBe("colour");
+    expect(matchLabelText("colour", "your")).toBe("Close to your hair colour");
+  });
+  it("keeps something new", () => expect(matchLabel(r(1, "straight", "something_new"), straightHair)).toBe("new"));
   it("words it for her or for you", () => {
     expect(matchLabelText("close", "her")).toBe("Close to her hair");
     expect(matchLabelText("close", "your")).toBe("Close to your hair");
     expect(matchLabelText("neutral", "your")).toBe("Worth a look");
   });
-  it("P1's W01 is close; P2's third match is not", () => {
-    const p1 = getSample("P1")!, p2 = getSample("P2")!;
-    const a = rankCatalogue(CATALOGUE, { hair: p1.hair, length: p1.length, texture: p1.texture });
-    const b = rankCatalogue(CATALOGUE, { hair: p2.hair, length: p2.length, texture: p2.texture });
-    expect(matchLabel(a.wigs[0], true)).toBe("close");
-    expect(matchLabel(b.wigs[2], true)).toBe("neutral");
-  });
 });
 
-describe("close threshold on the real catalogue", () => {
-  it("P2's ash brown is close to W04 but not to the greyer W03", () => {
-    const p2 = getSample("P2")!;
-    const r = rankCatalogue(CATALOGUE, { hair: p2.hair, length: p2.length, texture: p2.texture });
-    const byId = Object.fromEntries(r.wigs.map((x) => [x.item.id, matchLabel(x, true)]));
-    expect(byId.W04).toBe("close");
-    expect(byId.W03).toBe("neutral");
+describe("top 3 and labels for each sample person", () => {
+  const ranked = (id: string) => {
+    const p = getSample(id)!;
+    const r = rankCatalogue(CATALOGUE, { hair: p.hair, length: p.length, texture: p.texture, pool: { wigs: p.recordedWigs, wraps: p.recordedWraps } });
+    return r.wigs.slice(0, 3).map((x) => ({ id: x.item.id, texture: x.item.texture, label: matchLabel(x, { hair: p.hair, texture: p.texture }) }));
+  };
+
+  it("P1 (grey, long, curly): W01 close, then W06 (wavy) and W04, not close in colour", () => {
+    expect(ranked("P1")).toEqual([
+      { id: "W01", texture: "curly", label: "close" },
+      { id: "W06", texture: "wavy", label: "neutral" },
+      { id: "W04", texture: "straight", label: "neutral" },
+    ]);
+  });
+  it("P2 (ash brown, chin, straight): W04 close, W09 and the greyer W03 worth a look", () => {
+    expect(ranked("P2")).toEqual([
+      { id: "W04", texture: "straight", label: "close" },
+      { id: "W09", texture: "straight", label: "neutral" },
+      { id: "W03", texture: "straight", label: "neutral" },
+    ]);
+  });
+  it("P3 (black, shoulder, coily): W07 first, and no straight wig is ever called close", () => {
+    const r = ranked("P3");
+    expect(r[0]).toEqual({ id: "W07", texture: "coily", label: "close" });
+    expect(r.filter((x) => x.texture === "straight" && x.label === "close")).toEqual([]);
+    expect(r.map((x) => x.id)).toEqual(["W07", "W08", "W01"]);
+  });
+  it("P4 (black, chin, straight): W10 or W11 first, three close straight bobs and layers", () => {
+    const r = ranked("P4");
+    expect(["W10", "W11"]).toContain(r[0].id);
+    expect(r).toEqual([
+      { id: "W11", texture: "straight", label: "close" },
+      { id: "W10", texture: "straight", label: "close" },
+      { id: "W02", texture: "straight", label: "close" },
+    ]);
   });
 });

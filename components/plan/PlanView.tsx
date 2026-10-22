@@ -172,9 +172,6 @@ export default function PlanView() {
             <p className={styles.brief}>{plan.brief}</p>
           </section>
 
-          <p className="note">
-            {plan.unitsUsed} of 30 try-on units used this session.
-          </p>
         </div>
       )}
     </main>

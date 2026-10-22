@@ -52,7 +52,16 @@ export function RenderImage({ ranked, state, view, subject }: ImageProps) {
       </div>
     );
   }
-  // Not rendered (yet, or it couldn't be): the item on our model, labelled.
+  // Sample people only ever see themselves: no model photo, ever. Before the render starts, a quiet placeholder;
+  // after a genuine failure the card's error message says what happened.
+  if (subject.isSample) {
+    return (
+      <div className={styles.pending} role="status">
+        <p className={styles.pendingText}>{state.phase === "error" ? "This preview didn't load." : "Getting her preview ready."}</p>
+      </div>
+    );
+  }
+  // Own photo, not rendered (yet, or it couldn't be): the item on our model, labelled.
   return (
     <div className={styles.reference}>
       <AiImage src={item.image} alt={`Our model wearing the ${item.name.toLowerCase()}`} width={821} height={1024} />
@@ -77,21 +86,17 @@ interface Props extends ImageProps {
   match?: ReactNode;
 }
 
-const QUIET_CODES = new Set(["no_recording"]);
-
 export default function ResultCard(props: Props) {
   const { ranked, state, view, subject, label, whose, onDemand, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match } = props;
   const { item } = ranked;
-  // A sample card never says "not recorded": it quietly shows the item on our model.
-  const quiet = subject.isSample && state.phase === "error" && QUIET_CODES.has(state.result.errorCode ?? "");
-  const errored = state.phase === "error" && !quiet;
+  const errored = state.phase === "error";
 
   return (
     <article className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
       <RenderImage ranked={ranked} state={state} view={view} subject={subject} />
       <div className={styles.body}>
         {label && (
-          <p className={label === "close" ? styles.chip : label === "new" ? styles.chipNew : styles.chipNeutral}>
+          <p className={label === "close" || label === "colour" ? styles.chip : label === "new" ? styles.chipNew : styles.chipNeutral}>
             {matchLabelText(label, whose)}
           </p>
         )}

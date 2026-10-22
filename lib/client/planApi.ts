@@ -62,8 +62,7 @@ export function localPlan(req: PlanRequest, today: string): PlanResponse {
   if (first && !gone) {
     const choose = addDays(first, -7);
     if (choose > today) t.push({ date: choose, label: "Choose your wig", note: "Wigs are usually returnable only unopened, so try them on here first." });
-    t.push({ date: first, label: "Your first treatment date", note: "The date you gave us, as a marker for the steps around it." });
-    t.push({ date: addDays(first, 7), label: "Have your wig or a wrap ready", note: "Hair loss mostly starts 1 to 3 weeks after the first treatment." });
+    t.push({ date: first, label: "Have your wig or a wrap ready", note: "Your first treatment date. Hair loss mostly starts 1 to 3 weeks after it." });
     t.push({ date: addDays(first, 21), label: "Brows and lashes", note: "Eyebrows and eyelashes can fall out too. You can try brows on here." });
   }
   t.sort(byDate);

@@ -39,8 +39,8 @@ function hairLine(photo: ChosenPhoto, stage: HairLossStage, hair?: string): stri
   }
   if (photo.kind === "sample") {
     return stage === "gone"
-      ? "Matched to her hair colour, length and texture, read from her photo from before."
-      : "Matched to her hair colour, length and texture, read from her photo.";
+      ? "Matched to her hair texture, length and colour, read from her photo from before, among the styles she has tried on."
+      : "Matched to her hair texture, length and colour, read from her photo, among the styles she has tried on.";
   }
   return "Matched on colour only, read from your photo: a photo can't tell us your length or texture. Colour from a photo is approximate, so bring a lock of your hair to your stylist.";
 }
@@ -88,7 +88,13 @@ export default function ResultsView() {
   // hair gone has no hair to read.
   const hair = photo ? (photo.kind === "own" && stage === "gone" ? undefined : hairOf(photo)) : undefined;
   const ranking = useMemo(
-    () => rankCatalogue(CATALOGUE, sample ? { hair, length: sample.length, texture: sample.texture } : { hair }),
+    () =>
+      rankCatalogue(
+        CATALOGUE,
+        sample
+          ? { hair, length: sample.length, texture: sample.texture, pool: { wigs: sample.recordedWigs, wraps: sample.recordedWraps } }
+          : { hair },
+      ),
     [hair, sample],
   );
   const whose: Whose = sample ? "her" : "your";
@@ -264,7 +270,7 @@ export default function ResultsView() {
               view={viewOf(id)}
               subject={subject}
               whose={whose}
-              label={isWig ? matchLabel(r, Boolean(hair)) : undefined}
+              label={isWig ? matchLabel(r, { hair, texture: sample?.texture }) : undefined}
               onDemand={ownLive}
               onRender={() => void start(r)}
               selected={selected.includes(id)}

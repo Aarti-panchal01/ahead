@@ -15,6 +15,8 @@ interface PersonaJson {
   browDefault: string;
   length: HairLength;
   texture: HairTexture;
+  recordedWigs: string[];
+  recordedWraps: string[];
 }
 
 export interface SamplePerson {
@@ -35,6 +37,9 @@ export interface SamplePerson {
    * Picked by eye and checked as a crop: no skin, wall or ear inside.
    */
   hairCrop: [number, number, number];
+  /** Wigs and wraps recorded on her face: the only ones she is ranked among, so every card shows her. */
+  recordedWigs: string[];
+  recordedWraps: string[];
 }
 
 const EXTRA: Record<SampleId, { description: string; hairCrop: [number, number, number] }> = {
@@ -54,6 +59,8 @@ export const SAMPLE_PEOPLE: SamplePerson[] = (raw as PersonaJson[]).map((p) => (
   length: p.length,
   texture: p.texture,
   hairCrop: EXTRA[p.id].hairCrop,
+  recordedWigs: p.recordedWigs,
+  recordedWraps: p.recordedWraps,
 }));
 
 export function getSample(id: string | null | undefined): SamplePerson | undefined {

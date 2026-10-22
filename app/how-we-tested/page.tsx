@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DELETION_LINE, PLANNER_PRIVACY_LINE } from "@/lib/client/copy";
+import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE } from "@/lib/client/copy";
 import { parseInline, parseMarkdown, type Block } from "@/lib/client/markdown";
 import styles from "./honesty.module.css";
 
@@ -72,6 +72,7 @@ export default function HowWeTested() {
         </p>
         <p className="notice">{DELETION_LINE}</p>
         <p>{PLANNER_PRIVACY_LINE}</p>
+        <p>{PLANNER_UNITS_LINE}</p>
       </section>
       <div className={`stack ${styles.doc}`}>
         {ordered.map((b, i) => <BlockView key={i} block={b} />)}
