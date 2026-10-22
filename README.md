@@ -2,7 +2,7 @@
 
 Try on your next hair, before you lose this one.
 
-![tests](https://img.shields.io/badge/tests-XXX%20passing-2F6F5E)
+![tests](https://img.shields.io/badge/tests-526%20unit%20%2B%2016%20e2e%20passing-2F6F5E)
 
 ## Quick access for judges
 

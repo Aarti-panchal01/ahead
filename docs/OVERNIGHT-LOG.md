@@ -16,3 +16,7 @@ Steps (mark [x] when done):
 - [ ] Morning report docs/MORNING-REPORT.md
 - [x] D1 lab Web Worker merged: results TBT 27 s -> 0.05-0.18 s (Lighthouse mobile), console errors gone, outputs identical; 512 unit + 16/16 e2e green (4.2 min); pushed
 - [x] D2 ui perf + h1/titles merged; e2e helper scrolls lazy cards; card titles h2 (heading order). Lighthouse mobile after: landing 94/100/100/100, results 90/100/100/100 (TBT 90 ms, CLS 0). 523 unit + 16/16 e2e green. FEATURE FREEZE recorded in PLAN.md
+- [x] Fix: Groq tool calls with null optional fields (consult da01bef); 526 unit + 16/16 e2e green; Production plan screenshot 17-plan-production.png (Groq)
+- [x] Morning report docs/MORNING-REPORT.md
+
+ALL DONE
