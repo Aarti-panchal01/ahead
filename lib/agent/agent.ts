@@ -14,7 +14,7 @@
 import { generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
 import { getItem } from "@/lib/catalogue";
-import { LENGTHS } from "@/lib/rank";
+import { LENGTHS, TEXTURES } from "@/lib/rank";
 import type { PlanRequest, PlanResponse, TimelineItem } from "@/lib/types";
 import { draftBrief } from "./brief";
 import { SESSION_CAP_UNITS, setPending, unitsUsed, type PendingStep } from "./budget";
@@ -131,21 +131,28 @@ async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: Pla
   const tools = {
     shortlist: tool({
       description: "Rank catalogue wigs (and wraps if asked) for this person by hair colour (ΔE2000) and length. Local, free. Returns ids, best first.",
+      // Optional fields accept null as well as omission: gpt-oss on Groq sends null for fields it leaves out,
+      // and Groq rejects the whole call when the schema says "string" only.
       inputSchema: z.object({
-        length: z.enum(LENGTHS).optional().describe("Override the preferred length"),
-        texture: z.enum(["straight", "wavy", "curly", "coily"]).optional(),
-        wantsWraps: z.boolean().optional(),
+        length: z.enum(LENGTHS).nullish().describe("Override the preferred length"),
+        texture: z.enum(TEXTURES).nullish(),
+        wantsWraps: z.boolean().nullish(),
       }),
       execute: async (input) => {
-        state.shortlist = shortlistFor(req, input);
+        state.shortlist = shortlistFor(req, {
+          length: input.length ?? undefined,
+          texture: input.texture ?? undefined,
+          wantsWraps: input.wantsWraps ?? undefined,
+        });
         return state.shortlist.ranked.map((r) => ({ id: r.item.id, name: r.item.name, kind: r.item.kind, reason: r.reason }));
       },
     }),
     try_on: tool({
       description: `PAID (${TRYON_UNITS} units each). Does not run anything: returns try-ons that wait for the person's approval. Up to 3 shortlist ids.`,
-      inputSchema: z.object({ itemIds: z.array(z.string()).max(3) }),
-      execute: async ({ itemIds }) => {
+      inputSchema: z.object({ itemIds: z.array(z.string()).nullish() }),
+      execute: async (input) => {
         const allowed = current().ids;
+        const itemIds = (input.itemIds ?? []).slice(0, 3);
         state.pending = paidProposals(req, itemIds.filter((id) => allowed.includes(id)), used);
         if (isSamplePerson(req)) return { pendingApproval: [], free: true, note: "These are free saved previews: no approval and no units needed." };
         return { pendingApproval: state.pending, ran: false, note: "Nothing has run. The person approves each try-on." };
@@ -153,11 +160,12 @@ async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: Pla
     }),
     draft_brief: tool({
       description: "Plain stylist brief for the chosen ids: hair colour, bring a lock of hair, brow colour, notes.",
-      inputSchema: z.object({ itemIds: z.array(z.string()).max(6), notes: z.string().max(300).optional() }),
-      execute: async ({ itemIds, notes }) => {
+      inputSchema: z.object({ itemIds: z.array(z.string()).nullish(), notes: z.string().nullish() }),
+      execute: async (input) => {
         const visible = new Set(catalogueFor(req).map((x) => x.id));
-        const ids = itemIds.filter((id) => visible.has(id) && getItem(id));
-        const allNotes = [safeNotes(req), stripHealthDetails(notes)].filter(Boolean).join(" ");
+        const ids = (input.itemIds ?? []).slice(0, 6).filter((id) => visible.has(id) && getItem(id));
+        // The model's note gets the same health/date stripping as the person's notes, capped at 300 chars.
+        const allNotes = [safeNotes(req), stripHealthDetails((input.notes ?? undefined)?.slice(0, 300))].filter(Boolean).join(" ");
         state.brief = draftBrief({ itemIds: ids, hairColour: current().hairColour, browColour: browFor(req), notes: allNotes });
         return { brief: state.brief };
       },
