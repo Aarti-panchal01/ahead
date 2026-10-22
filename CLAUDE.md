@@ -25,7 +25,10 @@ client, never logged.
 - Makeup-vto (brows, lashes, 1 unit) lightens the whole face by about
   +5 L* on every skin tone. ALWAYS composite only the feature region
   back onto the original (landmark mask, feathered, global shift
-  removed). Colour comes from the user's eyebrow_color.
+  removed). Brow defaults: colour sampled from the user's own brows
+  (landmark brow region), made about 10 L* darker (same hue),
+  intensity 70. Colour and intensity barely change the render, so
+  expect a soft brow.
 - skin-tone-analysis: 20 units, once per session, cached, crop tight
   to the face first. Hair colour is approximate (greys read darker),
   so the match card shows the user's real hair crop next to the swatch
@@ -45,7 +48,7 @@ client, never logged.
 After every YouCam result, in the browser: MediaPipe face landmarks,
 sample both cheeks, nose bridge and chin (never the forehead, hair may
 cover it). Compare with the original in Lab: ΔE2000 and ΔL*. Above
-ΔE2000 3, paste the original inner face back with a feathered mask,
+ΔE2000 2, paste the original inner face back with a feathered mask,
 re-measure, and tell the user in plain words what was corrected. Every
 result card shows the check result.
 

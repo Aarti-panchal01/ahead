@@ -1,0 +1,30 @@
+[
+  {
+    "face": "P1B",
+    "raw_shift_rgb": [
+      14.0,
+      14.0,
+      13.0
+    ],
+    "forehead": {
+      "L_orig": 90.2,
+      "dL_raw": 2.8,
+      "dL_fixed": 0.0
+    },
+    "cheek_l": {
+      "L_orig": 78.9,
+      "dL_raw": 4.6,
+      "dL_fixed": 0.0
+    },
+    "cheek_r": {
+      "L_orig": 78.1,
+      "dL_raw": 4.5,
+      "dL_fixed": 0.0
+    },
+    "brow_core_L": {
+      "orig": 67.9,
+      "raw": 71.2,
+      "fixed": 66.3
+    }
+  }
+]
