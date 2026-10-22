@@ -12,7 +12,7 @@ import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
 import { integrityCheck } from "@/lib/client/image";
 import { goneImage, tryOnFace } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
-import { CARE_TEAM_LINE, FALLBACK_LINE, requestPlan, todayIso, withCareTeamLine } from "@/lib/client/planApi";
+import { CARE_TEAM_LINE, FALLBACK_LINE, planMessages, planSteps, requestPlan, todayIso } from "@/lib/client/planApi";
 import { sessionHeaders } from "@/lib/client/session";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import type { IntegrityReport, PlanRequest, PlanResponse } from "@/lib/types";
@@ -95,7 +95,10 @@ export default function PlanView() {
     setBusy(false);
   };
 
-  const messages = plan ? withCareTeamLine(plan.messages).filter((m) => m !== CARE_TEAM_LINE) : [];
+  // Each fixed line is shown once, in its own place: the simple-planner notice at the top, the care-team line
+  // closing the timeline. The planner may also send them as messages or as an undated timeline step.
+  const messages = plan ? planMessages(plan) : [];
+  const steps = plan ? planSteps(plan) : [];
 
   return (
     <main className="stack-lg">
@@ -126,7 +129,7 @@ export default function PlanView() {
           <section className="stack" aria-labelledby="tl-h">
             <h3 id="tl-h">Timeline</h3>
             <ol className={styles.timeline}>
-              {plan.timeline.map((t, i) => (
+              {steps.map((t, i) => (
                 <li key={i} className={styles.step}>
                   {t.date ? <p className={styles.date}><time dateTime={t.date}>{shortDate(t.date)}</time></p> : <p className={styles.date}>Any time</p>}
                   <div>

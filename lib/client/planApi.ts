@@ -101,3 +101,20 @@ export async function requestPlan(req: PlanRequest, fetchFn: typeof fetch = fetc
 export function withCareTeamLine(messages: string[]): string[] {
   return messages.some((m) => m.includes(CARE_TEAM_LINE)) ? messages : [...messages, CARE_TEAM_LINE];
 }
+
+const same = (a: string, b: string) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+/** Messages to list on the plan screen, without the lines the screen already shows in fixed places. */
+export function planMessages(p: PlanResponse): string[] {
+  const out: string[] = [];
+  for (const m of p.messages) {
+    if (same(m, CARE_TEAM_LINE) || same(m, FALLBACK_LINE) || out.some((x) => same(x, m))) continue;
+    out.push(m);
+  }
+  return out;
+}
+
+/** Timeline steps to list; the care-team line closes the timeline separately, so it is not a step. */
+export function planSteps(p: PlanResponse): TimelineItem[] {
+  return p.timeline.filter((t) => !same(t.label, CARE_TEAM_LINE));
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { cleanDraft, createBrief, expiryLine, getBrief } from "@/lib/client/briefApi";
-import { CARE_TEAM_LINE, FALLBACK_LINE, addDays, byDate, isPlanResponse, localPlan, requestPlan, withCareTeamLine } from "@/lib/client/planApi";
+import { CARE_TEAM_LINE, FALLBACK_LINE, addDays, byDate, isPlanResponse, planMessages, planSteps, localPlan, requestPlan, withCareTeamLine } from "@/lib/client/planApi";
 import type { PlanResponse, StylistBrief } from "@/lib/types";
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -101,6 +101,16 @@ describe("plan client", () => {
     const steps = [{ label: "Any time" }, { date: "2026-11-10", label: "b" }, { date: "2026-10-22", label: "a" }];
     expect(isPlanResponse({ ...server, timeline: steps })).toBe(true);
     expect([...steps].sort(byDate).map((t) => t.label)).toEqual(["a", "b", "Any time"]);
+  });
+
+  it("shows the fixed lines once: no repeated planner notice or care-team line", () => {
+    const p: PlanResponse = {
+      ...server, source: "fallback",
+      messages: ["Hello", FALLBACK_LINE, "Hello", CARE_TEAM_LINE],
+      timeline: [{ date: "2026-10-22", label: "Try on" }, { label: CARE_TEAM_LINE }],
+    };
+    expect(planMessages(p)).toEqual(["Hello"]);
+    expect(planSteps(p).map((t) => t.label)).toEqual(["Try on"]);
   });
 
   it("says plainly when the simple planner was used", () => {

@@ -12,17 +12,29 @@ export function hexToLab(hex: string): { L: number; a: number; b: number } {
   return { L, a, b };
 }
 
+/**
+ * One image-lab job at a time. The results screen asks for up to three jobs per card (check, brows, re-check)
+ * on four cards at once; MediaPipe's WASM graphs are shared, and running them in parallel ran a headless
+ * Chromium out of memory and crashed the tab. A queue keeps peak memory to one job, which matters on phones.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+export function serial<T>(job: () => Promise<T>): Promise<T> {
+  const run = queue.then(job, job);
+  queue = run.catch(() => undefined);
+  return run;
+}
+
 /** Hair and brow colour from the user's own photo, locally (0 units). Browser only. */
 export async function sampleColours(image: ImageData): Promise<SampledColours> {
   const { sampleColoursInBrowser } = await import("@/lib/image/browser");
-  return sampleColoursInBrowser(image);
+  return serial(() => sampleColoursInBrowser(image));
 }
 
 /** Measures cheeks, nose bridge and chin against the original; corrects above ΔE2000 2. Browser only. */
 export async function integrityCheck(originalUrl: string, renderUrl: string): Promise<IntegrityReport> {
   try {
     const { checkRender } = await import("@/lib/image/browser");
-    return await checkRender(originalUrl, renderUrl);
+    return await serial(() => checkRender(originalUrl, renderUrl));
   } catch {
     // Models failed to load or the image couldn't be read: say so, never claim "unchanged".
     return { status: "failed", regions: [], plainText: "Skin tone check: couldn't run on this device" };
@@ -40,7 +52,8 @@ export async function applyBrows(renderUrl: string, browsUrl: string): Promise<s
       applyBrowsInBrowser?: (render: string, brows: string) => Promise<string>;
     };
     if (typeof mod.applyBrowsInBrowser !== "function") return renderUrl;
-    return await mod.applyBrowsInBrowser(renderUrl, browsUrl);
+    const apply = mod.applyBrowsInBrowser;
+    return await serial(() => apply(renderUrl, browsUrl));
   } catch {
     return renderUrl;
   }
@@ -77,7 +90,7 @@ export function hairCropBox(mask: ArrayLike<number>, width: number, height: numb
 export async function hairCrop(photoUrl: string): Promise<string | undefined> {
   try {
     const { readFace, toDataUrl } = await import("@/lib/image/browser");
-    const f = await readFace(photoUrl);
+    const f = await serial(() => readFace(photoUrl));
     const box = hairCropBox(f.hairMask, f.image.width, f.image.height);
     if (!box) return undefined;
     const { x, y, size } = box;

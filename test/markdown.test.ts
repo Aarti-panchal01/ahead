@@ -71,3 +71,20 @@ describe("honesty page", () => {
     expect(html).not.toMatch(/anthropic/i);
   });
 });
+
+describe("serial (one image-lab job at a time)", () => {
+  it("never runs two jobs at once, and a failure doesn't block the next", async () => {
+    const { serial } = await import("@/lib/client/image");
+    let running = 0, peak = 0;
+    const job = (ms: number, fail = false) => serial(async () => {
+      running++; peak = Math.max(peak, running);
+      await new Promise((r) => setTimeout(r, ms));
+      running--;
+      if (fail) throw new Error("x");
+      return ms;
+    });
+    const out = await Promise.allSettled([job(20), job(5, true), job(1)]);
+    expect(peak).toBe(1);
+    expect(out.map((o) => o.status)).toEqual(["fulfilled", "rejected", "fulfilled"]);
+  });
+});
