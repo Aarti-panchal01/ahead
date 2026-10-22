@@ -12,7 +12,8 @@ import { compositeFeature } from "./composite";
 import { integrityCheck, type IntegrityOptions } from "./integrity";
 import type { Landmarks } from "./landmarks";
 import { channelsOf, resizeMask, type RawImage } from "./raw";
-import { hairMaskFromCategories, sampleColours } from "./sample";
+import { applyBrows } from "./brows";
+import { coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
 
 /** Must equal the exact version of @mediapipe/tasks-vision in package.json (a test checks this). */
 export const MEDIAPIPE_VERSION = "1.0.1";
@@ -153,18 +154,20 @@ export interface FaceRead {
   hairMask: Uint8Array;
 }
 
-async function hairMaskOf(segmenter: ImageSegmenter, data: ImageData): Promise<Uint8Array> {
+/** selfie-multiclass category mask at the image size. */
+function categoriesOf(segmenter: ImageSegmenter, data: ImageData): Uint8Array {
   const seg = segmenter.segment(data);
   try {
     const cm = seg.categoryMask;
     if (!cm) throw new Error("The segmenter returned no category mask");
     const raw = cm.getAsUint8Array();
-    const cats = cm.width === data.width && cm.height === data.height ? Uint8Array.from(raw) : resizeMask(raw, cm.width, cm.height, data.width, data.height);
-    return hairMaskFromCategories(cats);
+    return cm.width === data.width && cm.height === data.height ? Uint8Array.from(raw) : resizeMask(raw, cm.width, cm.height, data.width, data.height);
   } finally {
     seg.close();
   }
 }
+
+const hairMaskOf = (segmenter: ImageSegmenter, data: ImageData) => hairMaskFromCategories(categoriesOf(segmenter, data));
 
 /** Landmarks + hair mask for a photo. Read the user's photo once and pass the result to the calls below. */
 export async function readFace(src: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<FaceRead> {
@@ -172,7 +175,7 @@ export async function readFace(src: ImageSource | FaceRead, paths: AssetPaths = 
   const image = await loadPixels(src);
   const { landmarker, segmenter } = await getModels(paths);
   const data = toImageData(image);
-  const hairMask = await hairMaskOf(segmenter, data);
+  const hairMask = hairMaskOf(segmenter, data);
   const face = landmarker.detect(data).faceLandmarks[0];
   const landmarks = face && face.length ? face.map((p) => [p.x, p.y, p.z]) : null;
   return { image, landmarks, hairMask };
@@ -190,7 +193,7 @@ export async function checkRender(
   const o = await readFace(original, options);
   const r = await loadPixels(result);
   const { segmenter } = await getModels(options);
-  const resultHair = await hairMaskOf(segmenter, toImageData(r));
+  const resultHair = hairMaskOf(segmenter, toImageData(r));
   const rep = integrityCheck(o.image, r, o.landmarks, { threshold: options.threshold, hairMasks: { original: o.hairMask, result: resultHair } });
   const { correctedImage, ...rest } = rep;
   return correctedImage ? { ...rest, correctedImage: await toDataUrl(correctedImage) } : rest;
@@ -202,6 +205,24 @@ export async function compositeFeatureInBrowser(original: ImageSource | FaceRead
   if (!o.landmarks) throw new Error("We could not find a face in your photo. Try a brighter, front-facing photo.");
   const r = await loadPixels(result);
   return toDataUrl(compositeFeature(o.image, r, feature, o.landmarks));
+}
+
+/**
+ * Brows on a wig or wrap render (on by default when the user's hair is gone). `render` is a hair-transfer result made
+ * from the bald photo; `brows` is the user's brows photo (the compositeFeatureInBrowser result on that bald photo).
+ * Pass the brows photo's FaceRead to read it once for every render. Hair or a wrap over a brow is never painted over.
+ * Returns a data URL at the render's size.
+ */
+export async function applyBrowsInBrowser(render: ImageSource, brows: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<string> {
+  const b = await readFace(brows, paths);
+  if (!b.landmarks) throw new Error("We could not find a face in the brows photo. Try the brows step again.");
+  const r = await loadPixels(render);
+  const { landmarker, segmenter } = await getModels(paths);
+  const data = toImageData(r);
+  const face = landmarker.detect(data).faceLandmarks[0];
+  if (!face || !face.length) throw new Error("We could not find a face in this try-on, so the brows were not added.");
+  const cover = coverMaskFromCategories(categoriesOf(segmenter, data));
+  return toDataUrl(applyBrows(r, b.image, face.map((p) => [p.x, p.y, p.z]), b.landmarks, cover));
 }
 
 /** Hair and brow colour from the user's own photo (0 units). */

@@ -50,12 +50,14 @@ export {
   type IntegrityCoreReport,
   type IntegrityOptions,
 } from "./integrity";
-export { compositeFeature, compositeFeatureDetailed, type FeatureComposite } from "./composite";
-export { HAIR_CLASS, browDefault, hairMaskFromCategories, sampleColours } from "./sample";
+export { BROW_COMPOSITE, compositeFeature, compositeFeatureDetailed, type FeatureComposite } from "./composite";
+export { HAIR_CLASS, SKIN_CLASSES, browDefault, coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
+export { BROW_APPLY, EYE_LEFT, EYE_RIGHT, applyBrows, applyBrowsDetailed, fitSimilarity, type BrowsApplied, type Similarity } from "./brows";
 export {
   MEDIAPIPE_VERSION,
   MEDIAPIPE_WASM_BASE,
   MODEL_BASE,
+  applyBrowsInBrowser,
   checkRender,
   closeModels,
   compositeFeatureInBrowser,

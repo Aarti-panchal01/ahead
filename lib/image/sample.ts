@@ -23,6 +23,16 @@ export const SAMPLING = {
 /** Category-mask class for hair (selfie_multiclass_256x256). */
 export const HAIR_CLASS = 1;
 
+/** Skin classes of selfie_multiclass_256x256 (2 body skin, 3 face skin); 0 background, 1 hair, 4 clothes, 5 others. */
+export const SKIN_CLASSES: readonly number[] = [2, 3];
+
+/** A 0/1 mask of everything that is not skin (hair, a wrap or hat, glasses, background): what applyBrows never touches. */
+export function coverMaskFromCategories(category: Uint8Array): Uint8Array {
+  const out = new Uint8Array(category.length);
+  for (let i = 0; i < category.length; i++) out[i] = category[i] === 2 || category[i] === 3 ? 0 : 1;
+  return out;
+}
+
 /** A 0/1 hair mask from a selfie-multiclass category mask. */
 export function hairMaskFromCategories(category: Uint8Array): Uint8Array {
   const out = new Uint8Array(category.length);

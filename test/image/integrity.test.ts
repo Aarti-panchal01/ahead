@@ -1,39 +1,15 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { INTEGRITY_THRESHOLD, PLAIN, hairShadedRegions, integrityCheck, measureSkin, restoreInnerFace } from "@/lib/image/integrity";
 import { hairMaskFromCategories } from "@/lib/image/sample";
-import { deltaE2000, rgbToLab } from "@/lib/image/colour";
 import { resize, type RawImage } from "@/lib/image/raw";
 import type { Landmarks } from "@/lib/image/landmarks";
-import { loadCategories, loadImage, loadLandmarks } from "./helpers";
+import { loadCategories, loadImage, loadLandmarks, seamScore as seamScoreOf } from "./helpers";
 
 const hair = async (name: string) => hairMaskFromCategories((await loadCategories(name)).data);
 const maxDE = (rs: { deltaE2000: number }[]) => Math.max(...rs.map((r) => r.deltaE2000));
 
-const lab = (im: RawImage, i: number) => rgbToLab(im.data[i * 3], im.data[i * 3 + 1], im.data[i * 3 + 2]);
-
-/**
- * Seam score over the paste's soft edge (0 < mask < 1): for each pair of neighbouring pixels, the colour step in the
- * corrected image minus the larger step in either source (render, original in the render frame). A positive value is
- * an edge the paste made that neither picture has, which is what a visible seam is. Returns the max and 99.9th pct.
- */
-function seamScore(corrected: RawImage, result: RawImage, original: RawImage, mask: Float32Array) {
-  const o = resize(original, result.width, result.height);
-  const W = result.width, H = result.height;
-  const vals: number[] = [];
-  for (let y = 0; y < H - 1; y++) {
-    for (let x = 0; x < W - 1; x++) {
-      const i = y * W + x;
-      if (!(mask[i] > 0 && mask[i] < 1)) continue;
-      for (const j of [i + 1, i + W]) {
-        const made = deltaE2000(lab(corrected, i), lab(corrected, j));
-        const had = Math.max(deltaE2000(lab(result, i), lab(result, j)), deltaE2000(lab(o, i), lab(o, j)));
-        vals.push(made - had);
-      }
-    }
-  }
-  vals.sort((a, b) => a - b);
-  return { max: vals[vals.length - 1], p999: vals[Math.floor(vals.length * 0.999)], n: vals.length };
-}
+const seamScore = (corrected: RawImage, result: RawImage, original: RawImage, mask: Float32Array) =>
+  seamScoreOf(corrected, [result, resize(original, result.width, result.height)], mask);
 
 describe("full look: brows (composited) then hair-transfer W01", () => {
   let src: RawImage, bald: RawImage, full: RawImage, lm: Landmarks;

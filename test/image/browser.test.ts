@@ -23,7 +23,7 @@ describe("browser adapter (Node side)", () => {
   });
 
   it("exports the names the UI uses", () => {
-    for (const name of ["deltaE2000", "accentFromHair", "contrastRatio", "integrityCheck", "measureSkin", "compositeFeature", "sampleColours", "browDefault"]) {
+    for (const name of ["deltaE2000", "accentFromHair", "contrastRatio", "integrityCheck", "measureSkin", "compositeFeature", "sampleColours", "browDefault", "applyBrows", "applyBrowsInBrowser", "coverMaskFromCategories"]) {
       expect(typeof (lab as Record<string, unknown>)[name]).toBe("function");
     }
   });
