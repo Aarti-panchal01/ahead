@@ -1,0 +1,8 @@
+[
+  {
+    "file": "test/agent/fixtures/llm-transcript.json",
+    "rule": "prevent_hair_loss",
+    "contains": "This wig will prevent hair loss worries.",
+    "reason": "Deliberate: the scripted model reply includes one medical sentence so the agent's claim linter (lintText) is exercised. The fixture text never reaches a user; test/agent checks it is dropped."
+  }
+]
