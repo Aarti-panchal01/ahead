@@ -7,9 +7,8 @@ import { findRecording, messageFor } from "@/lib/youcam";
 import { GET as pollRoute } from "@/app/api/tryon/[id]/route";
 import { POST as tryonRoute } from "@/app/api/tryon/route";
 import { POST as listingRoute } from "@/app/api/listing/route";
-import { POST as endRoute } from "@/app/api/session/end/route";
 import { GET as statusRoute } from "@/app/api/status/route";
-import { claimDaily, cacheGet, trackSession, cachePut } from "@/lib/youcam/safety";
+import { claimDaily } from "@/lib/youcam/safety";
 import { fakeYoucam, freshStore, jpeg } from "./helpers";
 
 const post = (body: unknown, headers: Record<string, string> = {}) =>
@@ -80,43 +79,54 @@ describe("GET /api/status", () => {
   });
 });
 
-describe("live mode serves labelled recordings when capped", () => {
+const selfieReq = async (itemId = "W08") => {
+  const form = new FormData();
+  form.set("itemId", itemId);
+  form.set("selfie", new File([new Uint8Array(await jpeg())], "me.jpg", { type: "image/jpeg" }));
+  return new Request("http://x/api/tryon", { method: "POST", body: form });
+};
+
+describe("live mode: demo faces never go live", () => {
   beforeEach(() => { vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k"); });
 
-  it("daily cap reached with a recording available", async () => {
+  it("demo face + recording: the recording, labelled, 0 units, fetch never called", async () => {
     const fy = fakeYoucam(300);
-    vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "0");
-    const r = await tryonRoute(post({ itemId: "W08", faceId: "P3B" }));
-    expect(await r.json()).toMatchObject({ id: "mock:rec__P3B__W08", mode: "mock", recording: true, reason: "daily_cap" });
-    expect(fy.creates()).toBe(0);
-  });
-  it("reserve reached with a recording available", async () => {
-    const fy = fakeYoucam(150);
     const j = await (await tryonRoute(post({ itemId: "W08", faceId: "P3B" }))).json();
-    expect(j).toMatchObject({ recording: true, reason: "reserve" });
-    expect(fy.creates()).toBe(0);
+    expect(j).toMatchObject({ id: "mock:rec__P3B__W08", mode: "mock", recording: true });
+    expect(fy.calls.length).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
   });
-  it("cap reached and no recording: plain message, not a fake render", async () => {
+  it("demo face without a recording: plain no_recording, fetch never called", async () => {
+    const fy = fakeYoucam(300);
+    const r = await tryonRoute(post({ itemId: "W08", faceId: "P2A" }));
+    expect(r.status).toBe(422);
+    expect(await r.json()).toMatchObject({ errorCode: "no_recording" });
+    expect(fy.calls.length).toBe(0);
+  });
+  it("sample people can auto-render every card with no calls, even with a huge cap", async () => {
+    vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "1000");
+    const fy = fakeYoucam(1000);
+    for (const item of ["W01", "W02", "W03", "W05"]) await tryonRoute(post({ itemId: item, faceId: "P1B" }));
+    expect(fy.calls.length).toBe(0);
+  });
+  it("an uploaded selfie goes live through the ledger", async () => {
+    const fy = fakeYoucam(300);
+    const j = await (await tryonRoute(await selfieReq())).json();
+    expect(j).toMatchObject({ id: "task1", mode: "live" });
+    expect(j.recording).toBeUndefined();
+    expect(fy.creates()).toBe(1);
+  });
+  it("selfie at the daily cap or the reserve: plain message, never a recording", async () => {
     fakeYoucam(300);
     vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "0");
-    const r = await tryonRoute(post({ itemId: "W08", faceId: "P2A" }));
+    const r = await tryonRoute(await selfieReq());
     expect(r.status).toBe(503);
     expect(await r.json()).toMatchObject({ errorCode: "daily_cap", message: expect.stringMatching(/paused for today/) });
-  });
-  it("an uploaded selfie never gets a recording", async () => {
-    fakeYoucam(300);
-    vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "0");
-    const form = new FormData();
-    form.set("itemId", "W08");
-    form.set("selfie", new File([new Uint8Array(await jpeg())], "me.jpg", { type: "image/jpeg" }));
-    const r = await tryonRoute(new Request("http://x/api/tryon", { method: "POST", body: form }));
-    expect(r.status).toBe(503);
-  });
-  it("live demo persona success goes through the ledger", async () => {
-    const fy = fakeYoucam(300);
-    const j = await (await tryonRoute(post({ itemId: "W08", faceId: "P3B" }))).json();
-    expect(j).toMatchObject({ id: "task1", mode: "live" });
-    expect(fy.creates()).toBe(1);
+    vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "20");
+    vi.unstubAllGlobals();
+    const fy = fakeYoucam(150);
+    expect((await (await tryonRoute(await selfieReq())).json()).errorCode).toBe("reserve");
+    expect(fy.creates()).toBe(0);
   });
   it("rejects a non-image selfie upload with a plain message", async () => {
     fakeYoucam(300);
@@ -149,7 +159,7 @@ describe("POST /api/listing", () => {
     vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k");
     const fy = fakeYoucam(300);
     const form = new FormData();
-    form.set("faceId", "P1B");
+    form.set("selfie", new File([new Uint8Array(await jpeg())], "me.jpg", { type: "image/jpeg" }));
     form.set("listing", new File([new Uint8Array(await jpeg())], "listing.jpg", { type: "image/jpeg" }));
     const r = await listingRoute(new Request("http://x/api/listing", { method: "POST", body: form }));
     const j = await r.json();
@@ -159,24 +169,22 @@ describe("POST /api/listing", () => {
     expect(t).toMatchObject({ status: "error", errorCode: "error_no_face", unitsCharged: 0 });
     expect(t.message).toContain("This photo has no one wearing the wig, so we can't preview it");
   });
+  it("live: a demo face never goes live, it gets the needs_live answer with no YouCam call", async () => {
+    vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k");
+    const fy = fakeYoucam(300);
+    const form = new FormData();
+    form.set("faceId", "P1B");
+    form.set("listing", new File([new Uint8Array(await jpeg())], "listing.jpg", { type: "image/jpeg" }));
+    const j = await (await listingRoute(new Request("http://x/api/listing", { method: "POST", body: form }))).json();
+    expect(j).toMatchObject({ status: "needs_live" });
+    expect(fy.calls.length).toBe(0);
+  });
   it("live: a link to a non-image or private host is refused before any YouCam call", async () => {
     vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k");
     const fy = fakeYoucam(300);
     const r = await listingRoute(post({ url: "https://10.0.0.1/a.jpg", faceId: "P1B" }));
     expect(r.status).toBe(422);
     expect(fy.calls.length).toBe(0);
-  });
-});
-
-describe("POST /api/session/end", () => {
-  it("forgets the session's tasks and cache entries, and says YouCam keeps files for 30 days", async () => {
-    await trackSession("session-abc123", "t1");
-    await cachePut("k1", "t1");
-    const j = await (await endRoute(post({}, { "x-ahead-session": "session-abc123" }))).json();
-    expect(j).toMatchObject({ ended: true, forgotten: 1, deletedAtYoucam: false });
-    expect(j.note).toMatch(/30 days/);
-    expect(await cacheGet("k1")).toBeNull();
-    expect((await endRoute(post({}))).status).toBe(400);
   });
 });
 

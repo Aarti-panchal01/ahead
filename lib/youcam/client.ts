@@ -89,3 +89,24 @@ export async function getTask(feature: Feature, taskId: string): Promise<TaskSta
   if (d.task_status === "error") return { status: "error", errorCode: d.error ?? "unknown_error" };
   return { status: "running" };
 }
+
+export type DeleteOutcome = "deleted" | "gone" | "not_finished" | "failed";
+
+/**
+ * Deletes a finished task and its files at YouCam (verified 22 Oct 2026, 0 units).
+ * POST /s2s/v2.0/task/delete { task_id }. Never throws. "gone" = YouCam no longer knows the task (InvalidTaskId).
+ * "not_finished" = OperationInvalid: the task is still running, try again later.
+ */
+export async function deleteTask(taskId: string): Promise<DeleteOutcome> {
+  try {
+    const r = await fetch(`${BASE}/s2s/v2.0/task/delete`, { method: "POST", headers: headers(), body: JSON.stringify({ task_id: taskId }) });
+    const j = (await r.json().catch(() => null)) as { status?: number; error?: string; error_code?: string } | null;
+    if (r.ok && (!j || j.status === undefined || j.status === 200) && !j?.error && !j?.error_code) return "deleted";
+    const code = String(j?.error_code ?? j?.error ?? "");
+    if (code === "InvalidTaskId") return "gone";
+    if (code === "OperationInvalid") return "not_finished";
+    return "failed";
+  } catch {
+    return "failed";
+  }
+}

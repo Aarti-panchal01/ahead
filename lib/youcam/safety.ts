@@ -126,3 +126,15 @@ export async function takeSession(sessionId: string): Promise<string[]> {
   await s.del(k);
   return ids;
 }
+
+/** Put task ids back on a session (running tasks that could not be deleted yet, so a second end can finish the job). */
+export async function restoreSession(sessionId: string, taskIds: string[]) {
+  if (!taskIds.length) return;
+  await getStore().set(`sess:${sessionId}`, JSON.stringify(taskIds.slice(-50)), DAY_S);
+}
+
+// ---------- tasks whose session already ended (delete at YouCam as soon as their result has been read) ----------
+const endedKey = (taskId: string) => `ended:${taskId}`;
+export async function markEnded(taskId: string) { await getStore().set(endedKey(taskId), "1", 2 * DAY_S); }
+export async function isEnded(taskId: string): Promise<boolean> { return (await getStore().get(endedKey(taskId))) !== null; }
+export async function clearEnded(taskId: string) { await getStore().del(endedKey(taskId)); }
