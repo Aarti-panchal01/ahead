@@ -11,6 +11,6 @@ Steps (mark [x] when done):
 - [x] A6 shadow note wording (ui); A5 UI wording + no bug/bias test (ui)
 - [x] Merge A: 496 tests, lint/typecheck/build green, pushed
 - [x] B preview https://try-ahead-kvznucayp-aarti-panchals-projects.vercel.app : 41/41 sample cards = her recording; plan wig-ready on treatment day (Groq answered); 16 screenshots in docs/screenshots/final/ (local mock build; preview is login-protected). Note: on this laptop CPU the per-card checks finish in ~60 s (sequential queue, plain + brows re-check); on GPU ~1 s each.
-- [~] C docs merged (3283c08, pushed green); qa running
+- [x] C docs + qa merged: 505 unit tests, 16 e2e (mobile + desktop), axe no serious/critical, claim linter 0 hits, CI + uptime workflows
 - [~] D Lighthouse before: landing perf 80 (LCP 5.0 s), results perf 36 (TBT 26 s, TTI 29 s, console errors, CLS culprits); a11y 100 both. Fixing: lab -> Web Worker + silence MediaPipe logs; ui -> lazy checks, 640px images, sizes. Then merge, preview, FEATURE FREEZE
 - [ ] Morning report docs/MORNING-REPORT.md
