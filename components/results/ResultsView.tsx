@@ -26,7 +26,11 @@ type Tab = "wigs" | "wraps";
 
 function hairLine(photo: ChosenPhoto, stage: HairLossStage, hair?: string): string {
   if (!hair) return "With no hair to read in the photo, here is a spread of colours. An older photo of your hair, or a saved lock, will help your stylist match it.";
-  if (photo.kind === "sample" && stage === "gone") return "Matched to the hair colour in this person's photo from before.";
+  if (photo.kind === "sample") {
+    return stage === "gone"
+      ? "Matched to the hair colour in this person's photo from before."
+      : "Matched to this person's hair colour, read from the photo.";
+  }
   return "Matched to your hair colour, read from your photo. Photos read colour approximately, so bring a lock of your hair to your stylist.";
 }
 
@@ -132,7 +136,7 @@ export default function ResultsView() {
       <section className={styles.header}>
         <div className={styles.headerPhoto}><YourPhoto photo={photo} stage={stage} /></div>
         <div className="stack">
-          <h2>{sample ? `Matches for ${sample.label.toLowerCase()}` : "Your matches"}</h2>
+          <h2>{sample ? `${sample.label}: matches` : "Your matches"}</h2>
           <p className={styles.swatchRow}>
             {hair && <span className={styles.swatch} aria-hidden="true" />}
             <span className="note">{hairLine(photo, stage, hair)}</span>

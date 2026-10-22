@@ -35,8 +35,8 @@ export default function Landing() {
       </div>
 
       <p className="note">
-        Clinical advice is to choose a wig before hair loss and to photograph your current style (MedlinePlus; Oncolink;
-        American Cancer Society). The people shown here are AI-generated sample people.
+        MedlinePlus, Oncolink and the American Cancer Society suggest choosing a wig before hair loss and photographing
+        your current style. The people shown here are AI-generated sample people.
       </p>
     </main>
   );

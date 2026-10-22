@@ -116,9 +116,12 @@ export default function Capture() {
             <>
               <div className={styles.viewer} data-live={cam === "live"}>
                 {cam === "off" ? (
-                  <ul className={styles.guide} aria-label="For a good photo">
-                    {GUIDANCE.map((g) => <li key={g}>{g}</li>)}
-                  </ul>
+                  <>
+                    <div className={styles.ovalIdle} aria-hidden="true" />
+                    <ul className={styles.guide} aria-label="For a good photo">
+                      {GUIDANCE.map((g) => <li key={g}>{g}</li>)}
+                    </ul>
+                  </>
                 ) : (
                   <>
                     <video ref={videoRef} className={styles.video} playsInline muted aria-label="Camera preview" />
@@ -158,7 +161,7 @@ export default function Capture() {
         <ul className={styles.samples}>
           {SAMPLE_PEOPLE.map((p) => (
             <li key={p.id}>
-              <button type="button" className={styles.sample} onClick={() => pickSample(p.id)}>
+              <button type="button" className={styles.sample} onClick={() => pickSample(p.id)} aria-label={`Choose ${p.label}, ${p.description} (AI-generated)`}>
                 <AiImage src={beforeImage(p.id)} alt={`${p.label}, ${p.description}`} width={821} height={1024} />
                 <span className={styles.sampleName}>{p.label}</span>
               </button>

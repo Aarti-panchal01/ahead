@@ -36,7 +36,18 @@
   border-radius: 50%;
 }
 
+.ovalIdle {
+  position: absolute;
+  left: 32%;
+  right: 32%;
+  top: 7%;
+  height: 34%;
+  border: 2px dashed var(--line);
+  border-radius: 50%;
+}
+
 .guide {
+  position: relative;
   list-style: none;
   margin: 0;
   padding: 20px;

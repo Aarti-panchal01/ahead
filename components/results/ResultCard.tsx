@@ -74,7 +74,9 @@ export default function ResultCard(props: Props) {
     <article className={styles.card} data-selected={selected} aria-labelledby={`n-${item.id}`}>
       <RenderImage {...props} />
       <div className={styles.body}>
-        <p className={ranked.reason === "something_new" ? styles.chipNew : styles.chip}>{REASON[ranked.reason]}</p>
+        {item.kind === "wig" && (
+          <p className={ranked.reason === "something_new" ? styles.chipNew : styles.chip}>{REASON[ranked.reason]}</p>
+        )}
         <h3 id={`n-${item.id}`}>{item.name}</h3>
         {errored && (
           <div className="notice" role="alert">
