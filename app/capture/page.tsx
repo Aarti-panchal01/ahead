@@ -5,8 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import AiImage from "@/components/AiImage";
 import { useSession } from "@/components/SessionProvider";
-import { MOCK_PHOTO_NOTE } from "@/lib/client/copy";
-import { fetchMode } from "@/lib/client/mode";
+import { demoNote, fetchMode } from "@/lib/client/mode";
 import { SAMPLE_PEOPLE, beforeImage, type SampleId } from "@/lib/client/personas";
 import { photoFromFile, photoFromVideo, type LocalPhoto } from "@/lib/client/photo";
 import styles from "./capture.module.css";
@@ -23,10 +22,11 @@ export default function Capture() {
   const [cam, setCam] = useState<CamState>("off");
   const [shot, setShot] = useState<LocalPhoto>();
   const [error, setError] = useState<string>();
-  const [mock, setMock] = useState(true);
+  // Shown only when own photos can't get live try-ons right now (mock mode, daily cap or reserve), with the reason.
+  const [note, setNote] = useState<string>();
 
   useEffect(() => {
-    fetchMode().then((s) => setMock(s.mode === "mock"));
+    fetchMode().then((s) => setNote(demoNote(s)));
   }, []);
 
   const stopCamera = () => {
@@ -106,7 +106,7 @@ export default function Capture() {
             <>
               {/* eslint-disable-next-line @next/next/no-img-element -- in-memory object URL */}
               <img src={shot.url} alt="Your photo" className={styles.hero} />
-              {mock && <p className="notice">{MOCK_PHOTO_NOTE}</p>}
+              {note && <p className="notice">{note}</p>}
               <div className="btn-row">
                 <button type="button" className="btn btn-primary" onClick={useShot}>Use this photo</button>
                 <button type="button" className="btn btn-quiet" onClick={retake}>Take it again</button>
@@ -131,7 +131,7 @@ export default function Capture() {
               </div>
               {cam === "live" && <p className="note">{GUIDANCE.join(" ")}</p>}
               {error && <p className="notice" role="alert">{error}</p>}
-              {mock && cam === "off" && <p className="note">{MOCK_PHOTO_NOTE}</p>}
+              {note && cam === "off" && <p className="note">{note}</p>}
               <div className="btn-row">
                 {cam === "live" ? (
                   <button type="button" className="btn btn-primary" onClick={takePhoto}>Take the photo</button>

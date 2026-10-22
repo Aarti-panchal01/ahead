@@ -16,3 +16,5 @@
 }
 
 .panel:last-child .caption { color: var(--ink); font-weight: 700; }
+
+.headline { text-wrap: balance; }

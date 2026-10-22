@@ -1,5 +1,6 @@
 "use client";
 // Two results side by side.
+import type { CardView } from "@/lib/client/brows";
 import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
 import type { RenderState } from "@/lib/client/renderState";
 import type { RankedItem } from "@/lib/types";
@@ -10,23 +11,23 @@ import styles from "./results.module.css";
 interface Props {
   pair: [RankedItem, RankedItem];
   states: Record<string, RenderState>;
+  views: Record<string, CardView>;
   subject: Subject;
-  canRender: boolean;
   onClose: () => void;
 }
 
-export default function CompareView({ pair, states, subject, canRender, onClose }: Props) {
+export default function CompareView({ pair, states, views, subject, onClose }: Props) {
   return (
     <section className="stack" aria-labelledby="compare-h">
       <h2 id="compare-h">Side by side</h2>
       <div className={styles.compare}>
         {pair.map((r) => {
-          const s = states[r.item.id];
+          const v = views[r.item.id];
           return (
             <div key={r.item.id} className={styles.compareCol}>
-              <RenderImage ranked={r} state={s} subject={subject} canRender={canRender} />
+              <RenderImage ranked={r} state={states[r.item.id]} view={v} subject={subject} />
               <h3 className={styles.compareName}>{r.item.name}</h3>
-              {canRender && s.phase === "done" && <IntegrityLine report={s.report} />}
+              {!v.checking && v.report && <IntegrityLine report={v.report} whose={subject.isSample ? "her" : "your"} />}
             </div>
           );
         })}

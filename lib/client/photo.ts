@@ -39,3 +39,24 @@ export async function photoFromVideo(video: HTMLVideoElement): Promise<LocalPhot
   const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("no blob"))), "image/jpeg", 0.92));
   return photoFromSource(canvas, blob);
 }
+
+/** Vercel rejects request bodies over 4.5 MB; a 1024 px JPEG is well under 1 MB. */
+export const UPLOAD_LONG_SIDE = 1024;
+
+/** The user's photo, made ready to send for a live try-on: long side at most 1024 px, JPEG. Browser only. */
+export async function downscaleForUpload(src: Blob | string, longSide = UPLOAD_LONG_SIDE, quality = 0.9): Promise<Blob> {
+  const blob = typeof src === "string" ? await fetch(src).then((r) => r.blob()) : src;
+  const bmp = await createImageBitmap(blob, { imageOrientation: "from-image" });
+  try {
+    const scale = Math.min(1, longSide / Math.max(bmp.width, bmp.height));
+    const w = Math.round(bmp.width * scale), h = Math.round(bmp.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w; canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no canvas");
+    ctx.drawImage(bmp, 0, 0, w, h);
+    return await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("no blob"))), "image/jpeg", quality));
+  } finally {
+    bmp.close();
+  }
+}
