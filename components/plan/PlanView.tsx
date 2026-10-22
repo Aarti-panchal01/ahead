@@ -64,7 +64,7 @@ function ApprovalStep({ itemId, units, photo, isSample }: { itemId: string; unit
             // eslint-disable-next-line @next/next/no-img-element -- render of the user's own photo
             <img src={a.src} alt={`You wearing the ${item.name.toLowerCase()}`} className={styles.render} />
           )}
-          <IntegrityLine report={a.report} />
+          <IntegrityLine report={a.report} whose={isSample ? "her" : "your"} />
           <p className="note">{PREVIEW_DISCLAIMER}</p>
         </div>
       )}

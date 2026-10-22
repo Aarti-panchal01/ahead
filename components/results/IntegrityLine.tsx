@@ -17,8 +17,13 @@ export function skippedClause(skipped: IntegrityRegion[] | undefined): string {
   return `${list[0].toUpperCase()}${list.slice(1)} ${plural ? "are" : "is"} in the shadow of the new hair, so we left ${plural ? "them" : "it"} out of the check.`;
 }
 
+/** The lab words its results for the user ("your skin"); on a sample person's photo we say "her skin". */
+export function forWhom(text: string, whose: "her" | "your"): string {
+  return whose === "her" ? text.replace(/\byour\b/g, "her").replace(/\bYour\b/g, "Her") : text;
+}
+
 /** The check result every card shows (CLAUDE.md, Core rule). Green when unchanged or corrected, amber when it failed. */
-export default function IntegrityLine({ report }: { report: IntegrityReport }) {
+export default function IntegrityLine({ report, whose = "your" }: { report: IntegrityReport; whose?: "her" | "your" }) {
   const tone = report.status === "failed" ? styles.warn : styles.ok;
   const clause = skippedClause(report.skippedRegions);
   // The lab may already say it in plainText; don't say it twice.
@@ -27,7 +32,7 @@ export default function IntegrityLine({ report }: { report: IntegrityReport }) {
     <div className={`${styles.integrity} ${tone}`}>
       <span className={styles.integrityDot} aria-hidden="true" />
       <p className={styles.integrityText}>
-        {report.plainText}
+        {forWhom(report.plainText, whose)}
         {clause && !already && <span className={styles.integrityMore}>{clause}</span>}
       </p>
     </div>

@@ -109,7 +109,7 @@ export default function ResultCard(props: Props) {
         )}
         {view.browsNote && <p className="note" role="status">{view.browsNote}</p>}
         {view.checking && <p className="note" role="status">Checking {whose === "her" ? "her" : "your"} skin tone</p>}
-        {!view.checking && view.report && <IntegrityLine report={view.report} />}
+        {!view.checking && view.report && <IntegrityLine report={view.report} whose={whose} />}
         <p className="note">{PREVIEW_DISCLAIMER}</p>
         {match && matchOpen && match}
         <div className={styles.cardActions}>

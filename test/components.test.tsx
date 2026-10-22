@@ -4,7 +4,7 @@ import { createElement as h } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import ResultCard from "@/components/results/ResultCard";
-import IntegrityLine, { skippedClause } from "@/components/results/IntegrityLine";
+import IntegrityLine, { forWhom, skippedClause } from "@/components/results/IntegrityLine";
 import Landing from "@/app/page";
 import { CATALOGUE } from "@/lib/catalogue";
 import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
@@ -109,6 +109,13 @@ describe("IntegrityLine", () => {
   it("says in plain words when a region was left out", () => {
     const html = renderToStaticMarkup(h(IntegrityLine, { report: { status: "unchanged", regions: [], plainText: "Skin tone check: unchanged", skippedRegions: ["cheek_left"] } }));
     expect(html).toContain("One cheek is in the shadow of the new hair, so we left it out of the check.");
+  });
+});
+
+describe("forWhom", () => {
+  it("says her skin on a sample person, your skin on your photo", () => {
+    expect(forWhom("Corrected: the try-on lightened your skin slightly, restored", "her")).toBe("Corrected: the try-on lightened her skin slightly, restored");
+    expect(forWhom("Corrected: the try-on lightened your skin slightly, restored", "your")).toContain("your skin");
   });
 });
 

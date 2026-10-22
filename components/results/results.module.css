@@ -60,7 +60,7 @@
 .body { padding: 16px; }
 .body > * + * { margin-top: 10px; }
 
-.chip, .chipNew {
+.chip, .chipNew, .chipNeutral {
   display: inline-block;
   padding: 2px 10px;
   border-radius: 999px;

@@ -27,7 +27,7 @@ export default function CompareView({ pair, states, views, subject, onClose }: P
             <div key={r.item.id} className={styles.compareCol}>
               <RenderImage ranked={r} state={states[r.item.id]} view={v} subject={subject} />
               <h3 className={styles.compareName}>{r.item.name}</h3>
-              {!v.checking && v.report && <IntegrityLine report={v.report} />}
+              {!v.checking && v.report && <IntegrityLine report={v.report} whose={subject.isSample ? "her" : "your"} />}
             </div>
           );
         })}
