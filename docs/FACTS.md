@@ -117,7 +117,7 @@ One line per user-visible claim: the file(s) that implement it, then the test(s)
 
 | Claim | Implemented in | Proven by |
 |---|---|---|
-| The planner tries Groq, then Gemini (6 s each), then a rule-based plan, and says which one answered | `lib/agent/agent.ts` (`runPlan`), `lib/agent/providers.ts` | `test/agent/agent.test.ts` ("providers", "Gemini -> Groq -> rule-based", "both fail -> rule-based plan"). Order and timeout are being changed in wave 3; the ledger line is to be re-checked against the merged code (see "Known limits") |
+| The planner tries Groq, then Gemini (only if Groq errors, times out or is rate limited), 6 s each (`LLM_TIMEOUT_MS = 6_000`), then a rule-based plan, and says which one answered | `lib/agent/agent.ts` (`runPlan`, `LLM_TIMEOUT_MS`), `lib/agent/providers.ts` (`plannerModels`) | `test/agent/agent.test.ts` ("Groq first, then Gemini", "Groq answers ... Gemini not called", "Groq rate limited (429) -> Gemini answers", "Groq times out at the real 6 s -> Gemini answers", "both fail -> rule-based plan"), `test/agent/log.test.ts` |
 | The calendar is computed locally, deterministically; "Have your wig or wrap ready" falls on the first treatment day; order-by is 7 days before | `lib/agent/timeline.ts` | `test/agent/timeline.test.ts` ("ready falls ON day 0 and the order-by date is 7 days before it", "owner example") |
 | The 1 to 3 week hair-loss window and the unopened-return note come from the FACTS list, not from a model | `lib/agent/timeline.ts` (`WINDOW_START_DAY`, `WINDOW_END_DAY`, `RETURNS_NOTE`) | `test/agent/timeline.test.ts` |
 | A claim linter blocks medical wording in all agent text | `lib/agent/claims.ts` (`CLAIM_RULES`, `lintText`), `lib/agent/agent.ts` (`runPlan`) | `test/agent/claims.test.ts`, `test/agent/timeline.test.ts` ("passes the claim linter"), `test/api-clients.test.ts` ("no medical wording in the local plan") |
@@ -127,11 +127,14 @@ One line per user-visible claim: the file(s) that implement it, then the test(s)
 | A sample person's try-ons are free saved recordings and need no approval | `lib/agent/agent.ts` (`isSamplePerson`), `lib/agent/tryon.ts` | `test/agent/approve.test.ts` ("demo face (free recording)"), `test/agent/agent.test.ts` ("sample person on the LLM path") |
 | The plan route needs a session and never runs a paid step | `app/api/agent/plan/route.ts` | `test/agent/agent.test.ts` ("POST /api/agent/plan") |
 
-### Pending in wave 3 (not in this branch's code yet)
+### Tester code
 
-| Claim | Where it will live | Proof expected |
+| Claim | Implemented in | Proven by |
 |---|---|---|
-| Live try-on on your own photo needs a tester code | `lib/youcam/tester.ts` (platform agent); `UnitStatus.testerRequired` already exists in `lib/types.ts` | platform tests |
+| Live try-on on an uploaded photo needs a tester code when `TESTER_CODE` is set; sample people and recordings never need it; compared in constant time; the code is never logged or returned | `lib/youcam/tester.ts` (`testerGate`, `codeMatches`, `testerRequired`), `app/api/tryon/route.ts`, `app/api/listing/route.ts` | `test/platform/tester.test.ts` ("tester code gate on live selfie try-on", "status testerRequired and code matching") |
+| Code check endpoint, rate limited per IP (10 tries an hour by default) | `app/api/tester/route.ts` | `test/platform/tester.test.ts` ("POST /api/tester") |
+| The page asks for the code only when the server says it is needed, keeps it for this visit only (sessionStorage), and says plainly when it is wrong | `lib/client/tester.ts`, `components/results/TesterCode.tsx`, `components/results/ResultsView.tsx`, `components/plan/PlanView.tsx` | `test/tester.test.ts` ("tester code") |
+| UI copy never calls the skin smoothing a bug, bias or flaw | `lib/client/copy.ts` and the screens that use it | `test/tester.test.ts` ("owner's wording") |
 
 ## 4. Known limits (stated plainly, not hidden)
 
@@ -139,5 +142,4 @@ One line per user-visible claim: the file(s) that implement it, then the test(s)
 - **Lashes** are built and tested in the compositor (`lib/image/composite.ts`) but the UI does not offer them yet.
 - **Skin-tone analysis** (20 units) is measured (row 9) but not called by the app; hair and brow colour are read in the browser (`lib/image/sample.ts`).
 - **No dedicated tests** for: consent before the camera, in-memory photo handling, and the stage question. They are covered only by the code paths listed.
-- **Planner order and timeout**: the ledger line above is checked against the code merged into `master`; at the time of writing, `lib/agent/providers.ts` on this branch still lists Gemini first with a 25 s timeout, and the consult agent is changing it to Groq first, 6 s each.
 - **The honesty page test** (`test/markdown.test.ts`) asserts at least 18 truth-table rows and checks the first 18 row numbers; rows 19 to 23 are rendered by the same code but not asserted individually.
