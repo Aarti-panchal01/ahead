@@ -245,7 +245,7 @@ describe("GET /api/status never throws", () => {
     setStore(brokenStore());
     const r = await statusRoute();
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ mode: "live", servingRecordings: true, reason: "unavailable" });
+    expect(await r.json()).toEqual({ mode: "live", servingRecordings: true, reason: "unavailable", testerRequired: false });
   });
   it("mock mode is unaffected by a broken store", async () => {
     setStore(brokenStore());

@@ -183,3 +183,14 @@
   background: var(--surface); color: var(--ink); font: inherit; font-size: 1rem; resize: vertical;
 }
 .field textarea:focus-visible { border-color: var(--ink); }
+
+/* Tester code: quiet, one line of text, a field and a button. */
+.tester > * + * { margin-top: 8px; }
+.testerRow { display: flex; gap: 8px; }
+.testerRow input {
+  flex: 1; min-width: 0; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
+  border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit;
+}
+.testerRow input:focus-visible { border-color: var(--ink); }
+.testerRow .btn { width: auto; flex: none; }
+.testerError { color: var(--warning); font-weight: 700; font-size: 0.95rem; }

@@ -63,12 +63,12 @@ describe("personas in mock mode", () => {
 
 describe("GET /api/status", () => {
   it("mock mode", async () => {
-    expect(await (await statusRoute()).json()).toEqual({ mode: "mock", servingRecordings: false });
+    expect(await (await statusRoute()).json()).toEqual({ mode: "mock", servingRecordings: false, testerRequired: false });
   });
   it("live mode reports remaining units and flips to recordings at the cap", async () => {
     vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k");
     fakeYoucam(300);
-    expect(await (await statusRoute()).json()).toEqual({ mode: "live", servingRecordings: false, remainingToday: 20 });
+    expect(await (await statusRoute()).json()).toEqual({ mode: "live", servingRecordings: false, remainingToday: 20, testerRequired: false });
     for (let i = 0; i < 10; i++) await claimDaily(2);
     expect(await (await statusRoute()).json()).toMatchObject({ servingRecordings: true, remainingToday: 0, reason: "daily_cap" });
   });

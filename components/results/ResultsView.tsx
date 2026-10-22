@@ -22,6 +22,7 @@ import { downscaleForUpload } from "@/lib/client/photo";
 import { IDLE, nextRender, type RenderEvent, type RenderState } from "@/lib/client/renderState";
 import { parseStage } from "@/lib/client/routes";
 import { endSession, resetSessionId, sessionHeaders } from "@/lib/client/session";
+import { forgetCode, needsTesterCode, storedCode, testerHeaders, type StatusWithTester } from "@/lib/client/tester";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import { matchLabel, rankCatalogue } from "@/lib/rank";
 import type { HairLossStage, RankedItem, UnitStatus } from "@/lib/types";
@@ -29,6 +30,7 @@ import BriefMaker from "./BriefMaker";
 import CompareView from "./CompareView";
 import MatchCard from "./MatchCard";
 import ResultCard, { type Subject } from "./ResultCard";
+import TesterCode from "./TesterCode";
 import styles from "./results.module.css";
 
 type Tab = "wigs" | "wraps";
@@ -64,6 +66,10 @@ export default function ResultsView() {
   }, [urlPerson, urlStage, session.photo, session.stage, setPhoto, setStage]);
 
   const [status, setStatus] = useState<UnitStatus>();
+  const [hasCode, setHasCode] = useState(false);
+  useEffect(() => {
+    setHasCode(Boolean(storedCode()));
+  }, []);
   useEffect(() => {
     fetchMode().then(setStatus);
   }, []);
@@ -98,7 +104,10 @@ export default function ResultsView() {
     [hair, sample],
   );
   const whose: Whose = sample ? "her" : "your";
-  const ownLive = photo?.kind === "own" && status !== undefined && ownPhotoCanRender(status);
+  // Production may ask for a tester code before live try-ons on your own photo (lib/client/tester.ts).
+  const liveAllowed = photo?.kind === "own" && status !== undefined && ownPhotoCanRender(status);
+  const needCode = liveAllowed && needsTesterCode(status as StatusWithTester) && !hasCode;
+  const ownLive = liveAllowed && !needCode;
   const canRender = photo?.kind === "sample" || ownLive;
   const withBrows = Boolean(photo && browsAvailable(photo.kind, stage));
   const faceKey = photo ? (photo.kind === "sample" ? tryOnFace(photo.id) : photo.url) : "";
@@ -130,7 +139,14 @@ export default function ResultsView() {
         dispatch(key, { type: "result", result: { id: "", status: "error", errorCode: "no_photo", message: "We couldn't prepare your photo. Take it again, or try another one." } });
         return;
       }
-      const raw = await runTryOn(r.item.id, face, { headers: sessionHeaders(), onRunning: (ms) => dispatch(key, { type: "tick", elapsedMs: ms }) });
+      const headers = { ...sessionHeaders(), ...(photo.kind === "own" ? testerHeaders() : {}) };
+      const raw = await runTryOn(r.item.id, face, { headers, onRunning: (ms) => dispatch(key, { type: "tick", elapsedMs: ms }) });
+      if (raw.errorCode === "tester_code") {
+        // The stored code stopped working: ask again, and let this card start over once a new code is in.
+        forgetCode();
+        started.current.delete(key);
+        if (alive.current) setHasCode(false);
+      }
       const src = renderSrc(raw);
       const result = src ? { ...raw, resultUrl: src } : raw;
       dispatch(key, { type: "result", result });
@@ -236,6 +252,7 @@ export default function ResultsView() {
           <Link href="/capture#samples" className="btn btn-quiet">Try with a sample person</Link>
         </div>
       )}
+      {needCode && <TesterCode onAccepted={() => setHasCode(true)} />}
       {ownLive && (
         <p className="note">
           Your closest match is going on your photo now. To see any other one on you, tap &ldquo;Show me in this one&rdquo;.

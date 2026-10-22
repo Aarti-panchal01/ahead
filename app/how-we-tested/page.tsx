@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE } from "@/lib/client/copy";
+import { DELETION_LINE, PLANNER_PRIVACY_LINE, PLANNER_UNITS_LINE, SMOOTHING_LINE } from "@/lib/client/copy";
 import { parseInline, parseMarkdown, type Block } from "@/lib/client/markdown";
 import styles from "./honesty.module.css";
 
@@ -70,6 +70,7 @@ export default function HowWeTested() {
           Before building Ahead we tested the YouCam API ourselves on AI-generated faces and wigs. This is what it
           actually did, including what failed and what we changed because of it.
         </p>
+        <p>{SMOOTHING_LINE}</p>
         <p className="notice">{DELETION_LINE}</p>
         <p>{PLANNER_PRIVACY_LINE}</p>
         <p>{PLANNER_UNITS_LINE}</p>

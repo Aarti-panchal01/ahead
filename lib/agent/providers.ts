@@ -1,4 +1,5 @@
-// Language models for the consult agent, tried in order: Gemini, then Groq, then the rule-based planner.
+// Language models for the consult agent, tried in order: Groq first, then Gemini (only if Groq errors, times out
+// or is rate limited), then the rule-based planner. 6 s each (LLM_TIMEOUT_MS in agent.ts).
 // Keys are server-side env vars only. A provider without a key is skipped.
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
@@ -31,6 +32,7 @@ export interface PlannerModel {
 
 export function plannerModels(env: Record<string, string | undefined> = process.env): PlannerModel[] {
   const out: PlannerModel[] = [];
+  if (env.GROQ_API_KEY) out.push({ name: "Groq", model: createGroq({ apiKey: env.GROQ_API_KEY })(GROQ_MODEL_ID) });
   if (env.GOOGLE_GENERATIVE_AI_API_KEY) {
     out.push({
       name: "Gemini",
@@ -38,7 +40,6 @@ export function plannerModels(env: Record<string, string | undefined> = process.
       providerOptions: { google: { thinkingConfig: { thinkingLevel: "low" } } },
     });
   }
-  if (env.GROQ_API_KEY) out.push({ name: "Groq", model: createGroq({ apiKey: env.GROQ_API_KEY })(GROQ_MODEL_ID) });
   return out;
 }
 

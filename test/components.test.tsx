@@ -114,7 +114,7 @@ describe("IntegrityLine", () => {
   });
   it("says in plain words when a region was left out", () => {
     const html = renderToStaticMarkup(h(IntegrityLine, { report: { status: "unchanged", regions: [], plainText: "Skin tone check: unchanged", skippedRegions: ["cheek_left"] } }));
-    expect(html).toContain("One cheek is in the shadow of the new hair, so we left it out of the check.");
+    expect(html).toContain("One cheek was in shadow, so we checked the other.");
   });
 });
 
@@ -128,8 +128,10 @@ describe("forWhom", () => {
 describe("skippedClause", () => {
   it("words one, two and mixed regions", () => {
     expect(skippedClause(undefined)).toBe("");
-    expect(skippedClause(["cheek_left", "cheek_right"])).toBe("Both cheeks are in the shadow of the new hair, so we left them out of the check.");
-    expect(skippedClause(["cheek_right", "chin"])).toBe("One cheek and the chin are in the shadow of the new hair, so we left them out of the check.");
+    expect(skippedClause(["cheek_left"])).toBe("One cheek was in shadow, so we checked the other.");
+    expect(skippedClause(["cheek_right"])).toBe("One cheek was in shadow, so we checked the other.");
+    expect(skippedClause(["cheek_left", "cheek_right"])).toBe("Both cheeks were in shadow, so we checked the nose and chin.");
+    expect(skippedClause(["cheek_right", "chin"])).toBe("One cheek and the chin were in shadow or covered, so we checked the other cheek and the nose.");
   });
 });
 

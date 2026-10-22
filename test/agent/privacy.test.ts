@@ -36,10 +36,10 @@ beforeEach(() => { freshStore(); });
 afterEach(() => setStore(null));
 
 describe("privacy: what the model sees", () => {
-  it.each<HairLossStage>(["not_yet", "started", "gone"])("stage %s + a date + health notes: none of it reaches Gemini", async (stage) => {
+  it.each<HairLossStage>(["not_yet", "started", "gone"])("stage %s + a date + health notes: none of it reaches Groq", async (stage) => {
     const gemini = mockModel();
     const req: PlanRequest = { stage, firstTreatmentDate: "2026-11-02", personaId: "P1", preferences: { length: "long", texture: "curly", wantsWraps: true, notes: NOTES } };
-    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini)] });
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", gemini)] });
     expect(p.source).toBe("llm");
     expect(gemini.doGenerateCalls.length).toBeGreaterThan(1);
     const sent = sentTo(gemini);
@@ -53,11 +53,11 @@ describe("privacy: what the model sees", () => {
     else expect(p.timeline[0].date).toBe("2026-10-22");
   });
 
-  it("the Groq fallback gets the same clean input", async () => {
+  it("the Gemini fallback gets the same clean input", async () => {
     const groq = mockModel();
     await runPlan(
       { stage: "started", firstTreatmentDate: "2026-11-02", hairColour: "#3A2A22", preferences: { notes: NOTES } },
-      { sessionId: SID, now, mcp, models: [asPlanner("Gemini", failingModel(rateLimited())), asPlanner("Groq", groq)] },
+      { sessionId: SID, now, mcp, models: [asPlanner("Groq", failingModel(rateLimited())), asPlanner("Gemini", groq)] },
     );
     const sent = sentTo(groq);
     expectClean(sent);
