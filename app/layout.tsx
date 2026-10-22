@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Atkinson_Hyperlegible, Newsreader } from "next/font/google";
 import "./globals.css";
+import { SessionProvider } from "@/components/SessionProvider";
+import SiteHeader from "@/components/SiteHeader";
 
 const atkinson = Atkinson_Hyperlegible({ variable: "--font-body", subsets: ["latin"], weight: ["400", "700"] });
 const newsreader = Newsreader({ variable: "--font-headline", subsets: ["latin"] });
@@ -16,7 +18,12 @@ export const viewport: Viewport = { width: "device-width", initialScale: 1 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${atkinson.variable} ${newsreader.variable}`}>{children}</body>
+      <body className={`${atkinson.variable} ${newsreader.variable}`}>
+        <SessionProvider>
+          <SiteHeader />
+          {children}
+        </SessionProvider>
+      </body>
     </html>
   );
 }

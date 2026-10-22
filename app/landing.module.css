@@ -1,0 +1,18 @@
+.triptych {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.panel { min-width: 0; }
+
+.panel figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
+
+.caption {
+  margin-top: 6px;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.panel:last-child .caption { color: var(--ink); font-weight: 700; }

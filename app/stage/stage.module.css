@@ -1,0 +1,30 @@
+.set { border: 0; margin: 0; padding: 0; min-width: 0; }
+
+.legend { padding: 0; margin-bottom: 8px; }
+
+.options { margin-top: 16px; }
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--tap);
+  padding: 12px 16px;
+  margin-top: 10px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.option input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.option:has(input:checked) { border-color: var(--accent); font-weight: 700; }
+.option:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
+.option input:focus-visible { outline: none; }

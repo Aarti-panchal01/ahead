@@ -1,6 +1,9 @@
 .frame {
   position: relative;
   margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius, 14px);
+  background: #dfe3df;
 }
 
 .img {
