@@ -137,6 +137,8 @@ export interface PlanRequest {
   /** Sampled hair colour "#RRGGBB" (own photo) when there is no persona. */
   hairColour?: string;
   preferences?: { length?: string; texture?: string; wantsWraps?: boolean; notes?: string };
+  /** The person's local date "YYYY-MM-DD" so "today" on the timeline is their day (server UTC if missing). */
+  today?: string;
 }
 
 /** POST /api/agent/plan response. */

@@ -62,7 +62,7 @@ describe("plan client", () => {
     const [url, init] = calls(f)[0];
     expect(url).toBe("/api/agent/plan");
     expect(init.headers).toMatchObject({ "x-ahead-session": "abcdefgh" });
-    expect(JSON.parse(String(init.body))).toEqual({ stage: "not_yet", personaId: "P1", firstTreatmentDate: "2026-11-10" });
+    expect(JSON.parse(String(init.body))).toEqual({ stage: "not_yet", personaId: "P1", firstTreatmentDate: "2026-11-10", today: "2026-10-22" });
   });
 
   it("uses the local plan when the route is missing or answers nonsense", async () => {

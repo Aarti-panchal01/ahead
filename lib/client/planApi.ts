@@ -86,7 +86,7 @@ export function localPlan(req: PlanRequest, today: string): PlanResponse {
 
 export async function requestPlan(req: PlanRequest, fetchFn: typeof fetch = fetch, today = todayIso(), headers: Record<string, string> = {}): Promise<PlanResponse> {
   try {
-    const r = await fetchFn("/api/agent/plan", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify(req) });
+    const r = await fetchFn("/api/agent/plan", { method: "POST", headers: { "Content-Type": "application/json", ...headers }, body: JSON.stringify({ ...req, today: req.today ?? today }) });
     if (r.ok) {
       const j = await r.json().catch(() => null);
       if (isPlanResponse(j)) return j;
