@@ -91,6 +91,36 @@ export function lintText(text: string, opts: LintOptions = {}): LintResult {
   return { text: lines.filter((l): l is string => l !== null).join("\n"), hits, clean: hits.length === 0 };
 }
 
+// ---------- privacy: what may reach a language model ----------
+// Hard rule: no photos, treatment dates, hair-loss stage or any health detail ever goes to an LLM.
+// The person's free-text notes pass through stripHealthDetails() first; sentences that mention health,
+// hair loss or a date are removed whole.
+
+export const HEALTH_RULES: ClaimRule[] = [
+  {
+    id: "health_word",
+    pattern: /\b(?:chemo\w*|cancer\w*|treat\w*|radiation|radiotherapy|oncolog\w*|tumou?r\w*|diagnos\w*|hospital\w*|clinic\w*|doctor\w*|nurse\w*|medic\w*|drugs?|therap\w*|surger\w*|surgical|alopecia|illness|sick\w*|disease\w*|patients?|infusion\w*|cycles?|doses?|dosage|mg|scans?|biopsy|lymph\w*|leuka?emia|carcinoma|mastectomy|lumpectomy|steroids?|prescri\w*|symptoms?|side\s+effects?)\b/i,
+  },
+  { id: "hair_loss", pattern: /\b(?:hair\s*loss|los(?:e|ing|t)\s+(?:my\s+|all\s+my\s+)?hair|bald\w*|thinning|fall(?:s|ing)?\s+out|shed\w*|regrow\w*|grow(?:s|ing)?\s+back)\b/i },
+  {
+    id: "date",
+    pattern: /\b\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\b|\b\d{1,2}[-/.]\d{1,2}(?:[-/.]\d{2,4})?\b|\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b|\b\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|\b(?:next|this|last)\s+(?:week|month|monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b|\b(?:in|within|after)\s+\d+\s+(?:days?|weeks?|months?)\b|\b(?:today|tomorrow|yesterday)\b/i,
+  },
+];
+
+/** True when the text holds a health detail, hair-loss detail or date. */
+export const hasHealthDetail = (text: string) => HEALTH_RULES.some((r) => r.pattern.test(text));
+
+/** Removes every sentence with a health detail, hair-loss detail or date. Safe to send to a model. */
+export function stripHealthDetails(text: string | undefined): string {
+  if (!text) return "";
+  const kept: string[] = [];
+  for (const line of text.split(/\r?\n/)) {
+    for (const s of sentences(line)) if (!hasHealthDetail(s)) kept.push(s.trim());
+  }
+  return kept.join(" ").replace(/\s+/g, " ").trim();
+}
+
 /** Lints a list of short lines; drops empty results and repeats of the safe line. */
 export function lintLines(lines: string[], opts: LintOptions = {}): { lines: string[]; hits: ClaimHit[] } {
   const out: string[] = [];

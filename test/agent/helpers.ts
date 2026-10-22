@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import { APICallError } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
+import type { PlannerModel } from "@/lib/agent/providers";
 import type { LanguageModelV3GenerateResult } from "@ai-sdk/provider";
 
 const usage = {
@@ -25,9 +27,32 @@ export function mockModel(steps: LanguageModelV3GenerateResult[] = transcriptSte
   });
 }
 
-export function failingModel(err = new Error("overloaded")) {
+export function failingModel(err: unknown = new Error("overloaded")) {
   return new MockLanguageModelV3({ doGenerate: async () => { throw err; } });
 }
+
+/** Gemini's rate-limit answer: HTTP 429, RESOURCE_EXHAUSTED. */
+export function rateLimited() {
+  return new APICallError({
+    message: "Resource has been exhausted (e.g. check quota).",
+    url: "https://generativelanguage.googleapis.com/v1beta/models/x:generateContent",
+    requestBodyValues: {},
+    statusCode: 429,
+    responseBody: JSON.stringify({ error: { code: 429, status: "RESOURCE_EXHAUSTED" } }),
+    isRetryable: true,
+  });
+}
+
+/** Never answers; rejects when the agent's timeout aborts the call. */
+export function hangingModel() {
+  return new MockLanguageModelV3({
+    doGenerate: (opts) => new Promise((_, reject) => {
+      opts.abortSignal?.addEventListener("abort", () => reject(new Error("aborted")));
+    }),
+  });
+}
+
+export const asPlanner = (name: PlannerModel["name"], model: MockLanguageModelV3): PlannerModel => ({ name, model });
 
 interface Exchange { method: string; rpcMethod: string | null; status: number; contentType: string | null; sessionId: string | null; body: string }
 

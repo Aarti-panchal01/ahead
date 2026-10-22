@@ -1,9 +1,9 @@
 // plan_timeline: deterministic, no LLM. Cosmetic planning only, never medical advice.
-// Built only on these FACTS (.claude/agents/consult.md):
+// Built only on these FACTS (the consult agent brief, FACTS list):
 // - Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment (MedlinePlus).
 // - Choose a wig before hair loss, save a lock of hair, photograph your current style (MedlinePlus; Oncolink; ACS).
 // - Wigs are hygiene-sensitive and usually returnable only unopened (retailer return policies).
-// Dates are ISO "YYYY-MM-DD" in UTC. With no treatment date the wording is relative and date is "" (undated).
+// Dates are ISO "YYYY-MM-DD" in UTC. With no treatment date the wording is relative and steps carry no date.
 import type { HairLossStage, TimelineItem } from "@/lib/types";
 
 /** Day after the first treatment when hair loss often starts (1 week). */
@@ -40,11 +40,10 @@ export function planTimeline({ stage, firstTreatmentDate, now = new Date() }: Ti
   const first = parseIsoDate(firstTreatmentDate);
   const today = todayUtc(now);
   const items: TimelineItem[] = [];
-  const dated = (d: Date | null) => (d ? toIso(d) : "");
 
   if (stage === "not_yet") {
     items.push({
-      date: dated(first ? today : null),
+      ...(first ? { date: toIso(today) } : {}),
       label: "Choose your wig now",
       note: "Choose before hair loss starts. Save a lock of hair and photograph your current style.",
     });
@@ -63,26 +62,25 @@ export function planTimeline({ stage, firstTreatmentDate, now = new Date() }: Ti
         note: `Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment: about ${toIso(start)} to ${toIso(end)} (${SOURCE}).`,
       });
     } else {
-      items.push({ date: "", label: `Order your wig within ${ORDER_BY_DAY} days of your first treatment`, note: RETURNS_NOTE });
+      items.push({ label: `Order your wig within ${ORDER_BY_DAY} days of your first treatment`, note: RETURNS_NOTE });
       items.push({
-        date: "",
         label: `Hair loss often starts ${WINDOW_START_DAY} to ${WINDOW_END_DAY} days after the first treatment`,
         note: `Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment (${SOURCE}).`,
       });
     }
   } else {
     items.push({
-      date: dated(first ? today : null),
+      ...(first ? { date: toIso(today) } : {}),
       label: stage === "started" ? "Choose your wig or wrap now" : "Choose a wig or wrap when you are ready",
       note: stage === "started"
         ? "Photograph your current style and save a lock of hair if you can. It helps match the colour."
         : "Try wigs and head wraps on your own photo first, then choose.",
     });
-    items.push({ date: "", label: "Order when you are ready", note: RETURNS_NOTE });
+    items.push({ label: "Order when you are ready", note: RETURNS_NOTE });
   }
 
   // Dated steps in date order; undated steps keep their order after them.
-  const withDate = items.filter((i) => i.date).sort((a, b) => a.date.localeCompare(b.date));
+  const withDate = items.filter((i) => i.date).sort((a, b) => a.date!.localeCompare(b.date!));
   const without = items.filter((i) => !i.date);
-  return [...withDate, ...without, { date: "", label: CARE_TEAM_LINE }];
+  return [...withDate, ...without, { label: CARE_TEAM_LINE }];
 }

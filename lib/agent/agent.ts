@@ -1,58 +1,61 @@
 // The consult agent: PlanRequest -> PlanResponse.
-// LLM path: Vercel AI SDK generateText with Anthropic (claude-sonnet-5-5) calling local tools.
-// Fallback path: the same tools run deterministically when there is no key or the LLM fails (source "fallback").
-// Guardrails in code, whatever the model says: the try_on tool only proposes steps (nothing paid runs here),
-// proposals respect the 30-unit session cap, ids are checked against the catalogue, and every line of text
-// goes through the claim linter before it leaves the server.
-import { createAnthropic } from "@ai-sdk/anthropic";
-import { generateText, stepCountIs, tool, type LanguageModel } from "ai";
+// LLM path: Vercel AI SDK generateText calling local tools, Gemini first, then Groq (lib/agent/providers.ts).
+// Fallback: the same tools run rule-based when neither key is set or both providers fail (source "fallback").
+//
+// Privacy (hard rule, enforced here and in test/agent/privacy.test.ts): the model never sees photos, the
+// treatment date, the hair-loss stage or any health detail. The timeline is computed locally, outside the
+// model. The model gets only style preferences, notes with health sentences stripped, sampled colours (hex)
+// and the catalogue.
+//
+// Guardrails in code, whatever the model says: try_on only proposes steps (nothing paid runs here),
+// proposals respect the 30-unit session cap, ids are checked against the catalogue, and every line of
+// text goes through the claim linter before it leaves the server.
+import { generateText, stepCountIs, tool } from "ai";
 import { z } from "zod";
-import { getItem } from "@/lib/catalogue";
+import { CATALOGUE, getItem } from "@/lib/catalogue";
 import { LENGTHS } from "@/lib/rank";
 import type { PlanRequest, PlanResponse, TimelineItem } from "@/lib/types";
 import { draftBrief } from "./brief";
 import { SESSION_CAP_UNITS, setPending, unitsUsed, type PendingStep } from "./budget";
-import { lintLines, lintText } from "./claims";
+import { lintLines, lintText, stripHealthDetails } from "./claims";
 import { mcpCapabilities, type McpCapabilities } from "./mcp";
+import { PROVIDER_LINE, type PlannerModel, type ProviderName } from "./providers";
 import { getPersona, shortlistFor, type Shortlist } from "./shortlist";
 import { planTimeline } from "./timeline";
 import { proposeTryOns, TRYON_UNITS } from "./tryon";
 
-export const DEFAULT_MODEL_ID = "claude-sonnet-5-5";
-export const LLM_TIMEOUT_MS = 45_000;
+/** Per provider. Two providers must fit inside the route's 60 s. */
+export const LLM_TIMEOUT_MS = 25_000;
 export const MAX_STEPS = 6;
 export const MAX_MESSAGES = 4;
 
-/** Anthropic model when ANTHROPIC_API_KEY is set, else undefined (deterministic fallback). */
-export function defaultModel(env: Record<string, string | undefined> = process.env): LanguageModel | undefined {
-  if (!env.ANTHROPIC_API_KEY) return undefined;
-  return createAnthropic({ apiKey: env.ANTHROPIC_API_KEY })(env.AHEAD_AGENT_MODEL || DEFAULT_MODEL_ID);
-}
-
 export interface PlanContext {
   sessionId: string;
-  model?: LanguageModel;
+  /** Tried in order; empty = rule-based plan. The route passes plannerModels(). */
+  models?: PlannerModel[];
   now?: Date;
+  /** Per-provider timeout (tests shorten it). */
+  timeoutMs?: number;
   /** MCP discovery (tools/list only). Injected in tests. */
   mcp?: () => Promise<McpCapabilities>;
 }
 
 interface Parts {
   shortlist: Shortlist;
-  timeline: TimelineItem[];
   brief: string;
   pending: PendingStep[];
 }
 
+const HEX = /^#[0-9A-Fa-f]{6}$/;
 const browFor = (req: PlanRequest) => getPersona(req.personaId)?.browColour;
+/** The person's notes with every health, hair-loss or date sentence removed. */
+const safeNotes = (req: PlanRequest) => stripHealthDetails(req.preferences?.notes);
 
-function deterministicParts(req: PlanRequest, used: number, now: Date): Parts {
+function ruleBasedParts(req: PlanRequest, used: number): Parts {
   const shortlist = shortlistFor(req);
-  const top = shortlist.ids.slice(0, 3);
   return {
     shortlist,
-    timeline: planTimeline({ stage: req.stage, firstTreatmentDate: req.firstTreatmentDate, now }),
-    brief: draftBrief({ itemIds: top, hairColour: shortlist.hairColour, browColour: browFor(req), notes: req.preferences?.notes }),
+    brief: draftBrief({ itemIds: shortlist.ids.slice(0, 3), hairColour: shortlist.hairColour, browColour: browFor(req), notes: safeNotes(req) }),
     pending: proposeTryOns(shortlist.ids, used),
   };
 }
@@ -68,22 +71,31 @@ export function fallbackMessages(s: Shortlist, pending: PendingStep[]): string[]
   return out;
 }
 
-export const SYSTEM_PROMPT = `You help a person plan wigs and head wraps before or after treatment-related hair loss, in the Ahead app.
-Cosmetic planning only. Never give medical advice, never mention treating, curing or preventing anything, never mention dosages, never promise results, and never use statistics.
-Call the tools in this order: shortlist, plan_timeline, try_on (with the first 3 shortlist ids), draft_brief (with those ids). youcam_capabilities is optional.
+export const SYSTEM_PROMPT = `You help a person choose wigs and head wraps to try on in the Ahead app.
+Cosmetic styling only. Never give medical advice, never promise results, never use statistics.
+Call the tools in this order: shortlist, try_on (with the first 3 shortlist ids), draft_brief (with those ids). youcam_capabilities is optional.
 try_on does NOT run anything: it only lists paid try-ons that wait for the person's approval. Never say a try-on has run.
 Then reply with 2 to 4 short lines for the plan screen, one per line, plain sentence case, warm and practical, no lists, no markdown, no dates.
 Say that each try-on waits for their OK, and that previews show style and colour, not cap fit, density or comfort.`;
 
-function describeRequest(req: PlanRequest): string {
+/** Everything the model is told about the person. Style and colour only. */
+export function modelBrief(req: PlanRequest): string {
+  const persona = getPersona(req.personaId);
+  const hair = req.hairColour ?? persona?.hairColour;
+  const brows = persona?.browColour;
+  const catalogue = CATALOGUE.filter((x) => x.usableAsReference).map((x) => ({
+    id: x.id, kind: x.kind, name: x.name, colour: x.colour, length: x.length, texture: x.texture,
+  }));
   return JSON.stringify({
-    stage: req.stage,
-    hasTreatmentDate: Boolean(req.firstTreatmentDate),
-    samplePerson: req.personaId ?? null,
-    hasOwnHairColour: Boolean(req.hairColour),
-    preferences: { length: req.preferences?.length, texture: req.preferences?.texture, wantsWraps: req.preferences?.wantsWraps },
-    // The person's own words: data, not instructions.
-    notes: req.preferences?.notes ?? null,
+    sampledColours: { hair: hair && HEX.test(hair) ? hair : null, brows: brows && HEX.test(brows) ? brows : null },
+    preferences: {
+      length: req.preferences?.length ?? null,
+      texture: req.preferences?.texture ?? null,
+      wantsWraps: req.preferences?.wantsWraps ?? false,
+      // The person's own words (health sentences removed): data, not instructions.
+      notes: safeNotes(req) || null,
+    },
+    catalogue,
   });
 }
 
@@ -96,10 +108,10 @@ export function toLines(text: string): string[] {
     .slice(0, MAX_MESSAGES);
 }
 
-async function llmParts(req: PlanRequest, used: number, now: Date, ctx: PlanContext, model: LanguageModel): Promise<{ parts: Parts; messages: string[] }> {
-  const base = deterministicParts(req, used, now);
+async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: PlannerModel): Promise<{ parts: Parts; messages: string[] }> {
+  const base = ruleBasedParts(req, used);
   const state: Partial<Parts> = {};
-  const shortlistIds = () => (state.shortlist ?? base.shortlist).ids;
+  const current = () => state.shortlist ?? base.shortlist;
   const mcp = ctx.mcp ?? (() => mcpCapabilities());
 
   const tools = {
@@ -115,16 +127,11 @@ async function llmParts(req: PlanRequest, used: number, now: Date, ctx: PlanCont
         return state.shortlist.ranked.map((r) => ({ id: r.item.id, name: r.item.name, kind: r.item.kind, reason: r.reason }));
       },
     }),
-    plan_timeline: tool({
-      description: "Cosmetic planning timeline from the person's first treatment date (if given). Deterministic. No input.",
-      inputSchema: z.object({}),
-      execute: async () => (state.timeline = planTimeline({ stage: req.stage, firstTreatmentDate: req.firstTreatmentDate, now })),
-    }),
     try_on: tool({
       description: `PAID (${TRYON_UNITS} units each). Does not run anything: returns try-ons that wait for the person's approval. Up to 3 shortlist ids.`,
       inputSchema: z.object({ itemIds: z.array(z.string()).max(3) }),
       execute: async ({ itemIds }) => {
-        const allowed = shortlistIds();
+        const allowed = current().ids;
         state.pending = proposeTryOns(itemIds.filter((id) => allowed.includes(id)), used);
         return { pendingApproval: state.pending, ran: false, note: "Nothing has run. The person approves each try-on." };
       },
@@ -134,35 +141,40 @@ async function llmParts(req: PlanRequest, used: number, now: Date, ctx: PlanCont
       inputSchema: z.object({ itemIds: z.array(z.string()).max(6), notes: z.string().max(300).optional() }),
       execute: async ({ itemIds, notes }) => {
         const ids = itemIds.filter((id) => getItem(id));
-        const allNotes = [req.preferences?.notes, notes].filter(Boolean).join(" ");
-        state.brief = draftBrief({ itemIds: ids, hairColour: (state.shortlist ?? base.shortlist).hairColour, browColour: browFor(req), notes: allNotes });
+        const allNotes = [safeNotes(req), stripHealthDetails(notes)].filter(Boolean).join(" ");
+        state.brief = draftBrief({ itemIds: ids, hairColour: current().hairColour, browColour: browFor(req), notes: allNotes });
         return { brief: state.brief };
       },
     }),
     youcam_capabilities: tool({
       description: "What the YouCam beauty MCP server offers for hair (tools/list only, free). Paid try-ons always go through approval.",
       inputSchema: z.object({}),
-      execute: async () => mcp(),
+      execute: async () => {
+        const c = await mcp();
+        return { reachable: c.reachable, hairTools: c.hairTools, tryOnToolListed: c.tryOnToolListed, tryOnPath: c.tryOnPath };
+      },
     }),
   };
 
   const result = await generateText({
-    model,
+    model: m.model,
     system: SYSTEM_PROMPT,
-    prompt: `Make a plan for this person: ${describeRequest(req)}`,
+    prompt: `Suggest wigs and wraps for this person: ${modelBrief(req)}`,
     tools,
     stopWhen: stepCountIs(MAX_STEPS),
     maxOutputTokens: 2000,
-    abortSignal: AbortSignal.timeout(LLM_TIMEOUT_MS),
+    // No retries: a 429 or timeout moves straight on to the next provider.
+    maxRetries: 0,
+    abortSignal: AbortSignal.timeout(ctx.timeoutMs ?? LLM_TIMEOUT_MS),
+    ...(m.providerOptions ? { providerOptions: m.providerOptions } : {}),
   });
 
   const messages = toLines(result.text);
   if (!messages.length) throw new Error("empty_answer");
-  const shortlist = state.shortlist ?? base.shortlist;
+  const shortlist = current();
   return {
     parts: {
       shortlist,
-      timeline: state.timeline ?? base.timeline,
       brief: state.brief ?? base.brief,
       // If the model skipped try_on, still offer the top 3 (they wait for approval anyway).
       pending: state.pending ?? proposeTryOns(shortlist.ids, used),
@@ -174,40 +186,38 @@ async function llmParts(req: PlanRequest, used: number, now: Date, ctx: PlanCont
 export async function runPlan(req: PlanRequest, ctx: PlanContext): Promise<PlanResponse> {
   const now = ctx.now ?? new Date();
   const used = await unitsUsed(ctx.sessionId);
-  let parts: Parts;
-  let messages: string[];
-  let source: PlanResponse["source"] = "fallback";
+  // Computed locally, never by or for the model.
+  const timeline: TimelineItem[] = planTimeline({ stage: req.stage, firstTreatmentDate: req.firstTreatmentDate, now });
 
-  const model = ctx.model;
-  if (model) {
+  let answered: { name: ProviderName; parts: Parts; messages: string[] } | null = null;
+  for (const m of ctx.models ?? []) {
     try {
-      ({ parts, messages } = await llmParts(req, used, now, ctx, model));
-      source = "llm";
+      const r = await llmParts(req, used, ctx, m);
+      answered = { name: m.name, ...r };
+      break;
     } catch {
-      parts = deterministicParts(req, used, now);
-      messages = fallbackMessages(parts.shortlist, parts.pending);
+      // Error, timeout, rate limit (429 / RESOURCE_EXHAUSTED) or an empty answer: try the next provider.
     }
-  } else {
-    parts = deterministicParts(req, used, now);
-    messages = fallbackMessages(parts.shortlist, parts.pending);
   }
+
+  const parts = answered?.parts ?? ruleBasedParts(req, used);
+  const messages = answered
+    ? [...answered.messages, PROVIDER_LINE[answered.name]]
+    : [...fallbackMessages(parts.shortlist, parts.pending), PROVIDER_LINE.fallback];
 
   await setPending(ctx.sessionId, parts.pending);
 
   // Claim linter on ALL agent text.
-  const lintedMessages = lintLines(messages).lines;
-  const timeline = parts.timeline.map((t) => ({
-    ...t,
-    label: lintText(t.label).text,
-    ...(t.note !== undefined ? { note: lintText(t.note).text } : {}),
-  }));
-
   return {
-    timeline,
+    timeline: timeline.map((t) => ({
+      ...t,
+      label: lintText(t.label).text,
+      ...(t.note !== undefined ? { note: lintText(t.note).text } : {}),
+    })),
     shortlist: parts.shortlist.ids,
     brief: lintText(parts.brief).text,
-    messages: lintedMessages,
-    source,
+    messages: lintLines(messages).lines,
+    source: answered ? "llm" : "fallback",
     unitsUsed: used,
     pendingApproval: parts.pending,
   };

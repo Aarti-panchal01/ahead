@@ -11,7 +11,7 @@ describe("plan_timeline", () => {
       ["2026-10-22", "Choose your wig now"],
       ["2026-11-08", "Order your wig by this date"],
       ["2026-11-09", "Hair loss often starts around here"],
-      ["", CARE_TEAM_LINE],
+      [undefined, CARE_TEAM_LINE],
     ]);
     expect(t[0].note).toMatch(/save a lock of hair and photograph your current style/i);
     expect(t[1].note).toMatch(/returnable only unopened/);
@@ -30,12 +30,12 @@ describe("plan_timeline", () => {
     const order = t.find((x) => x.label.startsWith("Order"))!;
     expect(order).toMatchObject({ date: "2026-10-22", label: "Order your wig soon" });
     expect(order.note).toContain("Hair loss often starts from 2026-10-22");
-    expect(t.map((x) => x.date)).toEqual(["2026-10-22", "2026-10-22", "2026-10-22", ""]);
+    expect(t.map((x) => x.date)).toEqual(["2026-10-22", "2026-10-22", "2026-10-22", undefined]);
   });
 
   it("no date: relative wording and no dates", () => {
     const t = planTimeline({ stage: "not_yet", now });
-    expect(t.every((x) => x.date === "")).toBe(true);
+    expect(t.every((x) => x.date === undefined)).toBe(true);
     expect(t.map((x) => x.label)).toEqual([
       "Choose your wig now",
       "Order your wig within 6 days of your first treatment",
@@ -47,7 +47,7 @@ describe("plan_timeline", () => {
   it("an invalid date counts as no date", () => {
     expect(parseIsoDate("2026-02-30")).toBeNull();
     expect(parseIsoDate("22/10/2026")).toBeNull();
-    expect(planTimeline({ stage: "not_yet", firstTreatmentDate: "2026-02-30", now }).every((x) => x.date === "")).toBe(true);
+    expect(planTimeline({ stage: "not_yet", firstTreatmentDate: "2026-02-30", now }).every((x) => x.date === undefined)).toBe(true);
   });
 
   it("hair loss started or gone: no window, still ends with the care team line", () => {
