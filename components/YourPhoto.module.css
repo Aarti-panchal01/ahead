@@ -1,0 +1,17 @@
+.photo {
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 821 / 1024;
+  object-fit: cover;
+  object-position: center 30%;
+}
+
+.compact img { aspect-ratio: 4 / 3; }
+
+.img { display: block; }
