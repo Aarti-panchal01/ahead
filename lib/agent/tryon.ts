@@ -1,7 +1,9 @@
-// try_on: PAID (hair-transfer, 2 units). The agent never runs it. It only proposes pendingApproval steps;
-// the user approves one at a time through POST /api/agent/approve, which runs it through the existing
-// REST try-on path (POST /api/tryon -> lib/youcam/tryon: ledger, cache, judging reserve, daily cap,
-// recordings, end-of-session delete) and counts it against the 30-unit session cap.
+// try_on: PAID (hair-transfer, 2 units) for an uploaded selfie only. The agent never runs it. It only proposes
+// pendingApproval steps; the user approves one at a time through POST /api/agent/approve, which runs it through
+// the existing REST try-on path (POST /api/tryon -> lib/youcam/tryon: ledger, cache, judging reserve, daily cap,
+// end-of-session delete) and counts it against the 30-unit session cap.
+// A demo face (sample person, no selfie) never goes live in POST /api/tryon: it gets its saved recording at
+// 0 units, so it needs no approval and never touches the cap.
 import { NextResponse } from "next/server";
 import { getItem } from "@/lib/catalogue";
 import { FEATURES } from "@/lib/youcam/client";
@@ -39,9 +41,10 @@ export const APPROVE_MESSAGES = {
 export type TryOnHandler = (req: Request) => Promise<Response>;
 
 /**
- * Runs ONE approved try-on. Body: the same as POST /api/tryon (JSON { itemId, faceId } or multipart
- * { itemId, selfie }). The item must be one the plan proposed for this session.
- * Units count against the cap only when a live render was started (not a recording or an error).
+ * Runs ONE approved try-on. Body: the same as POST /api/tryon.
+ * - multipart { itemId, selfie }: the paid path. The item must be one the plan proposed for this session; units
+ *   count against the cap only when a live render was started (not a recording or an error).
+ * - { itemId, faceId } (a demo face): passed straight to the free recording, 0 units, approval list untouched.
  */
 export async function approveTryOn(req: Request, runTryOn: TryOnHandler): Promise<Response> {
   const sid = readSessionId(req);
@@ -50,16 +53,33 @@ export async function approveTryOn(req: Request, runTryOn: TryOnHandler): Promis
   const body = await req.arrayBuffer();
   const contentType = req.headers.get("content-type") ?? "";
   let itemId = "";
+  let hasSelfie = false;
   try {
     if (contentType.includes("multipart/form-data")) {
-      const v = (await new Request(req.url, { method: "POST", headers: { "content-type": contentType }, body }).formData()).get("itemId");
+      const form = await new Request(req.url, { method: "POST", headers: { "content-type": contentType }, body }).formData();
+      const v = form.get("itemId");
       itemId = typeof v === "string" ? v : "";
+      const f = form.get("selfie");
+      hasSelfie = !!f && typeof f !== "string" && f.size > 0;
     } else {
       const j = JSON.parse(new TextDecoder().decode(body) || "{}") as { itemId?: unknown };
       itemId = typeof j.itemId === "string" ? j.itemId : "";
     }
   } catch { /* handled below */ }
   if (!itemId) return json({ errorCode: "bad_request", message: APPROVE_MESSAGES.bad_request }, 400);
+
+  const forward = () => {
+    const headers = new Headers(req.headers);
+    headers.delete("content-length");
+    return runTryOn(new Request(new URL("/api/tryon", req.url), { method: "POST", headers, body }));
+  };
+
+  // Demo face: a free saved recording (or no_recording). No approval list, no units.
+  if (!hasSelfie) {
+    const res = await forward();
+    const out = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+    return json({ ...out, unitsCharged: 0, unitsUsed: await unitsUsed(sid), pendingApproval: await getPending(sid) }, res.status);
+  }
 
   const step = await takePending(sid, itemId);
   if (!step) return json({ errorCode: "not_proposed", message: APPROVE_MESSAGES.not_proposed, unitsUsed: await unitsUsed(sid) }, 403);
@@ -71,9 +91,7 @@ export async function approveTryOn(req: Request, runTryOn: TryOnHandler): Promis
 
   let res: Response;
   try {
-    const headers = new Headers(req.headers);
-    headers.delete("content-length");
-    res = await runTryOn(new Request(new URL("/api/tryon", req.url), { method: "POST", headers, body }));
+    res = await forward();
   } catch {
     await releaseUnits(sid, step.units);
     await restorePending(sid, step);

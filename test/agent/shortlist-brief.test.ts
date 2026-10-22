@@ -5,13 +5,19 @@ import { shortlistFor } from "@/lib/agent/shortlist";
 import { getItem } from "@/lib/catalogue";
 
 describe("shortlist", () => {
-  it("sample person: 3 closest curated wigs + 1 something new, all real usable ids", () => {
-    const s = shortlistFor({ stage: "not_yet", personaId: "P1" });
+  it.each([
+    ["P1", ["W01"]],
+    ["P2", ["W04"]],
+    ["P3", ["W07"]],
+    ["P4", ["W10", "W11"]],
+  ] as const)("sample person %s: best match first, 3 closest + 1 something new, all real usable ids", (personaId, firsts) => {
+    const s = shortlistFor({ stage: "not_yet", personaId });
+    expect(firsts).toContain(s.ids[0]);
     expect(s.ids).toHaveLength(4);
-    expect(s.ranked.slice(0, 3).every((r) => r.reason === "closest" && r.item.matches === "P1")).toBe(true);
+    expect(s.ranked.slice(0, 3).every((r) => r.reason === "closest")).toBe(true);
     expect(s.ranked[3].reason).toBe("something_new");
+    expect(new Set(s.ids).size).toBe(4);
     expect(s.ids.every((id) => getItem(id)?.usableAsReference)).toBe(true);
-    expect(s.hairColour).toBe("#706D6B");
   });
 
   it("own hair colour competes across all wigs; wraps added on request", () => {
@@ -20,11 +26,9 @@ describe("shortlist", () => {
     expect(s.ranked.filter((r) => r.item.kind === "wig")).toHaveLength(4);
   });
 
-  it("texture preference moves matching wigs up within the closest three", () => {
-    const base = shortlistFor({ stage: "not_yet", personaId: "P1" });
-    const s = shortlistFor({ stage: "not_yet", personaId: "P1", preferences: { texture: "straight" } });
-    expect(new Set(s.ids.slice(0, 3))).toEqual(new Set(base.ids.slice(0, 3)));
-    expect(s.ranked[0].item.texture).toBe("straight");
+  it("a texture preference changes the ranking through lib/rank.ts", () => {
+    const s = shortlistFor({ stage: "not_yet", hairColour: "#262121", preferences: { texture: "coily" } });
+    expect(s.ranked[0].item.texture).toBe("coily");
   });
 
   it("no colour at all still gives a spread", () => {

@@ -48,6 +48,14 @@ interface Parts {
 
 const HEX = /^#[0-9A-Fa-f]{6}$/;
 const browFor = (req: PlanRequest) => getPersona(req.personaId)?.browColour;
+/**
+ * Paid try-ons are only for an uploaded selfie. A sample person's try-ons are saved recordings (POST /api/tryon
+ * never goes live for a demo face): free, shown directly, never in pendingApproval, 0 units on the session.
+ */
+export const isSamplePerson = (req: PlanRequest) => Boolean(req.personaId);
+const paidProposals = (req: PlanRequest, ids: string[], used: number): PendingStep[] => (isSamplePerson(req) ? [] : proposeTryOns(ids, used));
+export const SAMPLE_FREE_LINE = "These try-ons are saved previews of a sample person, so they are free and need no approval.";
+
 /** The person's notes with every health, hair-loss or date sentence removed. */
 const safeNotes = (req: PlanRequest) => stripHealthDetails(req.preferences?.notes);
 
@@ -56,16 +64,17 @@ function ruleBasedParts(req: PlanRequest, used: number): Parts {
   return {
     shortlist,
     brief: draftBrief({ itemIds: shortlist.ids.slice(0, 3), hairColour: shortlist.hairColour, browColour: browFor(req), notes: safeNotes(req) }),
-    pending: proposeTryOns(shortlist.ids, used),
+    pending: paidProposals(req, shortlist.ids, used),
   };
 }
 
-export function fallbackMessages(s: Shortlist, pending: PendingStep[]): string[] {
+export function fallbackMessages(s: Shortlist, pending: PendingStep[], sample = false): string[] {
   const out: string[] = [];
   if (s.hairColour) out.push("These wigs are closest to your own hair colour and length, plus one new look to try.");
   else out.push("Here is a spread of wig colours from dark to light, plus one new look to try.");
   if (s.ranked.some((r) => r.item.kind === "wrap")) out.push("Head wraps are in your list too.");
-  if (pending.length) out.push(`Each try-on uses ${TRYON_UNITS} units and waits for your OK. This session can use up to ${SESSION_CAP_UNITS}.`);
+  if (sample) out.push(SAMPLE_FREE_LINE);
+  else if (pending.length) out.push(`Each try-on uses ${TRYON_UNITS} units and waits for your OK. This session can use up to ${SESSION_CAP_UNITS}.`);
   else out.push("This session has used its try-on units. Saved recordings still work.");
   out.push("Previews show style and colour, not cap fit, density or comfort.");
   return out;
@@ -76,7 +85,7 @@ Cosmetic styling only. Never give medical advice, never promise results, never u
 Call the tools in this order: shortlist, try_on (with the first 3 shortlist ids), draft_brief (with those ids). youcam_capabilities is optional.
 try_on does NOT run anything: it only lists paid try-ons that wait for the person's approval. Never say a try-on has run.
 Then reply with 2 to 4 short lines for the plan screen, one per line, plain sentence case, warm and practical, no lists, no markdown, no dates.
-Say that each try-on waits for their OK, and that previews show style and colour, not cap fit, density or comfort.`;
+Say that each try-on waits for their OK (or, when try_on says they are free saved previews, say that instead), and that previews show style and colour, not cap fit, density or comfort.`;
 
 /** Everything the model is told about the person. Style and colour only. */
 export function modelBrief(req: PlanRequest): string {
@@ -132,7 +141,8 @@ async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: Pla
       inputSchema: z.object({ itemIds: z.array(z.string()).max(3) }),
       execute: async ({ itemIds }) => {
         const allowed = current().ids;
-        state.pending = proposeTryOns(itemIds.filter((id) => allowed.includes(id)), used);
+        state.pending = paidProposals(req, itemIds.filter((id) => allowed.includes(id)), used);
+        if (isSamplePerson(req)) return { pendingApproval: [], free: true, note: "These are free saved previews: no approval and no units needed." };
         return { pendingApproval: state.pending, ran: false, note: "Nothing has run. The person approves each try-on." };
       },
     }),
@@ -177,7 +187,7 @@ async function llmParts(req: PlanRequest, used: number, ctx: PlanContext, m: Pla
       shortlist,
       brief: state.brief ?? base.brief,
       // If the model skipped try_on, still offer the top 3 (they wait for approval anyway).
-      pending: state.pending ?? proposeTryOns(shortlist.ids, used),
+      pending: state.pending ?? paidProposals(req, shortlist.ids, used),
     },
     messages,
   };
@@ -203,7 +213,7 @@ export async function runPlan(req: PlanRequest, ctx: PlanContext): Promise<PlanR
   const parts = answered?.parts ?? ruleBasedParts(req, used);
   const messages = answered
     ? [...answered.messages, PROVIDER_LINE[answered.name]]
-    : [...fallbackMessages(parts.shortlist, parts.pending), PROVIDER_LINE.fallback];
+    : [...fallbackMessages(parts.shortlist, parts.pending, isSamplePerson(req)), PROVIDER_LINE.fallback];
 
   await setPending(ctx.sessionId, parts.pending);
 

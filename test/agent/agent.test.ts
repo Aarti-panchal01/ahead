@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as planRoute } from "@/app/api/agent/plan/route";
-import { runPlan, toLines } from "@/lib/agent/agent";
+import { runPlan, SAMPLE_FREE_LINE, toLines } from "@/lib/agent/agent";
 import { claimUnits, getPending, SESSION_CAP_UNITS } from "@/lib/agent/budget";
 import { findClaims, SAFE_LINE } from "@/lib/agent/claims";
 import type { McpCapabilities } from "@/lib/agent/mcp";
@@ -43,15 +43,25 @@ describe("consult agent, rule-based plan", () => {
     expect(p.timeline.at(-1)).toEqual({ label: CARE_TEAM_LINE });
     expect(p.timeline[1]).toMatchObject({ date: "2026-11-08" });
     expect(p.brief).toMatch(/bring a lock of hair/);
-    expect(p.pendingApproval!.map((x) => x.itemId)).toEqual(p.shortlist.slice(0, 3));
+    // A sample person's try-ons are free saved recordings: nothing to approve, 0 units.
+    expect(p.pendingApproval).toEqual([]);
+    expect(p.messages).toContain(SAMPLE_FREE_LINE);
     expect(p.unitsUsed).toBe(0);
     expectSafe(p);
+    expect(await getPending(SID)).toEqual([]);
+  });
+
+  it("own photo: the top 3 wait for approval (paid, selfie only)", async () => {
+    const p = await runPlan({ stage: "not_yet", hairColour: "#655141" }, { sessionId: SID, now });
+    expect(p.pendingApproval!.map((x) => x.itemId)).toEqual(p.shortlist.slice(0, 3));
+    expect(p.pendingApproval!.every((x) => x.tool === "try_on" && x.units === 2)).toBe(true);
+    expect(p.messages.join(" ")).toMatch(/waits for your OK/);
     expect(await getPending(SID)).toEqual(p.pendingApproval);
   });
 
   it("at the cap nothing is proposed and the message says so", async () => {
     await claimUnits(SID, SESSION_CAP_UNITS);
-    const p = await runPlan({ stage: "not_yet", personaId: "P2" }, { sessionId: SID, now });
+    const p = await runPlan({ stage: "not_yet", hairColour: "#655141" }, { sessionId: SID, now });
     expect(p.pendingApproval).toEqual([]);
     expect(p.unitsUsed).toBe(SESSION_CAP_UNITS);
     expect(p.messages.join(" ")).toMatch(/used its try-on units/);
@@ -65,7 +75,8 @@ describe("consult agent, rule-based plan", () => {
 });
 
 describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded tool-call transcript)", () => {
-  const req = { stage: "not_yet" as const, firstTreatmentDate: "2026-11-02", personaId: "P1" as const, preferences: { notes: "Likes curls." } };
+  // Own photo (sampled colour, no sample person): the paid path, so try_on proposals are exercised.
+  const req = { stage: "not_yet" as const, firstTreatmentDate: "2026-11-02", hairColour: "#706D6B", preferences: { notes: "Likes curls." } };
 
   it("Gemini answers: tools run, paid steps stay pending, unknown ids dropped, text linted", async () => {
     const gemini = mockModel();
@@ -93,6 +104,16 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
     const call = gemini.doGenerateCalls[0];
     expect(call.tools!.map((t) => t.name).sort()).toEqual(["draft_brief", "shortlist", "try_on", "youcam_capabilities"]);
     expect(call.maxOutputTokens).toBe(2000);
+  });
+
+  it("sample person on the LLM path: try_on reports free saved previews, nothing pending, 0 units", async () => {
+    const gemini = mockModel();
+    const p = await runPlan({ stage: "gone", personaId: "P1" }, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini)] });
+    expect(p.source).toBe("llm");
+    expect(p.pendingApproval).toEqual([]);
+    expect(p.unitsUsed).toBe(0);
+    const toolResults = JSON.stringify(gemini.doGenerateCalls[1].prompt);
+    expect(toolResults).toContain("free saved previews");
   });
 
   it("Gemini rate limited (429 RESOURCE_EXHAUSTED) -> Groq answers, Gemini tried once", async () => {
