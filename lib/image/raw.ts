@@ -119,6 +119,68 @@ export function gaussianBlur(mask: Float32Array, width: number, height: number, 
   return out;
 }
 
+/**
+ * gaussianBlur of a 0/nonzero mask, computed only for the box [x0, x1) x [y0, y1) (clamped to the image). Returns the
+ * blurred box (row-major, box width x box height); values equal gaussianBlur over the whole image at those pixels.
+ */
+export function gaussianBlurBox(
+  mask: ArrayLike<number>,
+  width: number,
+  height: number,
+  sigma: number,
+  box: { x0: number; y0: number; x1: number; y1: number },
+): { data: Float32Array; x0: number; y0: number; w: number; h: number } {
+  const bx0 = Math.max(0, Math.floor(box.x0)), by0 = Math.max(0, Math.floor(box.y0));
+  const bx1 = Math.min(width, Math.ceil(box.x1)), by1 = Math.min(height, Math.ceil(box.y1));
+  const w = Math.max(0, bx1 - bx0), h = Math.max(0, by1 - by0);
+  const r = sigma > 0 ? Math.max(1, Math.ceil(sigma * 3)) : 0;
+  // Source crop with the kernel radius around the box; clamping to the image edge matches gaussianBlur's.
+  const sx0 = Math.max(0, bx0 - r), sy0 = Math.max(0, by0 - r), sx1 = Math.min(width, bx1 + r), sy1 = Math.min(height, by1 + r);
+  const sw = sx1 - sx0, sh = sy1 - sy0;
+  const src = new Float32Array(sw * sh);
+  for (let y = 0; y < sh; y++) for (let x = 0; x < sw; x++) src[y * sw + x] = mask[(y + sy0) * width + x + sx0] ? 1 : 0;
+  if (w === 0 || h === 0) return { data: new Float32Array(0), x0: bx0, y0: by0, w, h };
+  if (!(sigma > 0)) {
+    const out = new Float32Array(w * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) out[y * w + x] = src[(y + by0 - sy0) * sw + x + bx0 - sx0];
+    return { data: out, x0: bx0, y0: by0, w, h };
+  }
+  const k = new Float32Array(2 * r + 1);
+  let sum = 0;
+  for (let i = -r; i <= r; i++) sum += k[i + r] = Math.exp(-(i * i) / (2 * sigma * sigma));
+  for (let i = 0; i < k.length; i++) k[i] /= sum;
+  // Horizontal pass over the source rows, box columns only (edges clamped to the image, i.e. the source crop edge
+  // when the crop touches the image edge; otherwise the crop has the full radius).
+  const tmp = new Float32Array(w * sh);
+  for (let y = 0; y < sh; y++) {
+    const row = y * sw;
+    for (let x = 0; x < w; x++) {
+      const gx = x + bx0;
+      let s = 0;
+      for (let i = -r; i <= r; i++) {
+        let xx = gx + i;
+        xx = xx < 0 ? 0 : xx >= width ? width - 1 : xx;
+        s += k[i + r] * src[row + xx - sx0];
+      }
+      tmp[y * w + x] = s;
+    }
+  }
+  const out = new Float32Array(w * h);
+  for (let y = 0; y < h; y++) {
+    const gy = y + by0;
+    for (let x = 0; x < w; x++) {
+      let s = 0;
+      for (let i = -r; i <= r; i++) {
+        let yy = gy + i;
+        yy = yy < 0 ? 0 : yy >= height ? height - 1 : yy;
+        s += k[i + r] * tmp[(yy - sy0) * w + x];
+      }
+      out[y * w + x] = s;
+    }
+  }
+  return { data: out, x0: bx0, y0: by0, w, h };
+}
+
 /** Fill a polygon (even-odd rule, pixel centres) into a 0/1 mask. */
 export function fillPolygon(pts: readonly Point[], width: number, height: number, into?: Uint8Array): Uint8Array {
   const mask = into ?? new Uint8Array(width * height);
@@ -189,13 +251,31 @@ export function rampPolygon(poly: readonly Point[], width: number, height: numbe
   const inside = fillPolygon(poly, width, height);
   const alpha = new Float32Array(width * height);
   const n = poly.length;
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
+  if (n < 3) return alpha;
+  // Only edges within `ramp` of a pixel can make its distance < ramp; the rest are skipped by their padded bbox.
+  const ex0 = new Float64Array(n), ex1 = new Float64Array(n), ey0 = new Float64Array(n), ey1 = new Float64Array(n);
+  let y0 = Infinity, y1 = -Infinity, x0 = Infinity, x1 = -Infinity;
+  for (let k = 0, j = n - 1; k < n; j = k++) {
+    ex0[k] = Math.min(poly[j][0], poly[k][0]) - ramp;
+    ex1[k] = Math.max(poly[j][0], poly[k][0]) + ramp;
+    ey0[k] = Math.min(poly[j][1], poly[k][1]) - ramp;
+    ey1[k] = Math.max(poly[j][1], poly[k][1]) + ramp;
+    x0 = Math.min(x0, poly[k][0]);
+    x1 = Math.max(x1, poly[k][0]);
+    y0 = Math.min(y0, poly[k][1]);
+    y1 = Math.max(y1, poly[k][1]);
+  }
+  const ys = Math.max(0, Math.floor(y0)), ye = Math.min(height - 1, Math.ceil(y1));
+  const xs = Math.max(0, Math.floor(x0)), xe = Math.min(width - 1, Math.ceil(x1));
+  for (let y = ys; y <= ye; y++) {
+    const py = y + 0.5;
+    for (let x = xs; x <= xe; x++) {
       const i = y * width + x;
       if (!inside[i]) continue;
-      const px = x + 0.5, py = y + 0.5;
-      let d = Infinity;
+      const px = x + 0.5;
+      let d = ramp;
       for (let k = 0, j = n - 1; k < n; j = k++) {
+        if (px < ex0[k] || px > ex1[k] || py < ey0[k] || py > ey1[k]) continue;
         d = Math.min(d, segmentDistance(px, py, poly[j], poly[k]));
         if (d === 0) break;
       }

@@ -5,6 +5,7 @@ import {
   convexHull,
   fillPolygon,
   gaussianBlur,
+  gaussianBlurBox,
   median,
   percentile,
   rampPolygon,
@@ -96,6 +97,51 @@ describe("raw pixel helpers", () => {
     expect(median([4, 1, 2, 3])).toBe(2.5);
     expect(percentile([0, 10, 20, 30, 40], 10)).toBe(4);
     expect(median([])).toBeNaN();
+  });
+});
+
+describe("fast paths match the plain versions", () => {
+  // A pseudo-random mask with blobs, including at the image edges.
+  const W = 97, H = 83;
+  const mask = new Uint8Array(W * H);
+  let seed = 7;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let n = 0; n < 12; n++) {
+    const cx = rnd() * W, cy = rnd() * H, r = 2 + rnd() * 9;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if ((x - cx) ** 2 + (y - cy) ** 2 < r * r) mask[y * W + x] = 1;
+  }
+
+  it.each([0.6, 2.5, 7])("gaussianBlurBox equals gaussianBlur inside the box (sigma %s)", (sigma) => {
+    const full = gaussianBlur(Float32Array.from(mask), W, H, sigma);
+    for (const box of [{ x0: 10, y0: 5, x1: 60, y1: 40 }, { x0: -5, y0: -5, x1: 30, y1: 200 }, { x0: 0, y0: 0, x1: W, y1: H }]) {
+      const b = gaussianBlurBox(mask, W, H, sigma, box);
+      for (let y = 0; y < b.h; y++)
+        for (let x = 0; x < b.w; x++) expect(b.data[y * b.w + x]).toBeCloseTo(full[(y + b.y0) * W + x + b.x0], 5);
+    }
+  });
+
+  it("rampPolygon (edge-skipping) equals the brute-force distance ramp", () => {
+    const poly: Point[] = [[5.5, 8], [70, 3], [90, 40], [60, 78], [12, 66], [30, 40]];
+    const ramp = 9;
+    const a = rampPolygon(poly, W, H, ramp);
+    const inside = fillPolygon(poly, W, H);
+    const seg = (px: number, py: number, p: Point, q: Point) => {
+      const vx = q[0] - p[0], vy = q[1] - p[1];
+      const t = Math.max(0, Math.min(1, ((px - p[0]) * vx + (py - p[1]) * vy) / (vx * vx + vy * vy)));
+      return Math.hypot(px - (p[0] + t * vx), py - (p[1] + t * vy));
+    };
+    for (let y = 0; y < H; y++)
+      for (let x = 0; x < W; x++) {
+        const i = y * W + x;
+        if (!inside[i]) {
+          expect(a[i]).toBe(0);
+          continue;
+        }
+        let d = Infinity;
+        for (let k = 0, j = poly.length - 1; k < poly.length; j = k++) d = Math.min(d, seg(x + 0.5, y + 0.5, poly[j], poly[k]));
+        const t = Math.min(1, d / ramp);
+        expect(a[i]).toBeCloseTo(t * t * (3 - 2 * t), 5);
+      }
   });
 });
 

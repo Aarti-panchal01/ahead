@@ -23,7 +23,7 @@ import {
   channelsOf,
   clipHalfPlane,
   convexHull,
-  gaussianBlur,
+  gaussianBlurBox,
   median,
   rampPolygon,
   resize,
@@ -188,15 +188,23 @@ export function innerFaceMask(landmarks: Landmarks, width: number, height: numbe
 
   if (hairMask) {
     if (hairMask.length !== width * height) throw new Error("The hair mask must be the size of the render");
-    const hair = new Float32Array(hairMask.length);
-    for (let i = 0; i < hair.length; i++) hair[i] = hairMask[i] ? 1 : 0;
-    const soft = gaussianBlur(hair, width, height, Math.max(0.5, PASTE.hairBlur * fw));
-    // soft is 0.5 on a straight hair edge and falls off outside it: full paste at soft 0, none from soft 0.25 up.
-    for (let i = 0; i < alpha.length; i++) {
-      if (!(alpha[i] > 0)) continue;
-      const t = Math.min(1, soft[i] * 4);
-      alpha[i] *= 1 - t * t * (3 - 2 * t);
+    // Blur only over the paste polygon's box (alpha is 0 outside it).
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const [x, y] of poly) {
+      x0 = Math.min(x0, x);
+      y0 = Math.min(y0, y);
+      x1 = Math.max(x1, x);
+      y1 = Math.max(y1, y);
     }
+    const soft = gaussianBlurBox(hairMask, width, height, Math.max(0.5, PASTE.hairBlur * fw), { x0: x0 - 1, y0: y0 - 1, x1: x1 + 2, y1: y1 + 2 });
+    // soft is 0.5 on a straight hair edge and falls off outside it: full paste at soft 0, none from soft 0.25 up.
+    for (let y = 0; y < soft.h; y++)
+      for (let x = 0; x < soft.w; x++) {
+        const i = (y + soft.y0) * width + x + soft.x0;
+        if (!(alpha[i] > 0)) continue;
+        const t = Math.min(1, soft.data[y * soft.w + x] * 4);
+        alpha[i] *= 1 - t * t * (3 - 2 * t);
+      }
   }
   return alpha;
 }
@@ -238,6 +246,12 @@ export function restoreInnerFace(
 }
 
 const worst = (rs: IntegrityRegionResult[]) => Math.max(...rs.map((r) => r.deltaE2000));
+
+/**
+ * The regions left out of the check, in INTEGRITY_REGIONS order: shaded by the new hair (HAIR_SHADOW), mostly under
+ * hair (MIN_SKIN_SHARE), or off the image. Always an array once a face was found (empty when all four were measured).
+ */
+const skipped = (kept: IntegrityRegionResult[]): IntegrityRegion[] => INTEGRITY_REGIONS.filter((r) => !kept.some((k) => k.region === r));
 
 /**
  * Regions shaded by the render's new hair (see HAIR_SHADOW). Needs both hair masks: "new hair" is hair in the render
@@ -293,18 +307,20 @@ export function integrityCheck(
   const measured = measureSkin(original, result, landmarks, masks);
   const shaded = hairShadedRegions(measured, original, result, landmarks, masks);
   const regions = measured.filter((r) => !shaded.has(r.region));
-  if (regions.length === 0) return { status: "failed", regions, plainText: PLAIN.covered };
-  if (worst(regions) <= threshold) return { status: "unchanged", regions, plainText: PLAIN.unchanged };
+  const skippedRegions = skipped(regions);
+  if (regions.length === 0) return { status: "failed", regions, skippedRegions, plainText: PLAIN.covered };
+  if (worst(regions) <= threshold) return { status: "unchanged", regions, skippedRegions, plainText: PLAIN.unchanged };
 
   const corrected = restoreInnerFace(original, result, landmarks, masks).image;
   const after = measureSkin(original, corrected, landmarks, masks).filter((r) => !shaded.has(r.region));
-  if (after.length === 0 || worst(after) > threshold) return { status: "failed", regions, after, plainText: PLAIN.notRestored };
+  if (after.length === 0 || worst(after) > threshold) return { status: "failed", regions, skippedRegions, after, plainText: PLAIN.notRestored };
 
   const tripped = regions.filter((r) => r.deltaE2000 > threshold);
   const meanDL = tripped.reduce((s, r) => s + r.deltaL, 0) / tripped.length;
   return {
     status: "corrected",
     regions,
+    skippedRegions,
     after,
     plainText: meanDL > 0 ? PLAIN.lightened : PLAIN.darkened,
     correctedImage: corrected,
