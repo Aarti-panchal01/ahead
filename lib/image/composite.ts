@@ -4,7 +4,7 @@
 // the original's pixels.
 // - brows: each brow polygon grown ~35% around its centre, Gaussian-feathered (~1.2% of face width).
 // - lashes: a thin band along each upper and lower lid line (out from the eye, longer on the upper lid, tapering to
-//   the corners, a little into the lid), lightly feathered; the skin ring is around the eyes, eyes themselves left out.
+//   the inner corner, a little into the lid), lightly feathered; the skin ring is around the eyes, eyes themselves left out.
 
 import type { FeatureKind } from "@/lib/types";
 import {
@@ -38,7 +38,7 @@ export const LASH_COMPOSITE = {
   lowerOut: 0.03,
   /** The band also covers this much of the lid itself (into the eye), for the lash roots and liner line. */
   inset: 0.006,
-  /** Share of the band length kept at the eye corners (it tapers from the middle). */
+  /** Share of the band length kept at the inner corner (full length at the outer corner, where lashes flare). */
   cornerTaper: 0.35,
   /** Gaussian feather sigma, fraction of face width. Wide enough that the lid edge (sharp, and resampled differently by YouCam) leaves no seam. */
   feather: 0.014,
@@ -46,7 +46,7 @@ export const LASH_COMPOSITE = {
   ring: 2.4,
 } as const;
 
-/** Band along a lid line: out from the eye centre by `out` (tapered to the corners), into it by `inset`. Pixels. */
+/** Band along a lid line: out from the eye centre by `out` (tapering to the inner corner), into it by `inset`. Pixels. */
 function lidBand(px: readonly Point[], lid: readonly number[], centre: Point, out: number, inset: number): Point[] {
   const n = lid.length;
   const outer: Point[] = [], inner: Point[] = [];
@@ -54,7 +54,7 @@ function lidBand(px: readonly Point[], lid: readonly number[], centre: Point, ou
     const p = px[lid[k]];
     const dx = p[0] - centre[0], dy = p[1] - centre[1];
     const len = Math.hypot(dx, dy) || 1;
-    const taper = LASH_COMPOSITE.cornerTaper + (1 - LASH_COMPOSITE.cornerTaper) * Math.sin((Math.PI * k) / (n - 1));
+    const taper = 1 - (1 - LASH_COMPOSITE.cornerTaper) * (k / (n - 1)) ** 1.5; // lid lines run outer -> inner corner
     outer.push([p[0] + (dx / len) * out * taper, p[1] + (dy / len) * out * taper]);
     inner.push([p[0] - (dx / len) * inset, p[1] - (dy / len) * inset]);
   }

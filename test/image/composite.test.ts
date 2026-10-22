@@ -111,7 +111,7 @@ describe("compositeFeature lashes (thin band along the lids)", () => {
     for (const lid of [LID_UPPER_LEFT, LID_UPPER_RIGHT])
       for (const k of lid.slice(2, -2)) {
         const [x, y] = px[k];
-        for (let d = 1; d <= Math.round(0.025 * fw); d++) {
+        for (let d = 1; d <= Math.round(0.02 * fw); d++) {
           const i = (Math.round(y) - d) * W + Math.round(x);
           strokes.push(i);
           for (let c = 0; c < 3; c++) r[i * 3 + c] = 20;
