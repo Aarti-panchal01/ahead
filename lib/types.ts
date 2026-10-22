@@ -116,6 +116,8 @@ export interface UnitStatus {
   servingRecordings: boolean;
   remainingToday?: number;
   reason?: "daily_cap" | "reserve" | "unavailable";
+  /** True when live mode needs a tester code for try-ons on the user's own photo (TESTER_CODE is set). */
+  testerRequired?: boolean;
 }
 
 // ---------- Wave 2 contracts ----------
