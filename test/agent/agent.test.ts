@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { POST as planRoute } from "@/app/api/agent/plan/route";
-import { runPlan, SAMPLE_FREE_LINE, toLines } from "@/lib/agent/agent";
+import { LLM_TIMEOUT_MS, runPlan, SAMPLE_FREE_LINE, toLines } from "@/lib/agent/agent";
 import { claimUnits, getPending, SESSION_CAP_UNITS } from "@/lib/agent/budget";
 import { findClaims, SAFE_LINE } from "@/lib/agent/claims";
 import type { McpCapabilities } from "@/lib/agent/mcp";
@@ -9,7 +9,7 @@ import { CARE_TEAM_LINE } from "@/lib/agent/timeline";
 import { setStore } from "@/lib/store";
 import type { PlanResponse } from "@/lib/types";
 import { freshStore } from "../platform/helpers";
-import { asPlanner, failingModel, hangingModel, mockModel, rateLimited } from "./helpers";
+import { asPlanner, failingModel, groqRateLimited, hangingModel, mockModel, rateLimited } from "./helpers";
 
 const SID = "sess_agent_0001";
 const now = new Date("2026-10-22T09:00:00Z");
@@ -24,13 +24,15 @@ beforeEach(() => { freshStore(); });
 afterEach(() => { vi.unstubAllEnvs(); setStore(null); });
 
 describe("providers", () => {
-  it("Gemini first, then Groq; a provider without a key is skipped", () => {
+  it("Groq first, then Gemini; a provider without a key is skipped", () => {
     expect(plannerModels({})).toEqual([]);
     const both = plannerModels({ GOOGLE_GENERATIVE_AI_API_KEY: "g", GROQ_API_KEY: "q" });
-    expect(both.map((m) => m.name)).toEqual(["Gemini", "Groq"]);
-    expect((both[0].model as { modelId: string }).modelId).toBe(GEMINI_MODEL_ID);
-    expect((both[1].model as { modelId: string }).modelId).toBe(GROQ_MODEL_ID);
+    expect(both.map((m) => m.name)).toEqual(["Groq", "Gemini"]);
+    expect((both[0].model as { modelId: string }).modelId).toBe(GROQ_MODEL_ID);
+    expect((both[1].model as { modelId: string }).modelId).toBe(GEMINI_MODEL_ID);
     expect(plannerModels({ GROQ_API_KEY: "q" }).map((m) => m.name)).toEqual(["Groq"]);
+    expect(plannerModels({ GOOGLE_GENERATIVE_AI_API_KEY: "g" }).map((m) => m.name)).toEqual(["Gemini"]);
+    expect(LLM_TIMEOUT_MS).toBe(6000);
   });
 });
 
@@ -74,18 +76,18 @@ describe("consult agent, rule-based plan", () => {
   });
 });
 
-describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded tool-call transcript)", () => {
+describe("consult agent, Groq -> Gemini -> rule-based (mocked models, recorded tool-call transcript)", () => {
   // Own photo (sampled colour, no sample person): the paid path, so try_on proposals are exercised.
   const req = { stage: "not_yet" as const, firstTreatmentDate: "2026-11-02", hairColour: "#706D6B", preferences: { notes: "Likes curls." } };
 
-  it("Gemini answers: tools run, paid steps stay pending, unknown ids dropped, text linted", async () => {
-    const gemini = mockModel();
+  it("Groq answers: tools run, paid steps stay pending, unknown ids dropped, text linted; Gemini not called", async () => {
     const groq = mockModel();
-    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini), asPlanner("Groq", groq)] });
+    const gemini = mockModel();
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", groq), asPlanner("Gemini", gemini)] });
     expect(p.source).toBe("llm");
-    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Gemini);
-    expect(gemini.doGenerateCalls).toHaveLength(3);
-    expect(groq.doGenerateCalls).toHaveLength(0);
+    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Groq);
+    expect(groq.doGenerateCalls).toHaveLength(3);
+    expect(gemini.doGenerateCalls).toHaveLength(0);
     // shortlist tool asked for wraps
     expect(p.shortlist.some((id) => id.startsWith("H"))).toBe(true);
     // try_on: W99 is unknown; never more than 3; nothing ran
@@ -101,14 +103,14 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
     // the timeline is computed locally
     expect(p.timeline[1]).toMatchObject({ date: "2026-10-26", label: "Order your wig by this date" });
     expectSafe(p);
-    const call = gemini.doGenerateCalls[0];
+    const call = groq.doGenerateCalls[0];
     expect(call.tools!.map((t) => t.name).sort()).toEqual(["draft_brief", "shortlist", "try_on", "youcam_capabilities"]);
     expect(call.maxOutputTokens).toBe(2000);
   });
 
   it("sample person on the LLM path: try_on reports free saved previews, nothing pending, 0 units", async () => {
     const gemini = mockModel();
-    const p = await runPlan({ stage: "gone", personaId: "P1" }, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini)] });
+    const p = await runPlan({ stage: "gone", personaId: "P1" }, { sessionId: SID, now, mcp, models: [asPlanner("Groq", gemini)] });
     expect(p.source).toBe("llm");
     expect(p.pendingApproval).toEqual([]);
     expect(p.unitsUsed).toBe(0);
@@ -118,7 +120,7 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
 
   it("sample person on the LLM path: the model's catalogue holds only her recorded items", async () => {
     const gemini = mockModel();
-    const p = await runPlan({ stage: "gone", personaId: "P1", preferences: { wantsWraps: true } }, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini)] });
+    const p = await runPlan({ stage: "gone", personaId: "P1", preferences: { wantsWraps: true } }, { sessionId: SID, now, mcp, models: [asPlanner("Groq", gemini)] });
     const sent = JSON.stringify(gemini.doGenerateCalls[0].prompt);
     expect(sent).toContain('\\"id\\":\\"W01\\"');
     expect(sent).not.toContain("W08");
@@ -127,23 +129,37 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
     expect(p.shortlist.every((id) => allowed.includes(id))).toBe(true);
   });
 
-  it("Gemini rate limited (429 RESOURCE_EXHAUSTED) -> Groq answers, Gemini tried once", async () => {
-    const gemini = failingModel(rateLimited());
-    const groq = mockModel();
-    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", gemini), asPlanner("Groq", groq)] });
-    expect(gemini.doGenerateCalls).toHaveLength(1);
-    expect(groq.doGenerateCalls).toHaveLength(3);
+  it("Groq rate limited (429) -> Gemini answers, Groq tried once", async () => {
+    const groq = failingModel(groqRateLimited());
+    const gemini = mockModel();
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", groq), asPlanner("Gemini", gemini)] });
+    expect(groq.doGenerateCalls).toHaveLength(1);
+    expect(gemini.doGenerateCalls).toHaveLength(3);
     expect(p.source).toBe("llm");
-    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Groq);
+    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Gemini);
   });
 
-  it("Gemini times out -> Groq", async () => {
-    const p = await runPlan(req, { sessionId: SID, now, mcp, timeoutMs: 50, models: [asPlanner("Gemini", hangingModel()), asPlanner("Groq", mockModel())] });
-    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Groq);
-  });
+  it("Groq times out at the real 6 s -> Gemini answers", async () => {
+    const t0 = Date.now();
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", hangingModel()), asPlanner("Gemini", mockModel())] });
+    const ms = Date.now() - t0;
+    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.Gemini);
+    expect(ms).toBeGreaterThanOrEqual(5900);
+    expect(ms).toBeLessThan(8000);
+  }, 15_000);
+
+  it("both time out -> rule-based plan within about 12 s", async () => {
+    const t0 = Date.now();
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", hangingModel()), asPlanner("Gemini", hangingModel())] });
+    const ms = Date.now() - t0;
+    expect(p.source).toBe("fallback");
+    expect(p.messages.at(-1)).toBe(PROVIDER_LINE.fallback);
+    expect(ms).toBeGreaterThanOrEqual(11_800);
+    expect(ms).toBeLessThan(14_000);
+  }, 20_000);
 
   it("both fail -> rule-based plan with the plain line", async () => {
-    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Gemini", failingModel(rateLimited())), asPlanner("Groq", failingModel())] });
+    const p = await runPlan(req, { sessionId: SID, now, mcp, models: [asPlanner("Groq", failingModel(groqRateLimited())), asPlanner("Gemini", failingModel(rateLimited()))] });
     expect(p.source).toBe("fallback");
     expect(p.messages.at(-1)).toBe(PROVIDER_LINE.fallback);
     expect(p.shortlist).toHaveLength(4);
