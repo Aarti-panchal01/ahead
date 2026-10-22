@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "lint:claims": "tsx scripts/lint-claims.ts",
+    "test:count": "node scripts/test-count.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "3.0.131",
@@ -24,13 +27,19 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.11.3",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "1.62.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.20",
+    "tsx": "4.20.6",
     "typescript": "^5",
     "vitest": "^3.2.4"
+  },
+  "overrides": {
+    "playwright-core": "1.62.0"
   }
 }

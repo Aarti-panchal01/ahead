@@ -1,0 +1,31 @@
+name: Uptime
+
+# Every 30 minutes: the live site answers, and /api/status says which mode it is in.
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SITE: https://try-ahead.vercel.app
+    steps:
+      - name: Landing page returns 200
+        run: |
+          code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 --retry 2 --retry-delay 5 "$SITE/")
+          echo "GET / -> $code"
+          test "$code" = "200"
+
+      - name: Status endpoint returns 200 with a mode
+        run: |
+          code=$(curl -sS -o status.json -w '%{http_code}' --max-time 30 --retry 2 --retry-delay 5 "$SITE/api/status")
+          echo "GET /api/status -> $code"
+          test "$code" = "200"
+          jq -e 'has("mode")' status.json > /dev/null || { echo "status JSON has no mode:"; cat status.json; exit 1; }
+          echo "mode: $(jq -r '.mode' status.json)"
