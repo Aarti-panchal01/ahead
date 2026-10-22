@@ -25,35 +25,52 @@ export const MAX_PIXELS = 40_000_000;
 export interface AssetPaths {
   wasmBase?: string;
   modelBase?: string;
+  /**
+   * "GPU" (default) runs both models on WebGL, about 10x faster than "CPU" on a laptop and what keeps a check under
+   * 1.5 s on a mid-range phone; if the GPU delegate cannot start, the CPU is used. Only the first getModels call counts.
+   */
+  delegate?: "GPU" | "CPU";
 }
 
 interface Models {
   landmarker: FaceLandmarker;
   segmenter: ImageSegmenter;
+  /** The delegate the models actually run on. */
+  delegate: "GPU" | "CPU";
 }
 let models: Promise<Models> | null = null;
 
-/** Load (once) the WASM fileset and both models, CPU delegate like the Python helper that made the test fixtures. */
+/** Load (once) the WASM fileset and both models: GPU delegate when available, else CPU. */
 export function getModels(paths: AssetPaths = {}): Promise<Models> {
   if (typeof window === "undefined") return Promise.reject(new Error("The image lab models run only in a browser"));
   models ??= (async () => {
     const { FaceLandmarker, FilesetResolver, ImageSegmenter } = await import("@mediapipe/tasks-vision");
     const files = await FilesetResolver.forVisionTasks(paths.wasmBase ?? MEDIAPIPE_WASM_BASE);
     const base = paths.modelBase ?? MODEL_BASE;
-    const [landmarker, segmenter] = await Promise.all([
-      FaceLandmarker.createFromOptions(files, {
-        baseOptions: { modelAssetPath: `${base}/face_landmarker.task`, delegate: "CPU" },
-        runningMode: "IMAGE",
-        numFaces: 1,
-      }),
-      ImageSegmenter.createFromOptions(files, {
-        baseOptions: { modelAssetPath: `${base}/selfie_multiclass_256x256.tflite`, delegate: "CPU" },
-        runningMode: "IMAGE",
-        outputCategoryMask: true,
-        outputConfidenceMasks: false,
-      }),
-    ]);
-    return { landmarker, segmenter };
+    const load = (delegate: "GPU" | "CPU") =>
+      Promise.all([
+        FaceLandmarker.createFromOptions(files, {
+          baseOptions: { modelAssetPath: `${base}/face_landmarker.task`, delegate },
+          runningMode: "IMAGE",
+          numFaces: 1,
+        }),
+        ImageSegmenter.createFromOptions(files, {
+          baseOptions: { modelAssetPath: `${base}/selfie_multiclass_256x256.tflite`, delegate },
+          runningMode: "IMAGE",
+          outputCategoryMask: true,
+          outputConfidenceMasks: false,
+        }),
+      ]);
+    if ((paths.delegate ?? "GPU") === "GPU") {
+      try {
+        const [landmarker, segmenter] = await load("GPU");
+        return { landmarker, segmenter, delegate: "GPU" as const };
+      } catch {
+        // No WebGL2 (or a blocked GPU): fall back to the CPU below.
+      }
+    }
+    const [landmarker, segmenter] = await load("CPU");
+    return { landmarker, segmenter, delegate: "CPU" as const };
   })();
   models.catch(() => {
     models = null; // a failed load (offline, 404) can be retried
@@ -152,6 +169,8 @@ export interface FaceRead {
   landmarks: Landmarks | null;
   /** 0/1 hair mask at the image size. */
   hairMask: Uint8Array;
+  /** 0/1 mask of everything that is not skin (hair, a wrap, background) at the image size; applyBrows never paints it. */
+  coverMask: Uint8Array;
 }
 
 /** selfie-multiclass category mask at the image size. */
@@ -167,33 +186,44 @@ function categoriesOf(segmenter: ImageSegmenter, data: ImageData): Uint8Array {
   }
 }
 
-const hairMaskOf = (segmenter: ImageSegmenter, data: ImageData) => hairMaskFromCategories(categoriesOf(segmenter, data));
+const isFaceRead = (src: unknown): src is FaceRead => typeof src === "object" && src !== null && "hairMask" in src && "coverMask" in src;
 
-/** Landmarks + hair mask for a photo. Read the user's photo once and pass the result to the calls below. */
+/**
+ * Landmarks + hair and cover masks for a photo (one segmentation, one landmark pass). Read each photo once and pass
+ * the result on: the user's photo to every checkRender, the brows photo to every applyBrowsInBrowser, and a render to
+ * both checkRender and applyBrowsInBrowser.
+ */
 export async function readFace(src: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<FaceRead> {
-  if (typeof src === "object" && "hairMask" in src) return src;
+  if (isFaceRead(src)) return src;
   const image = await loadPixels(src);
   const { landmarker, segmenter } = await getModels(paths);
   const data = toImageData(image);
-  const hairMask = hairMaskOf(segmenter, data);
+  const cats = categoriesOf(segmenter, data);
   const face = landmarker.detect(data).faceLandmarks[0];
   const landmarks = face && face.length ? face.map((p) => [p.x, p.y, p.z]) : null;
-  return { image, landmarks, hairMask };
+  return { image, landmarks, hairMask: hairMaskFromCategories(cats), coverMask: coverMaskFromCategories(cats) };
 }
 
 /**
  * The integrity check on a YouCam render, in the browser. `original` is the exact photo sent to YouCam (for a full
- * look, the brow-composited photo); pass its FaceRead to avoid reading it again. The corrected image is a data URL.
+ * look, the brow-composited photo); pass FaceReads to avoid reading a photo twice. The corrected image is a data URL.
  */
 export async function checkRender(
   original: ImageSource | FaceRead,
-  result: ImageSource,
+  result: ImageSource | FaceRead,
   options: Pick<IntegrityOptions, "threshold"> & AssetPaths = {},
 ): Promise<IntegrityReport> {
   const o = await readFace(original, options);
-  const r = await loadPixels(result);
-  const { segmenter } = await getModels(options);
-  const resultHair = hairMaskOf(segmenter, toImageData(r));
+  let r: RawImage, resultHair: Uint8Array;
+  if (isFaceRead(result)) {
+    r = result.image;
+    resultHair = result.hairMask;
+  } else {
+    // The render's landmarks are not needed here (the original's are used), so only segment it.
+    r = await loadPixels(result);
+    const { segmenter } = await getModels(options);
+    resultHair = hairMaskFromCategories(categoriesOf(segmenter, toImageData(r)));
+  }
   const rep = integrityCheck(o.image, r, o.landmarks, { threshold: options.threshold, hairMasks: { original: o.hairMask, result: resultHair } });
   const { correctedImage, ...rest } = rep;
   return correctedImage ? { ...rest, correctedImage: await toDataUrl(correctedImage) } : rest;
@@ -213,16 +243,12 @@ export async function compositeFeatureInBrowser(original: ImageSource | FaceRead
  * Pass the brows photo's FaceRead to read it once for every render. Hair or a wrap over a brow is never painted over.
  * Returns a data URL at the render's size.
  */
-export async function applyBrowsInBrowser(render: ImageSource, brows: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<string> {
+export async function applyBrowsInBrowser(render: ImageSource | FaceRead, brows: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<string> {
   const b = await readFace(brows, paths);
   if (!b.landmarks) throw new Error("We could not find a face in the brows photo. Try the brows step again.");
-  const r = await loadPixels(render);
-  const { landmarker, segmenter } = await getModels(paths);
-  const data = toImageData(r);
-  const face = landmarker.detect(data).faceLandmarks[0];
-  if (!face || !face.length) throw new Error("We could not find a face in this try-on, so the brows were not added.");
-  const cover = coverMaskFromCategories(categoriesOf(segmenter, data));
-  return toDataUrl(applyBrows(r, b.image, face.map((p) => [p.x, p.y, p.z]), b.landmarks, cover));
+  const r = await readFace(render, paths);
+  if (!r.landmarks) throw new Error("We could not find a face in this try-on, so the brows were not added.");
+  return toDataUrl(applyBrows(r.image, b.image, r.landmarks, b.landmarks, r.coverMask));
 }
 
 /** Hair and brow colour from the user's own photo (0 units). */
