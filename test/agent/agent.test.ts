@@ -41,7 +41,7 @@ describe("consult agent, rule-based plan", () => {
     expect(p.messages.at(-1)).toBe(PROVIDER_LINE.fallback);
     expect(p.shortlist).toHaveLength(4);
     expect(p.timeline.at(-1)).toEqual({ label: CARE_TEAM_LINE });
-    expect(p.timeline[1]).toMatchObject({ date: "2026-11-08" });
+    expect(p.timeline[1]).toMatchObject({ date: "2026-10-26", label: "Order your wig by this date" });
     expect(p.brief).toMatch(/bring a lock of hair/);
     // A sample person's try-ons are free saved recordings: nothing to approve, 0 units.
     expect(p.pendingApproval).toEqual([]);
@@ -99,7 +99,7 @@ describe("consult agent, Gemini -> Groq -> rule-based (mocked models, recorded t
     expect(p.messages[2]).toBe(`${SAFE_LINE} Previews show style and colour, not cap fit, density or comfort.`);
     expect(p.messages[1]).toBe("Each try-on waits for your OK before anything runs.");
     // the timeline is computed locally
-    expect(p.timeline[1]).toMatchObject({ date: "2026-11-08" });
+    expect(p.timeline[1]).toMatchObject({ date: "2026-10-26", label: "Order your wig by this date" });
     expectSafe(p);
     const call = gemini.doGenerateCalls[0];
     expect(call.tools!.map((t) => t.name).sort()).toEqual(["draft_brief", "shortlist", "try_on", "youcam_capabilities"]);

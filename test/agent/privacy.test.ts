@@ -49,7 +49,7 @@ describe("privacy: what the model sees", () => {
     expect(sent).toContain("#706D6B");
     expect(sent).toContain("W01");
     // The timeline still uses the date: computed locally.
-    if (stage === "not_yet") expect(p.timeline.some((t) => t.date === "2026-11-08")).toBe(true);
+    if (stage === "not_yet") expect(p.timeline.some((t) => t.date === "2026-10-26")).toBe(true);
     else expect(p.timeline[0].date).toBe("2026-10-22");
   });
 
