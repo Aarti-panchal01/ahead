@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { draftBrief, PREVIEW_LINE } from "@/lib/agent/brief";
 import { findClaims } from "@/lib/agent/claims";
-import { shortlistFor } from "@/lib/agent/shortlist";
+import { catalogueFor, PERSONAS, shortlistFor } from "@/lib/agent/shortlist";
 import { getItem } from "@/lib/catalogue";
 
 describe("shortlist", () => {
@@ -51,5 +51,33 @@ describe("draft_brief", () => {
 
   it("without a colour still asks for a lock of hair", () => {
     expect(draftBrief({ itemIds: [] })).toMatch(/I will bring a lock of hair/);
+  });
+});
+
+describe("sample people see only their recorded wigs and wraps", () => {
+  const prefsList = [
+    {},
+    { wantsWraps: true },
+    { texture: "straight", wantsWraps: true },
+    { texture: "coily", length: "pixie" },
+    { length: "long", texture: "wavy", wantsWraps: true },
+  ];
+
+  it.each(PERSONAS.map((p) => [p.id, p] as const))("%s: every shortlist id is in her recorded lists", (_id, persona) => {
+    const allowed = new Set([...persona.recordedWigs, ...persona.recordedWraps]);
+    for (const preferences of prefsList) {
+      for (const stage of ["not_yet", "gone"] as const) {
+        const s = shortlistFor({ stage, personaId: persona.id, preferences });
+        expect(s.ids.length).toBeGreaterThan(0);
+        for (const id of s.ids) expect(allowed.has(id), `${persona.id} got ${id}`).toBe(true);
+      }
+    }
+    expect(catalogueFor({ personaId: persona.id }).every((x) => allowed.has(x.id))).toBe(true);
+  });
+
+  it("P1 never gets W08; an own photo keeps the whole catalogue", () => {
+    for (const preferences of prefsList) expect(shortlistFor({ stage: "gone", personaId: "P1", preferences }).ids).not.toContain("W08");
+    expect(catalogueFor({}).map((x) => x.id)).toContain("W08");
+    expect(catalogueFor({}).length).toBeGreaterThan(catalogueFor({ personaId: "P1" }).length);
   });
 });

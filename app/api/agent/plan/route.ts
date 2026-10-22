@@ -6,7 +6,7 @@ import { runPlan } from "@/lib/agent/agent";
 import { warnMissingKeys } from "@/lib/agent/log";
 import { plannerModels } from "@/lib/agent/providers";
 import { APPROVE_MESSAGES } from "@/lib/agent/tryon";
-import { parsePlanRequest } from "@/lib/agent/validate";
+import { parsePlanRequest, timelineNow } from "@/lib/agent/validate";
 import { sessionId } from "@/lib/youcam/http";
 
 export const runtime = "nodejs";
@@ -19,6 +19,7 @@ export async function POST(req: Request) {
   const parsed = parsePlanRequest(body);
   if (!parsed.ok) return NextResponse.json({ errorCode: "bad_request", message: parsed.message }, { status: 400 });
   warnMissingKeys();
-  const plan = await runPlan(parsed.value, { sessionId: sid, models: plannerModels() });
+  const { today, ...request } = parsed.value;
+  const plan = await runPlan(request, { sessionId: sid, models: plannerModels(), now: timelineNow(today) });
   return NextResponse.json(plan);
 }

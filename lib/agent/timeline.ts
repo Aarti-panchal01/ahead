@@ -10,8 +10,12 @@ import type { HairLossStage, TimelineItem } from "@/lib/types";
 export const WINDOW_START_DAY = 7;
 /** Day by which it mostly has started (3 weeks). */
 export const WINDOW_END_DAY = 21;
-/** Order before the window opens. */
-export const ORDER_BY_DAY = WINDOW_START_DAY - 1;
+/**
+ * Order this many days BEFORE the first treatment (day 0), so the wig or wrap is ready on day 0.
+ * Why 7: a week covers ordinary delivery plus one exchange of an unopened wig (wigs are usually returnable only
+ * unopened), and still lands before day 0. It is a planning margin, not a medical number.
+ */
+export const ORDER_DAYS_BEFORE = 7;
 
 export const CARE_TEAM_LINE = "Check details with your care team.";
 const RETURNS_NOTE = "Wigs are usually returnable only unopened, so try styles on here first.";
@@ -48,21 +52,32 @@ export function planTimeline({ stage, firstTreatmentDate, now = new Date() }: Ti
       note: "Choose before hair loss starts. Save a lock of hair and photograph your current style.",
     });
     if (first) {
-      const orderBy = addDays(first, ORDER_BY_DAY);
+      const orderBy = addDays(first, -ORDER_DAYS_BEFORE);
       const start = addDays(first, WINDOW_START_DAY);
       const end = addDays(first, WINDOW_END_DAY);
       if (orderBy.getTime() >= today.getTime()) {
-        items.push({ date: toIso(orderBy), label: "Order your wig by this date", note: `This is before day ${WINDOW_START_DAY} after your first treatment. ${RETURNS_NOTE}` });
+        items.push({
+          date: toIso(orderBy),
+          label: "Order your wig by this date",
+          note: `${ORDER_DAYS_BEFORE} days before your first treatment leaves time for delivery and one exchange. ${RETURNS_NOTE}`,
+        });
       } else {
-        items.push({ date: toIso(today), label: "Order your wig soon", note: `Hair loss often starts from ${toIso(start)}. ${RETURNS_NOTE}` });
+        // Never an order-by date in the past.
+        items.push({ date: toIso(today), label: "Order your wig as soon as you can", note: `So it is ready by ${toIso(first)}. ${RETURNS_NOTE}` });
       }
+      items.push({
+        date: toIso(first),
+        label: "Have your wig or wrap ready",
+        note: "Your first treatment day. Having it ready before hair loss starts means no rush later.",
+      });
       items.push({
         date: toIso(start),
         label: "Hair loss often starts around here",
         note: `Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment: about ${toIso(start)} to ${toIso(end)} (${SOURCE}).`,
       });
     } else {
-      items.push({ label: `Order your wig within ${ORDER_BY_DAY} days of your first treatment`, note: RETURNS_NOTE });
+      items.push({ label: `Order your wig at least ${ORDER_DAYS_BEFORE} days before your first treatment`, note: RETURNS_NOTE });
+      items.push({ label: "Have your wig or wrap ready by your first treatment", note: "Having it ready before hair loss starts means no rush later." });
       items.push({
         label: `Hair loss often starts ${WINDOW_START_DAY} to ${WINDOW_END_DAY} days after the first treatment`,
         note: `Hair loss mostly starts 1 to 3 weeks after the first chemo or radiation treatment (${SOURCE}).`,
