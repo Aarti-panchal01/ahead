@@ -22,14 +22,15 @@ export const TEXTURE_STEP_PENALTY = 4;
 
 /**
  * "Close to your hair" only below this ΔE2000.
- * Why 6: ΔE2000 of about 1 is the smallest difference most people see with two patches side by side, and 2 is
+ * Why 5: ΔE2000 of about 1 is the smallest difference most people see with two patches side by side, and 2 is
  * where we call skin "changed" in the integrity check. Hair is not one flat colour and our reading of it from a
- * photo is approximate (docs/api-truth-table.md row 9), so a stricter bar would promise more than we can measure.
- * Up to about 6 the two swatches read as the same shade with a small shift; past 10 they read as a different
- * colour. In our catalogue the matches we would stand behind are 1.0 to 4.6, the next nearest is 5.6 (an ash brown
- * against a salt-and-pepper wig, visibly greyer), so 6 keeps "close" honest. Anything above gets a neutral label.
+ * photo is approximate (docs/api-truth-table.md row 9), so a much stricter bar would promise more than we measure.
+ * Around 5 and above, two hair swatches stop reading as the same shade: in our catalogue the pairs we would stand
+ * behind are 1.0 to 4.6 (P1's grey and W01, P2's ash brown and W04, the black wigs for P3 and P4), and the first
+ * pair that looks visibly different is 5.6 (P2's ash brown against W03, a greyer salt and pepper). So "close" means
+ * under 5; anything above gets the neutral "Worth a look".
  */
-export const CLOSE_DELTA_E = 6;
+export const CLOSE_DELTA_E = 5;
 
 export interface RankInput {
   /** Measured hair colour, "#RRGGBB". Missing when there is no hair to read. */

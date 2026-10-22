@@ -118,3 +118,13 @@ describe("match labels", () => {
     expect(matchLabel(b.wigs[2], true)).toBe("neutral");
   });
 });
+
+describe("close threshold on the real catalogue", () => {
+  it("P2's ash brown is close to W04 but not to the greyer W03", () => {
+    const p2 = getSample("P2")!;
+    const r = rankCatalogue(CATALOGUE, { hair: p2.hair, length: p2.length, texture: p2.texture });
+    const byId = Object.fromEntries(r.wigs.map((x) => [x.item.id, matchLabel(x, true)]));
+    expect(byId.W04).toBe("close");
+    expect(byId.W03).toBe("neutral");
+  });
+});
