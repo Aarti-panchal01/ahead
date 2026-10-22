@@ -52,6 +52,7 @@ describe("full look: brows (composited) then hair-transfer W01", () => {
     expect(rep.status).toBe("corrected");
     expect(rep.plainText).toBe("Corrected: the try-on darkened your skin slightly, restored");
     expect(rep.regions).toHaveLength(4);
+    expect(rep.skippedRegions).toEqual([]);
     expect(maxDE(rep.regions)).toBeGreaterThan(INTEGRITY_THRESHOLD);
     for (const r of rep.regions) expect(r.deltaL).toBeLessThan(-1.5); // darker everywhere, as the truth table says
     expect(rep.after).toHaveLength(4);
@@ -149,6 +150,7 @@ describe("integrityCheck edge cases", () => {
       expect(rep.status).toBe("failed");
       expect(rep.regions).toEqual([]);
       expect(rep.plainText).toBe(PLAIN.noFace);
+      expect(rep.skippedRegions).toBeUndefined();
     }
   });
 
@@ -157,6 +159,7 @@ describe("integrityCheck edge cases", () => {
     const rep = integrityCheck(original, raw, lm, { hairMasks: { result: covered } });
     expect(rep.status).toBe("failed");
     expect(rep.plainText).toBe(PLAIN.covered);
+    expect(rep.skippedRegions).toEqual(["cheek_left", "cheek_right", "nose_bridge", "chin"]);
     expect(() => integrityCheck(original, raw, lm, { hairMasks: { result: new Uint8Array(10) } })).toThrow(/size/);
   });
 });
@@ -176,6 +179,8 @@ describe("recordings rec__P{1..4}B__W*: a bob's shadow on the cheek is not a ski
     const { rep } = await check(rec);
     expect(["unchanged", "corrected"]).toContain(rep.status);
     expect(rep.regions.length).toBeGreaterThanOrEqual(2);
+    // Every region is either measured or listed as left out, never both.
+    expect([...rep.regions.map((r) => r.region), ...rep.skippedRegions!].sort()).toEqual(["cheek_left", "cheek_right", "chin", "nose_bridge"]);
     if (rep.status === "corrected") for (const r of rep.after!) expect(r.deltaE2000).toBeLessThanOrEqual(INTEGRITY_THRESHOLD);
   }, 30000);
 
@@ -184,6 +189,7 @@ describe("recordings rec__P{1..4}B__W*: a bob's shadow on the cheek is not a ski
     const left = raw.find((r) => r.region === "cheek_left")!;
     expect(left.deltaL).toBeLessThan(-10); // really darker: the hair's shadow
     expect(rep.regions.map((r) => r.region)).not.toContain("cheek_left");
+    expect(rep.skippedRegions).toContain("cheek_left"); // W12 also hides the right cheek under hair
     expect(rep.status).toBe("unchanged");
     expect(rep.plainText).toBe(PLAIN.unchanged);
   }, 30000);

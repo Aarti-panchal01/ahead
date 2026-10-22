@@ -240,6 +240,12 @@ export function restoreInnerFace(
 const worst = (rs: IntegrityRegionResult[]) => Math.max(...rs.map((r) => r.deltaE2000));
 
 /**
+ * The regions left out of the check, in INTEGRITY_REGIONS order: shaded by the new hair (HAIR_SHADOW), mostly under
+ * hair (MIN_SKIN_SHARE), or off the image. Always an array once a face was found (empty when all four were measured).
+ */
+const skipped = (kept: IntegrityRegionResult[]): IntegrityRegion[] => INTEGRITY_REGIONS.filter((r) => !kept.some((k) => k.region === r));
+
+/**
  * Regions shaded by the render's new hair (see HAIR_SHADOW). Needs both hair masks: "new hair" is hair in the render
  * that was not hair in the original. Returns the region names to leave out (none without masks).
  */
@@ -293,18 +299,20 @@ export function integrityCheck(
   const measured = measureSkin(original, result, landmarks, masks);
   const shaded = hairShadedRegions(measured, original, result, landmarks, masks);
   const regions = measured.filter((r) => !shaded.has(r.region));
-  if (regions.length === 0) return { status: "failed", regions, plainText: PLAIN.covered };
-  if (worst(regions) <= threshold) return { status: "unchanged", regions, plainText: PLAIN.unchanged };
+  const skippedRegions = skipped(regions);
+  if (regions.length === 0) return { status: "failed", regions, skippedRegions, plainText: PLAIN.covered };
+  if (worst(regions) <= threshold) return { status: "unchanged", regions, skippedRegions, plainText: PLAIN.unchanged };
 
   const corrected = restoreInnerFace(original, result, landmarks, masks).image;
   const after = measureSkin(original, corrected, landmarks, masks).filter((r) => !shaded.has(r.region));
-  if (after.length === 0 || worst(after) > threshold) return { status: "failed", regions, after, plainText: PLAIN.notRestored };
+  if (after.length === 0 || worst(after) > threshold) return { status: "failed", regions, skippedRegions, after, plainText: PLAIN.notRestored };
 
   const tripped = regions.filter((r) => r.deltaE2000 > threshold);
   const meanDL = tripped.reduce((s, r) => s + r.deltaL, 0) / tripped.length;
   return {
     status: "corrected",
     regions,
+    skippedRegions,
     after,
     plainText: meanDL > 0 ? PLAIN.lightened : PLAIN.darkened,
     correctedImage: corrected,
