@@ -40,6 +40,8 @@ export {
 export {
   INTEGRITY_THRESHOLD,
   PLAIN,
+  HAIR_SHADOW,
+  hairShadedRegions,
   innerFaceMask,
   integrityCheck,
   measureSkin,

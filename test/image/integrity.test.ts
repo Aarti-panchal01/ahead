@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { INTEGRITY_THRESHOLD, PLAIN, integrityCheck, measureSkin, restoreInnerFace } from "@/lib/image/integrity";
+import { INTEGRITY_THRESHOLD, PLAIN, hairShadedRegions, integrityCheck, measureSkin, restoreInnerFace } from "@/lib/image/integrity";
 import { hairMaskFromCategories } from "@/lib/image/sample";
 import { deltaE2000, rgbToLab } from "@/lib/image/colour";
 import { resize, type RawImage } from "@/lib/image/raw";
@@ -158,5 +158,57 @@ describe("integrityCheck edge cases", () => {
     expect(rep.status).toBe("failed");
     expect(rep.plainText).toBe(PLAIN.covered);
     expect(() => integrityCheck(original, raw, lm, { hairMasks: { result: new Uint8Array(10) } })).toThrow(/size/);
+  });
+});
+
+describe("recordings rec__P{1..4}B__W*: a bob's shadow on the cheek is not a skin tone change", () => {
+  const recs = ["P1B__W01", "P1B__W02", "P1B__W03", "P1B__W05", "P2B__W03", "P2B__W04", "P2B__W05", "P2B__W06",
+    "P3B__W01", "P3B__W07", "P3B__W08", "P3B__W09", "P4B__W08", "P4B__W10", "P4B__W11", "P4B__W12"];
+  const check = async (rec: string) => {
+    const p = rec.slice(0, 3);
+    const [original, result] = await Promise.all([loadImage(`public/personas/${p}.jpg`), loadImage(`fixtures/youcam/rec__${rec}.jpg`)]);
+    const lm = loadLandmarks(p).landmarks;
+    const masks = { original: await hair(p), result: await hair(`rec__${rec}`) };
+    return { rep: integrityCheck(original, result, lm, { hairMasks: masks }), raw: measureSkin(original, result, lm, masks) };
+  };
+
+  it.each(recs)("%s is never failed", async (rec) => {
+    const { rep } = await check(rec);
+    expect(["unchanged", "corrected"]).toContain(rep.status);
+    expect(rep.regions.length).toBeGreaterThanOrEqual(2);
+    if (rep.status === "corrected") for (const r of rep.after!) expect(r.deltaE2000).toBeLessThanOrEqual(INTEGRITY_THRESHOLD);
+  }, 30000);
+
+  it.each(["P4B__W10", "P4B__W11", "P4B__W12", "P2B__W04"])("%s: the shaded cheek beside the bob is left out, the rest is unchanged", async (rec) => {
+    const { rep, raw } = await check(rec);
+    const left = raw.find((r) => r.region === "cheek_left")!;
+    expect(left.deltaL).toBeLessThan(-10); // really darker: the hair's shadow
+    expect(rep.regions.map((r) => r.region)).not.toContain("cheek_left");
+    expect(rep.status).toBe("unchanged");
+    expect(rep.plainText).toBe(PLAIN.unchanged);
+  }, 30000);
+
+  it("P1B__W03 lightened the whole face (every region lighter): a genuine correction", async () => {
+    const { rep } = await check("P1B__W03");
+    expect(rep.status).toBe("corrected");
+    expect(rep.regions).toHaveLength(4);
+    for (const r of rep.regions) expect(r.deltaL).toBeGreaterThan(0.5);
+    expect(rep.plainText).toBe(PLAIN.lightened);
+  }, 30000);
+});
+
+describe("hairShadedRegions", () => {
+  it("keeps a whole-face darkening (full look): nothing is left out as shadow", async () => {
+    const [src, full] = await Promise.all([loadImage("fixtures/youcam/hero__P1B__browsB.jpg"), loadImage("fixtures/youcam/hero__P1B_browsB__W01.jpg")]);
+    const lm = loadLandmarks("hero__P1B").landmarks;
+    const masks = { original: await hair("hero__P1B__browsB"), result: await hair("hero__P1B_browsB__W01") };
+    const regions = measureSkin(src, full, lm, masks);
+    expect(hairShadedRegions(regions, src, full, lm, masks).size).toBe(0);
+  });
+
+  it("leaves nothing out without a render hair mask", async () => {
+    const [o, r] = await Promise.all([loadImage("public/personas/P4B.jpg"), loadImage("fixtures/youcam/rec__P4B__W10.jpg")]);
+    const lm = loadLandmarks("P4B").landmarks;
+    expect(hairShadedRegions(measureSkin(o, r, lm), o, r, lm, {}).size).toBe(0);
   });
 });

@@ -4,7 +4,7 @@
 // feathered mask that stays clear of the hairline, re-measure, and say in plain words what was corrected.
 // Pure: raw pixels in, raw pixels out. lib/image/browser.ts turns the corrected pixels into a data URL.
 
-import type { IntegrityRegionResult, IntegrityReport } from "@/lib/types";
+import type { IntegrityRegion, IntegrityRegionResult, IntegrityReport } from "@/lib/types";
 import { deltaE2000, rgbToLab, type Lab } from "./colour";
 import {
   BROW_TOP,
@@ -52,6 +52,19 @@ export const PASTE = {
   feather: 0.05,
   /** Blur of the hair masks before hair is cut out of the paste (the cut fades in over about 2 blur widths). */
   hairBlur: 0.02,
+} as const;
+
+/**
+ * Hair shadow: a new wig (a bob falling past the cheek) shades the skin right next to it. That is lighting, not a skin
+ * tone change, and pasting the original back cannot (and should not) undo it. YouCam's real skin shifts move the whole
+ * face (docs/api-truth-table.md rows 7 and 16), so a region counts as shaded by the new hair when it is near hair that
+ * the render added AND it is much darker than the other regions. Shaded regions are left out of the check.
+ */
+export const HAIR_SHADOW = {
+  /** "Near": the render's new hair is within this fraction of face width of the patch centre. */
+  near: 0.2,
+  /** "Much darker": ΔL* at least this far below the median ΔL* of the other regions. */
+  gapL: 2,
 } as const;
 
 export const PLAIN = {
@@ -227,6 +240,44 @@ export function restoreInnerFace(
 const worst = (rs: IntegrityRegionResult[]) => Math.max(...rs.map((r) => r.deltaE2000));
 
 /**
+ * Regions shaded by the render's new hair (see HAIR_SHADOW). Needs both hair masks: "new hair" is hair in the render
+ * that was not hair in the original. Returns the region names to leave out (none without masks).
+ */
+export function hairShadedRegions(
+  regions: IntegrityRegionResult[],
+  original: RawImage,
+  result: RawImage,
+  landmarks: Landmarks,
+  hairMasks: HairMasks,
+): Set<IntegrityRegion> {
+  const out = new Set<IntegrityRegion>();
+  if (!hairMasks.result || regions.length < 2) return out;
+  const { width: W, height: H } = result;
+  const oh = hairMasks.original && resizeMask(hairMasks.original, original.width, original.height, W, H);
+  const rh = hairMasks.result;
+  const px = toPixels(landmarks, W, H);
+  const pts = skinSamplePoints(px);
+  const R = HAIR_SHADOW.near * faceWidth(px);
+  for (const r of regions) {
+    const others = regions.filter((o) => o !== r).map((o) => o.deltaL);
+    if (r.deltaL > median(others) - HAIR_SHADOW.gapL) continue; // not much darker than the rest of the face
+    const [cx, cy] = pts[r.region];
+    let near = false;
+    for (let y = Math.max(0, Math.floor(cy - R)); y <= Math.min(H - 1, Math.ceil(cy + R)) && !near; y++) {
+      for (let x = Math.max(0, Math.floor(cx - R)); x <= Math.min(W - 1, Math.ceil(cx + R)); x++) {
+        const i = y * W + x;
+        if (rh[i] && !(oh && oh[i]) && (x + 0.5 - cx) ** 2 + (y + 0.5 - cy) ** 2 <= R * R) {
+          near = true;
+          break;
+        }
+      }
+    }
+    if (near) out.add(r.region);
+  }
+  return out;
+}
+
+/**
  * Check one render against the photo it was made from. `original` must be the exact image sent to YouCam (for a full
  * look, the brow-composited photo, so the paste keeps the new brows). Landmarks are the original's, normalised.
  */
@@ -239,12 +290,14 @@ export function integrityCheck(
   const threshold = options.threshold ?? INTEGRITY_THRESHOLD;
   if (!hasFace(landmarks)) return { status: "failed", regions: [], plainText: PLAIN.noFace };
   const masks = options.hairMasks ?? {};
-  const regions = measureSkin(original, result, landmarks, masks);
+  const measured = measureSkin(original, result, landmarks, masks);
+  const shaded = hairShadedRegions(measured, original, result, landmarks, masks);
+  const regions = measured.filter((r) => !shaded.has(r.region));
   if (regions.length === 0) return { status: "failed", regions, plainText: PLAIN.covered };
   if (worst(regions) <= threshold) return { status: "unchanged", regions, plainText: PLAIN.unchanged };
 
   const corrected = restoreInnerFace(original, result, landmarks, masks).image;
-  const after = measureSkin(original, corrected, landmarks, masks);
+  const after = measureSkin(original, corrected, landmarks, masks).filter((r) => !shaded.has(r.region));
   if (after.length === 0 || worst(after) > threshold) return { status: "failed", regions, after, plainText: PLAIN.notRestored };
 
   const tripped = regions.filter((r) => r.deltaE2000 > threshold);
