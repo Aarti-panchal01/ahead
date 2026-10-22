@@ -1,8 +1,10 @@
 // GET /api/status: live-mode budget as UnitStatus ({ mode, servingRecordings, remainingToday?, reason? }).
+// testerRequired: true when TESTER_CODE is set and mode is live (uploaded-selfie try-ons need a code).
 // Never throws: if the store (Upstash) or YouCam is briefly unreachable, answer with the mock-safe status
 // (recordings, reason "unavailable") so the UI keeps working.
 import { NextResponse } from "next/server";
 import { mode } from "@/lib/youcam";
+import { testerRequired } from "@/lib/youcam/tester";
 import { getUnitStatus, type UnitStatusDetail } from "@/lib/youcam/status";
 
 export const runtime = "nodejs";
@@ -24,5 +26,5 @@ export async function GET() {
   } finally {
     clearTimeout(timer);
   }
-  return NextResponse.json(status, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ ...status, testerRequired: testerRequired() }, { headers: { "Cache-Control": "no-store" } });
 }
