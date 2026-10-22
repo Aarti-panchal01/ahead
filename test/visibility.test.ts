@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { NearViewport, afterFirstPaint, resetFirstPaint } from "@/lib/client/visibility";
+import { NearViewport, afterFirstPaint, afterImagePainted, resetFirstPaint } from "@/lib/client/visibility";
 
 class FakeIO {
   static last: FakeIO;
@@ -62,5 +62,28 @@ describe("afterFirstPaint", () => {
   it("resolves at once on the server", async () => {
     resetFirstPaint();
     await afterFirstPaint(undefined);
+  });
+});
+
+describe("afterImagePainted", () => {
+  it("waits for a paint, the card's own image to load and decode, then a paint and idle time", async () => {
+    const steps: string[] = [];
+    let onLoad: () => void = () => {};
+    const img = {
+      complete: false,
+      addEventListener: (t: string, f: () => void) => { if (t === "load") { steps.push("listen"); onLoad = f; } },
+      decode: () => { steps.push("decode"); return Promise.resolve(); },
+    } as unknown as HTMLImageElement;
+    const win = {
+      requestAnimationFrame: (f: () => void) => { steps.push("raf"); f(); return 1; },
+      requestIdleCallback: (f: () => void) => { steps.push("idle"); f(); return 1; },
+      setTimeout: () => 0,
+    } as unknown as Window & typeof globalThis;
+    const p = afterImagePainted(() => img, win);
+    for (let i = 0; i < 5; i++) await Promise.resolve();
+    expect(steps).toEqual(["raf", "raf", "idle", "listen"]);
+    onLoad();
+    await p;
+    expect(steps).toEqual(["raf", "raf", "idle", "listen", "decode", "raf", "raf", "idle"]);
   });
 });

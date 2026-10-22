@@ -2,11 +2,9 @@
 // once the card is near the viewport. The renders themselves still load right away; only the heavy on-device
 // work waits, so the page paints and responds first (Lighthouse: LCP, TBT).
 
-/** Resolves after the first paint, then when the browser is idle (or after a short timeout where there is no idle callback). */
-let painted: Promise<void> | undefined;
-export function afterFirstPaint(win: (Window & typeof globalThis) | undefined = typeof window !== "undefined" ? window : undefined): Promise<void> {
-  if (!win) return Promise.resolve();
-  painted ??= new Promise<void>((resolve) => {
+/** The next paint, then idle time (or a short timeout where there is no idle callback). */
+function paintThenIdle(win: Window & typeof globalThis): Promise<void> {
+  return new Promise<void>((resolve) => {
     const idle = () => {
       if (typeof win.requestIdleCallback === "function") win.requestIdleCallback(() => resolve(), { timeout: 1500 });
       else win.setTimeout(resolve, 200);
@@ -15,7 +13,33 @@ export function afterFirstPaint(win: (Window & typeof globalThis) | undefined = 
     if (typeof win.requestAnimationFrame === "function") win.requestAnimationFrame(() => win.requestAnimationFrame(idle));
     else idle();
   });
+}
+
+/** Resolves after the page's first paint, then idle time. */
+let painted: Promise<void> | undefined;
+export function afterFirstPaint(win: (Window & typeof globalThis) | undefined = typeof window !== "undefined" ? window : undefined): Promise<void> {
+  if (!win) return Promise.resolve();
+  painted ??= paintThenIdle(win);
   return painted;
+}
+
+/**
+ * Resolves once the image the card is SHOWING (its own <img>, so the small display copy, not the full-size file the
+ * check will read) has decoded and painted, then idle time. Starting the on-device check, and its full-size
+ * downloads, before that paint would put them in front of the page's largest paint (LCP).
+ */
+export async function afterImagePainted(
+  getImage: () => HTMLImageElement | null | undefined,
+  win: (Window & typeof globalThis) | undefined = typeof window !== "undefined" ? window : undefined,
+): Promise<void> {
+  if (!win) return;
+  await paintThenIdle(win); // let React commit the card's image first
+  const img = getImage();
+  if (img) {
+    if (!img.complete) await new Promise<void>((r) => { img.addEventListener("load", () => r(), { once: true }); img.addEventListener("error", () => r(), { once: true }); });
+    await img.decode().catch(() => undefined);
+  }
+  await paintThenIdle(win);
 }
 
 /** Test hook. */
@@ -72,6 +96,11 @@ export class NearViewport {
     this.seen.add(key);
     for (const r of this.waiting.get(key) ?? []) r();
     this.waiting.delete(key);
+  }
+
+  /** The card element registered under this key, if it is mounted. */
+  element(key: string): Element | undefined {
+    return this.elements.get(key);
   }
 
   whenNear(key: string): Promise<void> {

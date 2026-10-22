@@ -28,4 +28,17 @@ for (const dir of DIRS) {
     }
   }
 }
+// Sample-person recordings (served full size by /api/fixtures for the integrity check): display copies only, in
+// public/rec/320 and public/rec/640, plus a manifest the UI reads to know which recordings have copies.
+const REC = /^(rec|hero)__P[1-4][AB][A-Za-z0-9_]*\.jpg$/;
+const recs = fs.readdirSync(path.join(root, "fixtures/youcam")).filter((f) => REC.test(f) && !f.includes("_raw")).sort();
+for (const f of recs) {
+  for (const w of WIDTHS) {
+    const outDir = path.join(root, "public/rec", String(w));
+    fs.mkdirSync(outDir, { recursive: true });
+    await sharp(path.join(root, "fixtures/youcam", f)).resize({ width: w }).jpeg({ quality: 80, mozjpeg: true }).toFile(path.join(outDir, f));
+    n++;
+  }
+}
+fs.writeFileSync(path.join(root, "lib/client/resized-recordings.json"), JSON.stringify(recs.map((f) => f.replace(/\.jpg$/, ""))) + "\n");
 console.log(`wrote ${n} images`);

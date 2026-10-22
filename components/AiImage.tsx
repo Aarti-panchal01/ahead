@@ -4,6 +4,7 @@
 // Performance (Lighthouse mobile): local persona, catalogue and landing images have 320 and 640 px copies made by
 // scripts/resize-images.mjs, offered through srcset so a phone downloads a fraction of the bytes. Only the first
 // visible hero image of a screen is `priority` (eager, fetchpriority high); everything else is lazy and async.
+import recordings from "@/lib/client/resized-recordings.json";
 import styles from "./AiImage.module.css";
 
 /** Show only a square of the image (x, y, size in the file's pixels), e.g. a hair crop for the match card. */
@@ -29,9 +30,18 @@ interface Props {
 
 /** Folders with 320 and 640 px copies (scripts/resize-images.mjs). */
 const RESIZED = /^\/(personas|catalogue|landing)\/([A-Za-z0-9_]+)\.jpg$/;
-export const COLUMN = "(max-width: 34rem) 100vw, 34rem";
+/** Sample recordings served full size by /api/fixtures (the integrity check reads those); display copies in /rec. */
+const FIXTURE = /^\/api\/fixtures\/([A-Za-z0-9_]+)$/;
+const RECORDINGS = new Set<string>(recordings);
+/**
+ * A full-width card on a phone. Slightly under the true width (by the card padding) so a 412 px phone at 1.75x
+ * picks the 640 px copy instead of the full file; the difference is a few percent and not visible.
+ */
+export const COLUMN = "(max-width: 34rem) calc(100vw - 48px), 32rem";
 
 export function srcSetFor(src: string, naturalWidth = 821): string | undefined {
+  const f = FIXTURE.exec(src);
+  if (f) return RECORDINGS.has(f[1]) ? `/rec/320/${f[1]}.jpg 320w, /rec/640/${f[1]}.jpg 640w, ${src} ${naturalWidth}w` : undefined;
   const m = RESIZED.exec(src);
   if (!m) return undefined;
   const [, dir, name] = m;
