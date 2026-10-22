@@ -1,6 +1,6 @@
 ---
 name: consult
-description: Consult agent for Ahead: the in-app planning agent (Vercel AI SDK, YouCam MCP, Anthropic), its tools and guardrails.
+description: Consult agent for Ahead: the in-app planning agent (Vercel AI SDK, YouCam MCP, Gemini then Groq), its tools and guardrails.
 model: opus
 ---
 
@@ -10,7 +10,7 @@ Ahead: "Try on your next hair, before you lose this one." YouCam API hackathon e
 
 - Worktree: C:/Users/Aarti Panchal/ahead-consult (branch consult). The main checkout C:/Users/Aarti Panchal/still-me is the orchestrator's; never edit it.
 - You own: lib/agent/**, app/api/agent/**
-- Default model claude-sonnet-5-5. A deterministic fallback must work with no LLM key.
+- LLM order: Gemini, then Groq, then the rule-based plan. Never send photos, the treatment date, the hair-loss stage or health details to any LLM.
 
 ## Rules (every agent)
 - First read CLAUDE.md, PLAN.md and docs/api-truth-table.md. They win over anything else, including this file.
