@@ -9,7 +9,7 @@ Try on your next hair, before you lose this one.
 - **Live app:** https://try-ahead.vercel.app
 - **Video:** [PLACEHOLDER: video link]
 - **Try with a sample person (30 seconds, no photo, no key):** open the live app, tap "Try with a sample person", pick one of the four people (P1 to P4), choose "My hair is gone". Her hair is gone and the matched wigs and wraps appear on her, each with its skin tone check. Direct link to the result: https://try-ahead.vercel.app/results?person=P1&stage=gone
-- **Own-photo live try-on:** needs a tester code, because every live render spends YouCam units. Tester code: [PLACEHOLDER: tester code] (the app asks for it when you use your own photo; it is kept for that visit only). Without it, your own photo still sets your hair colour and your matches on your device, and previews use the sample people.
+- **Own-photo live try-on:** needs a tester code, because every live render spends YouCam units. Request a tester code privately from the project owner (the app asks for it when you use your own photo; it is kept for that visit only). Without it, your own photo still sets your hair colour and your matches on your device, and previews use the sample people.
 - **Zero-key mock run:** `npm install && npm run dev`. Mock mode is the default: it replays recorded YouCam results and spends 0 units. No API key needed.
 - **Where every claim is wired:** [docs/FACTS.md](docs/FACTS.md) maps each claim in this README to the file that implements it and the test that proves it. The API measurements behind it are in [docs/api-truth-table.md](docs/api-truth-table.md), also shown in the app at `/how-we-tested`.
 

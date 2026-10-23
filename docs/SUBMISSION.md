@@ -96,7 +96,7 @@ Next.js 15, React 19, TypeScript, Vercel, YouCam API (hair transfer v2.1, makeup
 
 - **Live app:** https://try-ahead.vercel.app
 - **Sample person path (30 seconds, no photo needed):** open the app, tap "Try with a sample person", pick one of the four people (P1 to P4), choose "My hair is gone". Her hair is gone and the matched wigs and wraps appear on her, each with its skin tone check. Direct link: https://try-ahead.vercel.app/results?person=P1&stage=gone
-- **Testing instructions for your own photo:** live try-on on your own photo needs a tester code, because each live render spends YouCam units. Tester code: [PLACEHOLDER: tester code]. Take one photo (consent comes first), answer "Has your hair loss started?", and your matches appear. Without the code, your photo still sets your hair colour and matches on your device and previews use the sample people.
+- **Testing instructions for your own photo:** live try-on on your own photo needs a tester code, because each live render spends YouCam units. Request a tester code privately from the project owner. Take one photo (consent comes first), answer "Has your hair loss started?", and your matches appear. Without the code, your photo still sets your hair colour and matches on your device and previews use the sample people.
 - **No key needed:** `npm install && npm run dev` runs mock mode, which replays recorded YouCam results at 0 units.
 - **The honesty page:** `/how-we-tested`.
 - **Code and claim map:** the repository README and `docs/FACTS.md`.
