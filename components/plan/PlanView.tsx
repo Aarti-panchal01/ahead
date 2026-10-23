@@ -128,7 +128,7 @@ export default function PlanView() {
           )}
 
           <section className="stack" aria-labelledby="tl-h">
-            <h3 id="tl-h">Timeline</h3>
+            <h2 id="tl-h" className="h3">Timeline</h2>
             <ol className={styles.timeline}>
               {steps.map((t, i) => (
                 <li key={i} className={styles.step}>
@@ -145,7 +145,7 @@ export default function PlanView() {
 
           {plan.shortlist.length > 0 && (
             <section className="stack" aria-labelledby="sl-h">
-              <h3 id="sl-h">Shortlist</h3>
+              <h2 id="sl-h" className="h3">Shortlist</h2>
               <ul className={styles.shortlist}>
                 {plan.shortlist.map((id) => {
                   const it = getItem(id);
@@ -162,7 +162,7 @@ export default function PlanView() {
 
           {plan.pendingApproval && plan.pendingApproval.length > 0 && (
             <section className="stack" aria-labelledby="ap-h">
-              <h3 id="ap-h">Try-ons waiting for your yes</h3>
+              <h2 id="ap-h" className="h3">Try-ons waiting for your yes</h2>
               <ul className={styles.approvals}>
                 {plan.pendingApproval.map((p) => (
                   <ApprovalStep key={p.itemId} itemId={p.itemId} units={p.units} photo={photo} isSample={isSample} />

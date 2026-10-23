@@ -52,7 +52,7 @@ export default function BriefView({ id }: { id: string }) {
 
       {(brief.hairColour || brief.browColour) && (
         <section className="stack" aria-labelledby="colours-h">
-          <h3 id="colours-h">Colours</h3>
+          <h2 id="colours-h" className="h3">Colours</h2>
           {brief.hairColour && <Swatch hex={brief.hairColour} label="Hair colour, read from a photo" />}
           {brief.browColour && <Swatch hex={brief.browColour} label="Brow colour, read from a photo" />}
           <p className="note">{SCREEN_COLOUR_NOTE} Match against a lock of hair, not this screen.</p>
@@ -60,7 +60,7 @@ export default function BriefView({ id }: { id: string }) {
       )}
 
       <section className="stack" aria-labelledby="items-h">
-        <h3 id="items-h">Chosen styles</h3>
+        <h2 id="items-h" className="h3">Chosen styles</h2>
         <ul className={styles.items}>
           {items.map((it) => (
             <li key={it.id} className={styles.item}>
@@ -78,7 +78,7 @@ export default function BriefView({ id }: { id: string }) {
 
       {brief.notes && (
         <section className="stack" aria-labelledby="notes-h">
-          <h3 id="notes-h">Notes</h3>
+          <h2 id="notes-h" className="h3">Notes</h2>
           <p className={styles.notes}>{brief.notes}</p>
         </section>
       )}
