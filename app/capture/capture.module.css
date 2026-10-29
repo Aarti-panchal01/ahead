@@ -2,6 +2,7 @@
   display: block;
   width: 100%;
   border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
 }
 
 .viewer {
@@ -13,6 +14,7 @@
   overflow: hidden;
   display: flex;
   align-items: flex-end;
+  box-shadow: var(--shadow-sm);
 }
 
 .viewer[data-live="true"] { background: #101616; border-color: transparent; }
@@ -58,12 +60,14 @@
   padding: 12px 0;
   border-top: 1px solid var(--line);
   font-size: 1.05rem;
+  color: var(--ink-soft);
 }
 
 .guide li:first-child { border-top: 0; }
 
 .subhead { font-size: 1.2rem; }
 
+/* Sample person grid */
 .samples {
   list-style: none;
   margin: 0;
@@ -84,13 +88,24 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              transform var(--duration-fast) var(--ease-out);
 }
 
-.sample:hover { border-color: var(--line); }
+.sample:hover {
+  border-color: var(--line);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.sample:active { transform: translateY(0); }
 
 .sampleName {
   display: block;
-  padding: 8px 4px 4px;
+  padding: 8px 8px 6px;
   font-weight: 700;
+  font-size: 0.95rem;
   min-height: 44px;
 }

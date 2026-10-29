@@ -9,13 +9,22 @@
   align-items: center;
   gap: 14px;
   min-height: var(--tap);
-  padding: 12px 16px;
+  padding: 14px 18px;
   margin-top: 10px;
   border: 2px solid var(--line);
   border-radius: 12px;
   background: var(--surface);
   font-size: 1.05rem;
   cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out),
+              background var(--duration-fast) var(--ease-out);
+}
+
+.option:hover {
+  border-color: var(--ink-soft);
+  box-shadow: var(--shadow-md);
 }
 
 .option input {
@@ -23,8 +32,15 @@
   height: 22px;
   margin: 0;
   accent-color: var(--accent);
+  flex: none;
 }
 
-.option:has(input:checked) { border-color: var(--accent); font-weight: 700; }
+.option:has(input:checked) {
+  border-color: var(--accent);
+  background: rgba(91, 70, 54, 0.04);
+  font-weight: 700;
+  box-shadow: var(--shadow-md);
+}
+
 .option:has(input:focus-visible) { outline: 3px solid var(--ink); outline-offset: 3px; }
 .option input:focus-visible { outline: none; }

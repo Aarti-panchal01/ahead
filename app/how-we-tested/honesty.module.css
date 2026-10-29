@@ -1,15 +1,34 @@
 .doc { overflow-wrap: anywhere; }
-.doc code { font-size: 0.9em; background: var(--surface); padding: 0 4px; border-radius: 4px; }
-.h { font-size: 1.3rem; padding-top: 12px; }
+.doc code {
+  font-size: 0.9em;
+  background: var(--surface);
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  font-family: ui-monospace, "Cascadia Code", "Source Code Pro", monospace;
+}
+.h { font-size: 1.3rem; padding-top: 16px; }
 .list { padding-left: 20px; margin: 0; }
 .list > li + li { margin-top: 8px; }
 
+/* Evidence rows: each test we ran is a proud card */
 .rows { list-style: none; padding: 0; margin: 0; }
 .rows > li + li { margin-top: 14px; }
-.row { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
+
+.row {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  box-shadow: var(--shadow-sm);
+  border-left: 3px solid var(--integrity);
+  transition: box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.row:hover { box-shadow: var(--shadow-md); }
+
 .row dl { margin: 0; }
 .row dl > div + div { margin-top: 10px; }
-.row dt { font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); }
-.row dd { margin: 2px 0 0; }
+.row dt { font-size: 0.85rem; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+.row dd { margin: 3px 0 0; }
 .rowHead dt { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
-.rowHead dd { font-weight: 700; font-size: 1.05rem; }
+.rowHead dd { font-weight: 700; font-size: 1.05rem; color: var(--ink); }

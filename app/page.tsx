@@ -28,6 +28,13 @@ export default function Landing() {
           See wigs and head wraps on your own photo, now and after your hair goes. Every preview is checked so it still
           looks like you.
         </p>
+        <div className={styles.stat} role="note">
+          <span className={styles.statNum} aria-hidden="true">77%</span>
+          <span className={styles.statText}>
+            of patients called hair loss the most feared side effect of treatment.
+            {" "}<cite style={{ fontStyle: "normal", opacity: 0.7 }}>Kargar et al.&thinsp;2011</cite>
+          </span>
+        </div>
       </section>
 
       <div className="btn-row">

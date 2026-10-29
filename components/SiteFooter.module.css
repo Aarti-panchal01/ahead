@@ -12,7 +12,16 @@
 .foot a {
   display: inline-flex;
   align-items: center;
+  gap: 6px;
   min-height: 44px;
+  font-weight: 700;
+  color: var(--integrity);
+  text-decoration-color: rgba(47, 111, 94, 0.4);
+}
+
+.foot a::before {
+  content: "✓";
+  font-size: 0.9em;
   font-weight: 700;
 }
 

@@ -1,3 +1,4 @@
+/* ─── Results header ────────────────────────────────────────────────── */
 .header {
   display: grid;
   grid-template-columns: 32% 1fr;
@@ -21,6 +22,7 @@
   box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent);
 }
 
+/* ─── Tabs ──────────────────────────────────────────────────────────── */
 .tabs {
   display: flex;
   gap: 4px;
@@ -39,27 +41,98 @@
   font-weight: 700;
   color: var(--ink-soft);
   cursor: pointer;
+  transition: color var(--duration-fast) var(--ease-out),
+              border-bottom-color var(--duration-fast) var(--ease-out);
 }
 
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tab[aria-selected="true"] {
+  color: var(--ink);
+  border-bottom-color: var(--accent);
+}
 
-.cards > * + * { margin-top: 28px; }
+/* ─── Carousel intro line ───────────────────────────────────────────── */
+.carouselIntro {
+  font-size: 1rem;
+  color: var(--ink-soft);
+  font-style: italic;
+  padding: 2px 4px 0;
+}
 
+/* ─── Horizontal scroll-snap carousel ──────────────────────────────── */
+/*
+ * Cards scroll horizontally with scroll-snap. On mobile they are ~82vw wide so
+ * the next card peeks in from the right edge, signalling there is more to scroll.
+ * On wider screens two cards are fully visible with the third peeking.
+ * Negative horizontal margin bleeds the scroll container to the viewport edges
+ * while the padding restores the visual gutter.
+ */
+.cards {
+  display: flex;
+  gap: 14px;
+  /* Bleed past the column padding so cards can peek at the edge */
+  margin-left: -16px;
+  margin-right: -16px;
+  padding-left: 16px;
+  padding-right: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding-left: 16px;
+  -webkit-overflow-scrolling: touch;
+  /* Hide scrollbar on all browsers (design decision: edge-peeks communicate scrollability) */
+  scrollbar-width: none;
+}
+.cards::-webkit-scrollbar { display: none; }
+
+/* ─── Result card ───────────────────────────────────────────────────── */
 .card {
+  flex: none;
+  /* 82 vw on 390 px → next card peeks ~14 vw. Clamp: never narrower than 220 px, never wider than 340 px. */
+  width: clamp(220px, 82vw, 340px);
+  scroll-snap-align: start;
   background: var(--surface);
   border-radius: calc(var(--radius) + 4px);
   border: 2px solid transparent;
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast) var(--ease-out),
+              box-shadow var(--duration-fast) var(--ease-out);
 }
 
-.card[data-selected="true"] { border-color: var(--accent); }
+.card:hover { box-shadow: var(--shadow-md); }
+.card[data-selected="true"] { border-color: var(--accent); box-shadow: var(--shadow-md); }
 
+/* On ≥ 600 px, show two cards + peek */
+@media (min-width: 600px) {
+  .card { width: clamp(240px, 46%, 320px); }
+}
+
+/* On ≥ 900 px (desktop), normal flow, no horizontal scroll */
+@media (min-width: 900px) {
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 18px;
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+  .card {
+    width: auto;
+    scroll-snap-align: none;
+  }
+}
+
+/* ─── Card image area ───────────────────────────────────────────────── */
 .render { margin: 0; border-radius: 0; }
 .render img { display: block; width: 100%; height: auto; }
 
 .body { padding: 16px; }
 .body > * + * { margin-top: 10px; }
 
+/* ─── Label chips ───────────────────────────────────────────────────── */
 .chip, .chipNew, .chipNeutral {
   display: inline-block;
   padding: 2px 10px;
@@ -71,6 +144,7 @@
 .chipNew { color: var(--ink); border: 1.5px dashed var(--ink-soft); }
 .chipNeutral { color: var(--ink-soft); border: 1.5px solid var(--line); }
 
+/* ─── Skeleton / pending state ──────────────────────────────────────── */
 .pending {
   aspect-ratio: 821 / 1024;
   display: flex;
@@ -78,11 +152,24 @@
   justify-content: flex-end;
   gap: 10px;
   padding: 20px;
-  background: #e4e8e4;
+  background: linear-gradient(
+    90deg,
+    #e4e8e4 25%,
+    #edeee9 50%,
+    #e4e8e4 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
 
-.pendingText { font-size: 1rem; }
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
 
+.pendingText { font-size: 1rem; color: var(--ink-soft); }
+
+/* ─── Progress bar ──────────────────────────────────────────────────── */
 .bar {
   height: 6px;
   border-radius: 3px;
@@ -97,6 +184,7 @@
   transition: width 1.4s linear;
 }
 
+/* ─── Own-photo placeholder (model image) ───────────────────────────── */
 .reference { position: relative; }
 .reference figure { border-radius: 0; opacity: 0.9; }
 
@@ -111,6 +199,7 @@
   font-weight: 700;
 }
 
+/* ─── Integrity line ────────────────────────────────────────────────── */
 /* Dot on the first line; the text wraps under itself, not under the dot. */
 .integrity { display: grid; grid-template-columns: 10px 1fr; column-gap: 8px; align-items: start; font-weight: 700; }
 .integrityDot { width: 10px; height: 10px; margin-top: calc(0.75em - 5px); border-radius: 50%; background: currentColor; }
@@ -119,11 +208,13 @@
 .ok { color: var(--integrity); }
 .warn { color: var(--warning); }
 
+/* ─── Card actions ──────────────────────────────────────────────────── */
 .retry { margin-top: 10px; }
 .compareBtn { min-height: 48px; }
 .renderBtn { border-color: var(--accent); color: var(--accent); }
 .cardActions > * + * { margin-top: 8px; }
 
+/* ─── Compare bar (sticky bottom) ───────────────────────────────────── */
 .withBar { padding-bottom: 140px; }
 
 .compareBar {
@@ -136,11 +227,13 @@
   border-top: 1px solid var(--line);
   display: flex;
   justify-content: center;
+  box-shadow: 0 -4px 16px rgba(30,42,42,0.08);
 }
 
 .compareBar > * { width: 100%; max-width: 32rem; }
 .compareBar p { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; }
 
+/* ─── Compare view ──────────────────────────────────────────────────── */
 .compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -155,7 +248,7 @@
 .compareName { font-size: 0.95rem; }
 .compareCol .integrity { font-size: 0.85rem; }
 
-/* Match card */
+/* ─── Match card ────────────────────────────────────────────────────── */
 .match { padding: 14px; border-radius: 12px; background: var(--bg); }
 .match > * + * { margin-top: 10px; }
 .matchPair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -170,12 +263,15 @@
 .matchName { font-weight: 700; }
 .hex { font-variant-numeric: tabular-nums; font-size: 0.95rem; }
 
+/* ─── Brows row ─────────────────────────────────────────────────────── */
 .browsRow > * + * { margin-top: 8px; }
 .browsBtn { border-color: var(--accent); }
 
+/* ─── "What next" panel ─────────────────────────────────────────────── */
 .panel { padding-top: 24px; border-top: 1px solid var(--line); }
 .panelHead { font-size: 1.25rem; }
 
+/* ─── Stylist brief form ────────────────────────────────────────────── */
 .field > * + * { margin-top: 6px; }
 .field label { display: block; font-weight: 700; }
 .field textarea {
@@ -184,7 +280,7 @@
 }
 .field textarea:focus-visible { border-color: var(--ink); }
 
-/* Tester code: quiet, one line of text, a field and a button. */
+/* ─── Tester code ───────────────────────────────────────────────────── */
 .tester > * + * { margin-top: 8px; }
 .testerRow { display: flex; gap: 8px; }
 .testerRow input {

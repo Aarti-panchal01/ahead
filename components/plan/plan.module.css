@@ -3,23 +3,78 @@
 .field input {
   display: block; width: 100%; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
   border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit;
+  transition: border-color var(--duration-fast) var(--ease-out);
 }
-.field input:focus-visible { border-color: var(--ink); }
+.field input:focus-visible { border-color: var(--ink); outline: none; }
 
-.timeline { list-style: none; padding: 0; margin: 0; border-left: 3px solid var(--accent); }
-.step { display: grid; grid-template-columns: 7.2rem 1fr; gap: 12px; padding: 0 0 18px 14px; }
-.date { font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Timeline: a left-rule calendar with a dot at each step */
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-left: 3px solid var(--accent);
+  position: relative;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 7.2rem 1fr;
+  gap: 12px;
+  padding: 0 0 20px 18px;
+  position: relative;
+}
+
+/* Dot on the timeline bar */
+.step::before {
+  content: "";
+  position: absolute;
+  left: -7px;
+  top: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+}
+
+.date {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  padding-top: 2px;
+}
 .label { font-weight: 700; }
-.care { font-weight: 700; }
+.care { font-weight: 700; color: var(--ink-soft); font-size: 0.95rem; }
 
-.shortlist { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.shortlist {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
 .thumb figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
 .thumbName { margin-top: 6px; font-size: 0.92rem; }
 
 .approvals { list-style: none; padding: 0; margin: 0; }
 .approvals > li + li { margin-top: 16px; }
-.approval { background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
+.approval {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+}
 .approval > * + * { margin-top: 10px; }
 .render { display: block; width: 100%; border-radius: 12px; }
 
-.brief { white-space: pre-wrap; background: var(--surface); border-radius: 12px; padding: 12px 14px; }
+.brief {
+  white-space: pre-wrap;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow-sm);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}

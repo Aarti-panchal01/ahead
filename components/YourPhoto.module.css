@@ -2,6 +2,7 @@
   margin: 0;
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
 
 .photo img {

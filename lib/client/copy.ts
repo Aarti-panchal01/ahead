@@ -1,6 +1,12 @@
 // Copy used on more than one screen or checked by tests. Plain sentence case, cosmetic language only.
 export const PREVIEW_DISCLAIMER = "Style and colour preview, not cap fit, density or comfort.";
 
+/** Warm intro line above the results carousel. No outcomes, no promises. */
+export const RESULTS_INTRO = "So many options. Pick the one that feels like you.";
+
+/** Intro line for the wraps tab. */
+export const WRAPS_INTRO = "Head wraps are a soft, versatile choice. See which one feels right.";
+
 export const CONSENT_LINES = [
   "We use your photo only to show you wigs and head wraps on yourself.",
   "Nothing is stored after this session. Close the tab and your photo is gone.",

@@ -15,6 +15,7 @@ import YourPhoto from "@/components/YourPhoto";
 import { CATALOGUE } from "@/lib/catalogue";
 import { browsAvailable, browsToggleLabel, cardView, type BrowsLayer } from "@/lib/client/brows";
 import type { Whose } from "@/lib/client/copy";
+import { RESULTS_INTRO, WRAPS_INTRO } from "@/lib/client/copy";
 import { applyBrows, integrityCheck } from "@/lib/client/image";
 import { demoNote, fetchMode, ownPhotoCanRender } from "@/lib/client/mode";
 import { browsImage, getSample, goneImage, tryOnFace, type SamplePerson } from "@/lib/client/personas";
@@ -297,6 +298,7 @@ export default function ResultsView() {
         ))}
       </div>
 
+      <p className={styles.carouselIntro} aria-hidden="true">{tab === "wigs" ? RESULTS_INTRO : WRAPS_INTRO}</p>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className={styles.cards}>
         {visible.map((r, i) => {
           const isWig = r.item.kind === "wig";
