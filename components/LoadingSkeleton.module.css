@@ -1,0 +1,86 @@
+/* Shared skeleton for results and plan loading states */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}
+
+.wrap {
+  max-width: 34rem;
+  margin: 0 auto;
+  padding: 8px 16px 72px;
+  min-height: calc(100svh - 60px);
+}
+
+.bone {
+  border-radius: var(--radius, 14px);
+  background: linear-gradient(
+    90deg,
+    #e4e8e4 25%,
+    #edeee9 50%,
+    #e4e8e4 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bone { animation: none; background: #e4e8e4; }
+}
+
+.headerRow {
+  display: grid;
+  grid-template-columns: 32% 1fr;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.boneThumb {
+  aspect-ratio: 821 / 1024;
+  border-radius: 14px;
+}
+
+.headerText {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.boneTitle {
+  height: 28px;
+  border-radius: 6px;
+  width: 70%;
+}
+
+.boneSubtitle {
+  height: 16px;
+  border-radius: 6px;
+  width: 90%;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 28px;
+}
+
+.boneTab {
+  height: 40px;
+  width: 96px;
+  border-radius: 8px;
+}
+
+/* Horizontal skeleton cards matching the carousel */
+.cards {
+  display: flex;
+  gap: 14px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+
+.boneCard {
+  flex: none;
+  width: clamp(220px, 82vw, 340px);
+  aspect-ratio: 821 / 1600;
+  border-radius: 18px;
+}

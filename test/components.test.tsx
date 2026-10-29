@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import ResultCard from "@/components/results/ResultCard";
 import IntegrityLine, { forWhom, skippedClause } from "@/components/results/IntegrityLine";
 import Landing from "@/app/page";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { CATALOGUE } from "@/lib/catalogue";
 import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
 import { IDLE, nextRender, type RenderState } from "@/lib/client/renderState";
@@ -148,3 +149,12 @@ describe("Landing", () => {
     expect(html.match(/AI-generated<\/figcaption>/g)?.length).toBe(3);
   });
 });
+
+describe("LoadingSkeleton", () => {
+  it("renders with aria-busy and accessible label", () => {
+    const html = renderToStaticMarkup(h(LoadingSkeleton, { label: "Loading your matches" }));
+    expect(html).toContain(`aria-busy="true"`);
+    expect(html).toContain(`aria-label="Loading your matches"`);
+  });
+});
+
