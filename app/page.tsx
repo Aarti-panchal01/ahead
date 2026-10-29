@@ -32,7 +32,7 @@ export default function Landing() {
           <span className={styles.statNum} aria-hidden="true">77%</span>
           <span className={styles.statText}>
             of patients called hair loss the most feared side effect of treatment.
-            {" "}<cite style={{ fontStyle: "normal", opacity: 0.7 }}>Kargar et al.&thinsp;2011</cite>
+            <cite className={styles.statCite}>Kargar et al.&thinsp;2011</cite>
           </span>
         </div>
       </section>

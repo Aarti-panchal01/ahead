@@ -3,17 +3,6 @@
   grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   margin-top: 4px;
-  /* Subtle entrance on load */
-  animation: fadeUp var(--duration-slow) var(--ease-out) both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .triptych { animation: none; }
 }
 
 .panel { min-width: 0; }
@@ -36,15 +25,9 @@
   line-height: 1.12;
   letter-spacing: -0.01em;
   text-wrap: balance;
-  /* Stagger the text in after the images */
-  animation: fadeUp var(--duration-slow) var(--ease-out) 80ms both;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .headline { animation: none; }
-}
-
-/* Stat callout: show the 77% stat from DEMO-SCRIPT in a subtle pull-quote */
+/* Stat callout: show the 77% stat from DEMO-SCRIPT */
 .stat {
   display: flex;
   gap: 12px;
@@ -64,13 +47,21 @@
 }
 
 .statText {
-  font-size: 0.9rem;
-  color: var(--ink-soft);
+  font-size: 0.95rem;
+  color: var(--ink);
   line-height: 1.4;
   align-self: center;
 }
 
-/* Hero section on larger screens: side-by-side triptych + text */
+.statCite {
+  display: block;
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+/* Hero section on larger screens: larger headline */
 @media (min-width: 640px) {
   .headline { font-size: 2.6rem; }
 }
