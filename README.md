@@ -32,11 +32,13 @@ For an own-photo try-on, choose **Use your photo**, review the consent, upload a
 
 ## See Ahead
 
-The before and preview below use the same project-provided portrait. The after image is a successful live YouCam Hair Transfer result for the ash-brown chin-length bob. It shows the core idea: explore a possible look privately, then bring a concrete style direction to a specialist fitting.
+The gallery below shows all **16 successful live YouCam Hair Transfer previews** on the same project-provided portrait: 12 wigs and 4 wraps or caps, arranged four across. Each result is tied to its own style and Ahead reference code, so the person can compare length, silhouette, texture, colour, and headwear before a specialist fitting.
 
-![Ahead before-and-preview flow: a woman with thinning hair sees an ash-brown bob on her own photo, then takes a style direction to a specialist](docs/images/treatment-fitting-flow.jpg)
+![Sixteen distinct YouCam Hair Transfer style previews on the same thinning-hair portrait, with four options per row](docs/images/sixteen-style-gallery.jpg)
 
-The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) uses this same portrait and matching YouCam result. The full fitting room offers 12 wig styles and 4 wraps or caps.
+The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) shows the starting portrait alongside six representative options. The full fitting room lets someone explore all 16, compare favourites, and take a brief to a specialist.
+
+Individual preview files and their style mapping are in [`docs/images/variants/`](docs/images/variants/) and its [render manifest](docs/images/variants/manifest.json). The `AHD-*` codes are Ahead reference codes, not retailer SKUs.
 
 ## Why we built it
 
@@ -148,7 +150,7 @@ Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can
 
 ## Image note
 
-The before portrait is project-provided, and the after portrait is an actual YouCam Hair Transfer preview. Style previews are illustrative and do not confirm fit, comfort, products, or stock; Ahead states this once in the app footer.
+The before portrait is project-provided, and all 16 after images are individual live YouCam Hair Transfer results. Style previews are illustrative and do not confirm fit, comfort, products, or stock; Ahead states this once in the app footer.
 
 ## Licence
 

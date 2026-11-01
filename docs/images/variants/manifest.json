@@ -1,0 +1,118 @@
+{
+  "input": "before-photo-thinning-hair.png",
+  "costUnits": 32,
+  "results": [
+    {
+      "id": "H01",
+      "name": "Dusty rose jersey wrap",
+      "kind": "wrap",
+      "status": "success",
+      "file": "docs/images/variants/H01.jpg"
+    },
+    {
+      "id": "H02",
+      "name": "Navy twisted turban",
+      "kind": "wrap",
+      "status": "success",
+      "file": "docs/images/variants/H02.jpg"
+    },
+    {
+      "id": "H03",
+      "name": "Ochre and teal patterned cotton wrap",
+      "kind": "wrap",
+      "status": "success",
+      "file": "docs/images/variants/H03.jpg"
+    },
+    {
+      "id": "H04",
+      "name": "Soft charcoal knit cap",
+      "kind": "wrap",
+      "status": "success",
+      "file": "docs/images/variants/H04.jpg"
+    },
+    {
+      "id": "W01",
+      "name": "Long soft curls, salt and pepper",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W01.jpg"
+    },
+    {
+      "id": "W02",
+      "name": "Shoulder layers, black with grey blend",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W02.jpg"
+    },
+    {
+      "id": "W03",
+      "name": "Short pixie, salt and pepper",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W03.jpg"
+    },
+    {
+      "id": "W04",
+      "name": "Chin-length straight bob, ash brown",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W04.jpg"
+    },
+    {
+      "id": "W05",
+      "name": "Short layered cut, silver grey",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W05.jpg"
+    },
+    {
+      "id": "W06",
+      "name": "Shoulder-length soft waves, light golden blonde",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W06.jpg"
+    },
+    {
+      "id": "W07",
+      "name": "Shoulder-length coily, black",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W07.jpg"
+    },
+    {
+      "id": "W08",
+      "name": "Short tapered curls, dark brown",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W08.jpg"
+    },
+    {
+      "id": "W09",
+      "name": "Sleek straight bob, dark brown",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W09.jpg"
+    },
+    {
+      "id": "W10",
+      "name": "Straight chin bob, black",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W10.jpg"
+    },
+    {
+      "id": "W11",
+      "name": "Bob with grey streaks, black",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W11.jpg"
+    },
+    {
+      "id": "W12",
+      "name": "Soft shoulder layers, warm brown",
+      "kind": "wig",
+      "status": "success",
+      "file": "docs/images/variants/W12.jpg"
+    }
+  ]
+}
