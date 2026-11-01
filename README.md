@@ -14,9 +14,9 @@
   <img alt="Playwright" src="https://img.shields.io/badge/E2E-Playwright-2ead69?logo=playwright&logoColor=white" />
 </p>
 
-Ahead is a photo-first wig and headwear try-on for people navigating treatment-related hair loss. It makes space to explore a look privately before a fitting, then turns favourites into a practical conversation with a wig specialist.
+Ahead is a private wig and headwear fitting room for people navigating treatment-related hair loss. It lets someone explore options on their own photo, keep the looks that feel like them, and take a shortlist to a specialist.
 
-**The product promise:** see a style direction on yourself; take the details to someone who can help find the right real product.
+**The product promise:** more choice, more agency, and a more prepared fitting conversation. Ahead is designed to help people feel more confident exploring options, without pressuring them to choose.
 
 > Ahead is a shopping companion, not a medical tool or a retailer. Its catalogue is illustrative: it does not show verified products, prices, stock, or confirmed availability.
 
@@ -32,19 +32,19 @@ For an own-photo try-on, choose **Use your photo**, review the consent, upload a
 
 ## See Ahead
 
-The project gallery uses one consistent portrait throughout: the supplied demo portrait, styled with live YouCam Hair Transfer results. The first image is the real desktop fitting room with all 16 previews ready; the remaining images show distinct wig and headwear directions on the same person.
+The project gallery follows one person from her own photo to live YouCam previews. Ahead keeps her face central while she explores styles privately and decides what she wants to discuss at a fitting.
 
 ![Ahead fitting room showing four headwear previews on the supplied portrait](docs/images/live-fitting-room.jpg)
 
-| Long soft curls · salt and pepper | Shoulder layers · black with grey blend | Navy twisted turban |
-| --- | --- | --- |
-| ![Long soft curls preview on the supplied portrait](docs/images/try-on-long-curls.jpg) | ![Shoulder layers preview on the supplied portrait](docs/images/try-on-shoulder-layers.jpg) | ![Navy twisted turban preview on the supplied portrait](docs/images/try-on-navy-turban.jpg) |
+| Her starting photo | Shoulder layers · black with grey blend | Short pixie · salt and pepper | Navy twisted turban |
+| --- | --- | --- | --- |
+| ![Portrait used as the starting photo for Ahead's try-on demo](docs/images/ahead-demo-portrait.jpg) | ![YouCam shoulder layers preview on the same portrait](docs/images/try-on-shoulder-layers.jpg) | ![YouCam short pixie preview on the same portrait](docs/images/try-on-short-pixie.jpg) | ![YouCam navy turban preview on the same portrait](docs/images/try-on-navy-turban.jpg) |
 
 The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) uses the same portrait and previews.
 
 ## Why we built it
 
-Choosing a wig during treatment-related hair loss can mean making a personal decision from product photos of someone else. Ahead gives people a private place to explore style and colour on their own photo, save the looks they prefer, and bring specific references to a specialist.
+Choosing a wig during treatment-related hair loss can mean making a personal decision from product photos of someone else. Ahead puts the person back into that decision: explore style and colour on your own photo, save the looks that feel right, and bring specific references to a specialist. A private preview cannot promise confidence, but it can give someone more room to explore before a fitting.
 
 The specialist remains central: the preview cannot tell someone whether a wig fits, feels comfortable, suits their scalp, or is available. Ahead helps make that first fitting conversation easier to start.
 
@@ -152,7 +152,7 @@ Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can
 
 ## Image note
 
-The same supplied demo portrait appears across these example previews. Catalogue reference images are illustrative style references, not live retailer products or confirmed stock; the app communicates this once in its footer.
+The supplied demo portrait is the starting point for the featured YouCam previews. Catalogue reference images are illustrative style references, not live retailer products or confirmed stock; the app communicates this once in its footer.
 
 ## Licence
 
