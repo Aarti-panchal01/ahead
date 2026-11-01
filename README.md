@@ -30,25 +30,25 @@ Ahead is a private wig and headwear fitting room for people navigating treatment
 
 For an own-photo try-on, choose **Use your photo**, review the consent, upload a photo, and ask to see matches. A public deployment can require a judge access code for fresh live API calls. Sample previews remain available without it.
 
-## Inside the web app
+## Ahead in the browser
 
-Start with one portrait and browse 12 wigs or 4 wraps and caps. These screenshots show Ahead’s actual results interface with the successful YouCam Hair Transfer renders: each card keeps the full image in frame and includes its style name, reference code, model comparison, skin-tone check, and fitting actions.
+Upload one portrait to explore 12 wig styles or 4 wraps and caps. These screenshots are from the working results page after all 16 saved YouCam Hair Transfer renders finished. Each card keeps the complete render in frame and shows its style code, model reference, skin-tone check, comparison action, and fitting-brief path.
 
 ### Wig lookbook · 12 styles
 
-Four styles appear across each desktop row. Scroll the grid to explore all 12.
+The desktop results grid shows four choices across; scroll to explore all 12.
 
-<p align="center"><img src="docs/screenshots/ahead-wig-results.png" alt="Ahead's wig results page showing four full try-on images in a row, with style names, reference codes, skin-tone checks, model comparison and fitting actions" width="100%" /></p>
+<p align="center"><img src="docs/screenshots/ahead-wig-results.png" alt="Ahead's browser results page showing four complete wig previews in a row with style codes, model-reference toggles, skin-tone checks and comparison actions" width="100%" /></p>
 
 ### Wraps and caps · 4 styles
 
-The headwear tab shows all four options together on the same portrait.
+All four headwear options appear together on the same portrait.
 
-<p align="center"><img src="docs/screenshots/ahead-headwear-results.png" alt="Ahead's headwear results page showing all four wrap and cap try-ons together, with style codes and fitting actions" width="100%" /></p>
+<p align="center"><img src="docs/screenshots/ahead-headwear-results.png" alt="Ahead's browser results page showing all four complete wrap and cap previews together with style codes and fitting actions" width="100%" /></p>
 
 ## All 16 preview directions
 
-This project gallery shows all **16 successful YouCam Hair Transfer previews** on the same project-provided portrait: 12 wigs and 4 wraps or caps, arranged four across. Each result is tied to its own style and Ahead reference code, so someone can compare length, silhouette, texture, colour, and headwear before a specialist fitting.
+This gallery shows the **16 successful YouCam Hair Transfer previews** on the same project-provided portrait: 12 wigs and 4 wraps or caps, arranged four across. Each image is paired with its style name and Ahead reference code to make the range easy to scan before a specialist fitting.
 
 ![Sixteen distinct YouCam Hair Transfer style previews on the same thinning-hair portrait, with four options per row](docs/images/sixteen-style-gallery.jpg)
 
