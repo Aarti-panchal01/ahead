@@ -8,7 +8,7 @@ import type { UnitStatus } from "@/lib/types";
 export const TESTER_HEADER = "x-ahead-tester";
 const KEY = "ahead-tester-code";
 
-export const TESTER_PROMPT = "Have a tester code? Enter it to see wigs on your own photo";
+export const TESTER_PROMPT = "Enter the preview access code to see these styles on your photo.";
 export const TESTER_WRONG = "That code didn't work. Check it and try again.";
 
 /** Status as platform sends it; testerRequired is read defensively until it is in lib/types.ts. */

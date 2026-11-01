@@ -111,6 +111,15 @@ export async function checkRender(original: ImageSource | FaceRead, result: Imag
   return run("checkRender", [original, result], options, () => engine.checkRender(original, result, options));
 }
 
+/** Restore the original face with a feathered landmark mask; fail when the faces do not align safely. */
+export async function restoreFace(original: ImageSource | FaceRead, result: ImageSource | FaceRead, options: AssetPaths = {}): Promise<string> {
+  return run("restoreFace", [original, result], options, () => engine.restoreFaceInBrowser(original, result, options));
+}
+
+export async function protectFaceAndCheck(original: ImageSource | FaceRead, result: ImageSource, options: AssetPaths = {}): Promise<{ image: string; report: IntegrityReport; fingerprint: string }> {
+  return run("protectFace", [original, result], options, () => engine.protectFaceAndCheckInBrowser(original, result, options));
+}
+
 /** Paste only the feature (brows or lashes) of a makeup-vto render back onto the original. Returns a data URL. */
 export async function compositeFeatureInBrowser(original: ImageSource | FaceRead, result: ImageSource, feature: FeatureKind, paths: AssetPaths = {}): Promise<string> {
   return run("compositeFeature", [original, result], { ...paths, feature }, () => engine.compositeFeatureInBrowser(original, result, feature, paths));

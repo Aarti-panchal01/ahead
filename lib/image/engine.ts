@@ -10,7 +10,7 @@ import type { FaceLandmarker, ImageSegmenter } from "@mediapipe/tasks-vision";
 import type { FeatureKind, IntegrityReport, SampledColours } from "@/lib/types";
 import { applyBrows } from "./brows";
 import { compositeFeature } from "./composite";
-import { integrityCheck, type IntegrityCoreReport, type IntegrityOptions } from "./integrity";
+import { faceLandmarkDrift, integrityCheck, restoreInnerFace, type IntegrityCoreReport, type IntegrityOptions } from "./integrity";
 import type { Landmarks } from "./landmarks";
 import { channelsOf, resizeMask, type RawImage, type RawImageOut } from "./raw";
 import { coverMaskFromCategories, hairMaskFromCategories, sampleColours } from "./sample";
@@ -280,6 +280,58 @@ export async function checkRenderRaw(original: ImageSource | FaceRead, result: I
   const o = await readFace(original, options);
   const r = await readRenderForCheck(result, options);
   return integrityCheck(o.image, r.image, o.landmarks, { threshold: options.threshold, hairMasks: { original: o.hairMask, result: r.hairMask } });
+}
+
+/** Landmark alignment beyond this threshold is too risky for a clean face composite. */
+export const MAX_FACE_LANDMARK_DRIFT = 0.14;
+
+/** Restore the user's feathered inner face over a try-on, rejecting a result with a missing or shifted face. */
+export async function restoreFaceRaw(original: ImageSource | FaceRead, result: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<RawImageOut> {
+  const o = await readFace(original, paths);
+  const r = await readFace(result, paths);
+  const drift = faceLandmarkDrift(o.landmarks, r.landmarks);
+  if (!Number.isFinite(drift) || drift > MAX_FACE_LANDMARK_DRIFT) {
+    throw new Error("We couldn't line up the face in this preview, so it wasn't shown. Retry this style.");
+  }
+  // Keep the original photo's hair out of the face paste; otherwise short source strands cut into the new wig or wrap.
+  // Preserve result hair too so the generated style remains whole around the temples.
+  return restoreInnerFace(o.image, r.image, o.landmarks!, { original: o.hairMask, result: r.hairMask }).image;
+}
+
+/** One-pass own-photo gate: reuse the original face read, detect the render landmarks without segmentation,
+ * restore the feathered original face, then run the existing skin check on those same decoded pixels. */
+export async function protectFaceAndCheckRaw(original: FaceRead, result: ImageSource, paths: AssetPaths = {}): Promise<{ image: RawImageOut; report: IntegrityCoreReport; fingerprint: string }> {
+  if (!original.landmarks) throw new Error("We could not find a face in your photo. Try a brighter, front-facing photo.");
+  const rendered = await loadPixels(result);
+  const pixels = new Uint8Array(rendered.data.buffer, rendered.data.byteOffset, rendered.data.byteLength);
+  const digestInput = new Uint8Array(pixels.byteLength);
+  digestInput.set(pixels);
+  const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", digestInput.buffer as ArrayBuffer));
+  const fingerprint = [...digest].map((b) => b.toString(16).padStart(2, "0")).join("");
+  const { landmarker } = await getModels(paths);
+  const found = await quietMediaPipe(() => landmarker.detect(toImageData(rendered)).faceLandmarks[0]);
+  const landmarks: Landmarks | null = found?.length ? found.map((p) => [p.x, p.y, p.z]) : null;
+  const drift = faceLandmarkDrift(original.landmarks, landmarks);
+  if (!Number.isFinite(drift) || drift > MAX_FACE_LANDMARK_DRIFT) {
+    throw new Error("We couldn't line up the face in this preview, so it wasn't shown. Retry this style.");
+  }
+  // Never paste source hair back over the result. The face mask stops at the brow line, keeping the generated fringe
+  // and wrap edge whole while the inner face and eyes are restored.
+  const hairMasks = { original: original.hairMask };
+  const image = restoreInnerFace(original.image, rendered, original.landmarks, hairMasks).image;
+  const report = integrityCheck(original.image, image, original.landmarks, { hairMasks });
+  return { image, report, fingerprint };
+}
+
+export async function protectFaceAndCheckInBrowser(original: ImageSource | FaceRead, result: ImageSource, paths: AssetPaths = {}): Promise<{ image: string; report: IntegrityReport; fingerprint: string }> {
+  const face = await readFace(original, paths);
+  const checked = await protectFaceAndCheckRaw(face, result, paths);
+  return { image: await toDataUrl(checked.image), report: await encodeReport(checked.report, (img) => toDataUrl(img)), fingerprint: checked.fingerprint };
+}
+
+/** Browser adapter for the feathered face restore, encoded as a readable JPEG data URL. */
+export async function restoreFaceInBrowser(original: ImageSource | FaceRead, result: ImageSource | FaceRead, paths: AssetPaths = {}): Promise<string> {
+  return toDataUrl(await restoreFaceRaw(original, result, paths));
 }
 
 export async function compositeFeatureRaw(original: ImageSource | FaceRead, result: ImageSource, feature: FeatureKind, paths: AssetPaths = {}): Promise<RawImageOut> {

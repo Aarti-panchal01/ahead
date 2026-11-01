@@ -31,12 +31,14 @@ export default function BriefMaker({ items, chosen, hairColour, browColour, whos
   };
 
   return (
-    <section className={`stack ${styles.panel}`} aria-labelledby="brief-h">
-      <h2 id="brief-h" className={styles.panelHead}>For {whose} stylist</h2>
+    <section id="fitting-brief" className={`stack ${styles.panel}`} aria-labelledby="brief-h">
+      <p className={styles.bagEyebrow}>TAKE IT WITH YOU</p>
+      <h2 id="brief-h" className={styles.panelHead}>Create your fitting brief</h2>
       <p className="note">
-        A link {whose === "her" ? "she" : "you"} can share: {chosen ? "the ones chosen to compare" : "these matches"}, the colours and any notes.
-        No photos are kept, and the link stops working after a few days.
+        {chosen ? "Your saved looks" : "Four suggested looks"} with colour references and notes, ready to share with {whose === "her" ? "her" : "your"} specialist.
+        It contains no photo and expires after seven days.
       </p>
+      <p className={styles.bagNotice}>This is a fitting shortlist, not a retailer cart. Your specialist can match these style directions to real products, current prices and stock.</p>
       <div className={styles.field}>
         <label htmlFor={notesId}>Notes for the stylist (optional)</label>
         <textarea
@@ -51,7 +53,7 @@ export default function BriefMaker({ items, chosen, hairColour, browColour, whos
       </div>
       {error && <p className="notice" role="alert">{error}</p>}
       <button type="button" className="btn btn-quiet" onClick={make} disabled={busy || !items.length}>
-        {busy ? "Making the brief" : "Make a brief for my stylist"}
+        {busy ? "Preparing your brief…" : "Create fitting brief"}
       </button>
     </section>
   );

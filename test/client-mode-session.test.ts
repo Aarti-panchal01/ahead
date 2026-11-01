@@ -9,14 +9,17 @@ describe("mode", () => {
   it("own photos render only in live mode with units", () => {
     expect(ownPhotoCanRender({ mode: "live", servingRecordings: false })).toBe(true);
     expect(ownPhotoCanRender({ mode: "live", servingRecordings: true, reason: "daily_cap" })).toBe(false);
+    expect(ownPhotoCanRender({ mode: "live", servingRecordings: false, reason: "daily_cap", remainingToday: 0 })).toBe(false);
+    expect(ownPhotoCanRender({ mode: "live", servingRecordings: false, reason: "reserve" })).toBe(false);
     expect(ownPhotoCanRender({ mode: "mock", servingRecordings: false })).toBe(false);
   });
 
   it("the demo line appears only when own photos can't render, with the reason", () => {
     expect(demoNote({ mode: "live", servingRecordings: false })).toBeUndefined();
-    expect(demoNote({ mode: "mock", servingRecordings: true })).toMatch(/^In this demo, previews use our sample people\. Live try-ons are switched off/);
+    expect(demoNote({ mode: "mock", servingRecordings: true })).toMatch(/^Live previews are off in this environment\./);
     expect(demoNote({ mode: "live", servingRecordings: true, reason: "daily_cap" })).toMatch(/Today's live try-ons are used up/);
     expect(demoNote({ mode: "live", servingRecordings: true, reason: "reserve" })).toMatch(/reserve for judging/);
+    expect(demoNote({ mode: "live", servingRecordings: false, reason: "daily_cap", remainingToday: 0 })).toMatch(/Today's live try-ons are used up/);
   });
 
   it("falls back to mock when the status route is missing", async () => {

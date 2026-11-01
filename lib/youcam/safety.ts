@@ -16,8 +16,10 @@ export function effectiveReserve(raw: string | undefined = process.env.AHEAD_RES
   return Number.isFinite(n) ? Math.max(RESERVE_UNITS, n) : RESERVE_UNITS;
 }
 export const limits = () => ({
-  dailyCap: num(process.env.AHEAD_DAILY_UNIT_CAP, 20),
-  ipPerHour: num(process.env.AHEAD_IP_LIMIT_PER_HOUR, 10),
+  // Two full 16-look catalogue passes cost 64 units at 2 units per hair-transfer.
+  // The separate 150-unit balance reserve remains the hard stop for judging.
+  dailyCap: num(process.env.AHEAD_DAILY_UNIT_CAP, 80),
+  ipPerHour: num(process.env.AHEAD_IP_LIMIT_PER_HOUR, 20),
   reserve: effectiveReserve(),
 });
 
@@ -27,7 +29,11 @@ const unitsKey = (day: string) => `units:day:${day}`;
 
 export function cacheKey(...parts: (Buffer | string)[]): string {
   const h = createHash("sha256");
-  for (const p of parts) { h.update(p); h.update("|"); }
+  for (const p of parts) {
+    const bytes = Buffer.isBuffer(p) ? p : Buffer.from(p, "utf8");
+    h.update(Buffer.from(`${Buffer.isBuffer(p) ? "b" : "s"}:${bytes.length}:`, "utf8"));
+    h.update(bytes);
+  }
   return h.digest("hex");
 }
 
@@ -64,6 +70,8 @@ export interface LedgerCall {
   units: number;
   day: string;
   kind: "tryon" | "listing";
+  /** Catalogue style id requested for this task ("listing" for listing try-ons). */
+  itemId?: string;
   cacheKey?: string;
 }
 const callKey = (taskId: string) => `ledger:call:${taskId}`;

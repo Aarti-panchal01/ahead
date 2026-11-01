@@ -52,7 +52,7 @@ export async function POST(req: Request) {
   try {
     const src = selfie;
     const ref = await prepare(fs.readFileSync(path.join(process.cwd(), "public", item.image)));
-    const r = await startHairTransfer({ src, ref, ip: clientIp(req), sessionId: sessionId(req) });
+    const r = await startHairTransfer({ itemId, src, ref, ip: clientIp(req), sessionId: sessionId(req) });
     if (r.ok) return NextResponse.json({ ...job, id: r.taskId });
         return NextResponse.json({ errorCode: r.code, message: r.message }, { status: r.status });
   } catch (e) {

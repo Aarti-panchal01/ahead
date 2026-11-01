@@ -1,40 +1,49 @@
 "use client";
-// Screen 3: take a photo, upload one, or pick a sample person.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import AiImage from "@/components/AiImage";
-import { useSession } from "@/components/SessionProvider";
+import { useSession, type ChosenPhoto } from "@/components/SessionProvider";
 import { demoNote, fetchMode } from "@/lib/client/mode";
-import { SAMPLE_PEOPLE, beforeImage, type SampleId } from "@/lib/client/personas";
 import { photoFromFile, photoFromVideo, type LocalPhoto } from "@/lib/client/photo";
 import styles from "./capture.module.css";
 
 const GUIDANCE = ["Face the camera, chin level.", "Find even light, with no bright window behind you.", "Step back so your shoulders show."];
-
 type CamState = "off" | "starting" | "live";
 
 export default function Capture() {
-  const { consented, setPhoto } = useSession();
+  const { consented, photo, setPhoto } = useSession();
   const router = useRouter();
+  const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const [cam, setCam] = useState<CamState>("off");
   const [shot, setShot] = useState<LocalPhoto>();
   const [error, setError] = useState<string>();
-  // Shown only when own photos can't get live try-ons right now (mock mode, daily cap or reserve), with the reason.
+  const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string>();
+  const activePhoto = useRef<ChosenPhoto | undefined>(photo);
+  useEffect(() => { activePhoto.current = photo; }, [photo]);
 
-  useEffect(() => {
-    fetchMode().then((s) => setNote(demoNote(s)));
-  }, []);
+  const applyLateHair = (local: LocalPhoto) => {
+    void local.hairPromise?.then((hair) => {
+      if (!hair) return;
+      setShot((current) => current?.url === local.url ? { url: local.url, hair } : current);
+      const current = activePhoto.current;
+      if (current?.kind === "own" && current.url === local.url) {
+        const updated = { ...current, hair };
+        activePhoto.current = updated;
+        setPhoto(updated);
+      }
+    });
+  };
 
+  useEffect(() => { fetchMode().then((s) => setNote(demoNote(s))); }, []);
   const stopCamera = () => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
     setCam("off");
   };
-  useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), []);
+  useEffect(() => () => streamRef.current?.getTracks().forEach((track) => track.stop()), []);
 
   const openCamera = async () => {
     setError(undefined);
@@ -51,77 +60,103 @@ export default function Capture() {
       });
     } catch {
       setCam("off");
-      setError("We can't open your camera. Allow camera access in your browser settings, or upload a photo instead.");
+      setError("Camera access is unavailable. Allow it in your browser settings, or choose a photo instead.");
     }
   };
 
   const takePhoto = async () => {
     if (!videoRef.current) return;
+    setBusy(true);
     try {
-      setShot(await photoFromVideo(videoRef.current));
+      const next = await photoFromVideo(videoRef.current);
+      setShot(next);
+      applyLateHair(next);
       stopCamera();
     } catch {
-      setError("That photo didn't save. Try taking it again.");
-    }
+      setError("That photo did not save. Check the camera and try again.");
+    } finally { setBusy(false); }
   };
 
-  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
+  const onFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
     if (!file) return;
-    setError(undefined);
-    try {
-      setShot(await photoFromFile(file));
-      stopCamera();
-    } catch {
-      setError("We couldn't open that file. Choose a JPG or PNG photo.");
+    if (!consented) {
+      setError("Review the photo privacy details before choosing a personal photo.");
+      return;
     }
-  };
-
-  const retake = () => {
-    if (shot) URL.revokeObjectURL(shot.url);
-    setShot(undefined);
+    setError(undefined);
+    setBusy(true);
+    try {
+      const next = await photoFromFile(file);
+      if (shot) URL.revokeObjectURL(shot.url);
+      setShot(next);
+      applyLateHair(next);
+      stopCamera();
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : "unreadable";
+      setError(reason === "too-large"
+        ? "That photo is over 25 MB. Choose a smaller image."
+        : reason === "unsupported"
+          ? "Choose a photo file in JPG, PNG, WebP, AVIF or HEIC format."
+          : "We could not read that photo. Try a JPG or PNG image from your camera roll.");
+    } finally { setBusy(false); }
   };
 
   const useShot = () => {
     if (!shot) return;
-    setPhoto({ kind: "own", url: shot.url, hair: shot.hair });
+    const chosen = { kind: "own" as const, url: shot.url, hair: shot.hair };
+    activePhoto.current = chosen;
+    setPhoto(chosen);
+    applyLateHair(shot);
     router.push("/stage");
   };
-
-  const pickSample = (id: SampleId) => {
-    stopCamera();
-    setPhoto({ kind: "sample", id });
-    router.push("/stage");
-  };
-
   return (
-    <main className="stack-lg">
+    <main className={styles.capture}>
       <Link href="/" className="back">Back to the start</Link>
-      <h1>Take one photo</h1>
+      <header className={styles.intro}>
+        <p className={styles.eyebrow}><span aria-hidden="true" /> For hair changes during cancer treatment</p>
+        <h1>Start with a photo of you.</h1>
+        <p className={styles.lede}>Preview wigs and wraps on your own face, explore every style in a horizontal lookbook, and save favourites for your fitting.</p>
+      </header>
 
-      {consented ? (
-        <section className="stack" aria-label="Your photo">
+      <div className={styles.columns}>
+        <section className={styles.photoPanel} aria-labelledby="photo-heading">
           {shot ? (
             <>
+              <div className={styles.panelHeading}>
+                <div><p className={styles.eyebrow}>Your photo</p><h2 id="photo-heading">Ready when you are.</h2></div>
+              </div>
               {/* eslint-disable-next-line @next/next/no-img-element -- in-memory object URL */}
-              <img src={shot.url} alt="Your photo" className={styles.hero} />
+              <img src={shot.url} alt="Your selected photo" className={styles.preview} />
               {note && <p className="notice">{note}</p>}
-              <div className="btn-row">
-                <button type="button" className="btn btn-primary" onClick={useShot}>Use this photo</button>
-                <button type="button" className="btn btn-quiet" onClick={retake}>Take it again</button>
+              <div className={styles.actions}>
+                <button type="button" className="btn btn-primary" onClick={useShot}>Continue with this photo</button>
+                <button type="button" className="btn btn-quiet" onClick={() => fileRef.current?.click()}>Choose a different photo</button>
               </div>
             </>
+          ) : !consented ? (
+            <div className={styles.consentCard}>
+              <div className={styles.panelHeading}>
+                <div><p className={styles.eyebrow}>Use your own photo</p><h2 id="photo-heading">You stay in control.</h2></div>
+                <span className={styles.lock} aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg></span>
+              </div>
+              <p>Before opening your camera or selecting a photo, we’ll explain how it is handled. You stay in control of when a live preview is made.</p>
+              <Link href="/start" className="btn btn-primary">Review privacy & continue</Link>
+            </div>
           ) : (
             <>
+              <div className={styles.panelHeading}>
+                <div><p className={styles.eyebrow}>Use your own photo</p><h2 id="photo-heading">Choose how to begin.</h2></div>
+                <span className={styles.lock} aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="11" rx="2" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /></svg></span>
+              </div>
               <div className={styles.viewer} data-live={cam === "live"}>
                 {cam === "off" ? (
-                  <>
-                    <div className={styles.ovalIdle} aria-hidden="true" />
-                    <ul className={styles.guide} aria-label="For a good photo">
-                      {GUIDANCE.map((g) => <li key={g}>{g}</li>)}
-                    </ul>
-                  </>
+                  <div className={styles.cameraPrompt}>
+                    <span className={styles.cameraIcon} aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 7.5h3l1.5-2h7l1.5 2h3a1.5 1.5 0 0 1 1.5 1.5v9a1.5 1.5 0 0 1-1.5 1.5h-16A1.5 1.5 0 0 1 3 18V9a1.5 1.5 0 0 1 1-1.5Z" /><circle cx="12" cy="13" r="3.5" /></svg></span>
+                    <strong>A clear, front-facing photo works best.</strong>
+                    <span>Face a window or soft light. Keep your shoulders in frame.</span>
+                  </div>
                 ) : (
                   <>
                     <video ref={videoRef} className={styles.video} playsInline muted aria-label="Camera preview" />
@@ -129,46 +164,42 @@ export default function Capture() {
                   </>
                 )}
               </div>
-              {cam === "live" && <p className="note">{GUIDANCE.join(" ")}</p>}
+              {cam === "live" && <p className={styles.privacyHint}>{GUIDANCE.join(" ")}</p>}
               {error && <p className="notice" role="alert">{error}</p>}
               {note && cam === "off" && <p className="note">{note}</p>}
-              <div className="btn-row">
+              <div className={styles.actions}>
                 {cam === "live" ? (
-                  <button type="button" className="btn btn-primary" onClick={takePhoto}>Take the photo</button>
+                  <>
+                    <button type="button" className="btn btn-primary" onClick={takePhoto} disabled={busy}>{busy ? "Preparing your photo…" : "Take this photo"}</button>
+                    <button type="button" className="btn btn-quiet" onClick={stopCamera}>Close camera</button>
+                  </>
                 ) : (
-                  <button type="button" className="btn btn-primary" onClick={openCamera} disabled={cam === "starting"}>
-                    {cam === "starting" ? "Opening the camera" : "Open the camera"}
-                  </button>
+                  <>
+                    <button type="button" className="btn btn-primary" onClick={() => fileRef.current?.click()} disabled={busy}>{busy ? "Preparing your photo…" : "Upload a photo"}</button>
+                    <button type="button" className="btn btn-quiet" onClick={openCamera} disabled={cam === "starting"}>{cam === "starting" ? "Opening camera…" : "Use the camera"}</button>
+                  </>
                 )}
-                <label className="btn btn-quiet">
-                  Upload a photo
-                  <input type="file" accept="image/*" className="sr-only" onChange={onFile} />
-                </label>
               </div>
+              <p className={styles.privacyHint}>JPG, PNG, WebP, AVIF or HEIC · up to 25 MB</p>
             </>
           )}
+          <input ref={fileRef} id="photo-upload" type="file" accept="image/*" className="sr-only" onChange={onFile} aria-label="Choose a photo to upload" disabled={!consented} />
         </section>
-      ) : (
-        <section className="stack">
-          <p className="lede">To use your own photo, first read how we handle it. It takes ten seconds.</p>
-          <Link href="/start" className="btn btn-quiet">Use my own photo</Link>
-        </section>
-      )}
 
-      <section id="samples" className="stack" aria-labelledby="samples-h">
-        <h2 id="samples-h" className={styles.subhead}>Or try with a sample person</h2>
-        <p className="note">Pick someone to see the whole flow without a photo of your own.</p>
-        <ul className={styles.samples}>
-          {SAMPLE_PEOPLE.map((p) => (
-            <li key={p.id}>
-              <button type="button" className={styles.sample} onClick={() => pickSample(p.id)} aria-label={`Choose ${p.label}, ${p.description} (AI-generated)`}>
-                <AiImage src={beforeImage(p.id)} alt={`${p.label}, ${p.description}`} width={821} height={1024} sizes="(max-width: 34rem) 46vw, 16rem" />
-                <span className={styles.sampleName}>{p.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </section>
+        <aside className={styles.samplePanel} aria-labelledby="preview-heading">
+          <div className={styles.panelHeading}>
+            <div><p className={styles.eyebrow}>Your fitting, at your pace</p><h2 id="preview-heading">A lookbook made for your decision.</h2></div>
+            <span className={styles.sampleCount}>Wigs + wraps</span>
+          </div>
+          <p className={styles.sampleIntro}>Ask for your matches once; the available wig and headwear looks then load on your photo together.</p>
+          <ol className={styles.previewSteps}>
+            <li><span>01</span><div><strong>See it on you</strong><p>Try a style using your own photo.</p></div></li>
+            <li><span>02</span><div><strong>Move through every look</strong><p>Swipe across wigs and head wraps.</p></div></li>
+            <li><span>03</span><div><strong>Bring your shortlist</strong><p>Ask your wig specialist about real products and availability.</p></div></li>
+          </ol>
+          <p className={styles.sampleFoot}>The current style references are illustrative, not a retailer’s live stock.</p>
+        </aside>
+      </div>
     </main>
   );
 }

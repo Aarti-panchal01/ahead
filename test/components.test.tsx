@@ -30,10 +30,10 @@ const done = nextRender(nextRender(running, { type: "result", result: { id: "t",
 const noRecording = nextRender(running, { type: "result", result: { id: "", status: "error", errorCode: "no_recording", message: "This demo combination isn't recorded yet. Pick another wig or face." } });
 
 describe("ResultCard", () => {
-  it("shows the render, the AI label, the name, the check and the disclaimer", () => {
+  it("shows the render, the name, the check and the disclaimer without a per-image AI label", () => {
     const html = card(done);
     expect(html).toContain('src="/api/fixtures/rec__P1B__W01"');
-    expect(html).toContain("AI-generated");
+    expect(html).not.toContain("AI-generated");
     expect(html).toContain(ranked.item.name);
     expect(html).toContain("Skin tone check: unchanged");
     expect(html).toContain(PREVIEW_DISCLAIMER);
@@ -63,26 +63,27 @@ describe("ResultCard", () => {
 
   it("offers one retry after a YouCam error", () => {
     const err = nextRender(running, { type: "result", result: { id: "", status: "error", errorCode: "unknown_internal_error", message: "Try again." } });
-    expect(card(err)).toContain("Try this one again");
+    expect(card(err)).toContain("Retry this style");
   });
 
   it("labels the compare button with what it does", () => {
-    expect(card(done)).toContain("Add to compare");
-    expect(card(done, { selected: true })).toContain("Remove from compare");
+    expect(card(done)).toContain("Save to fitting bag");
+    expect(card(done, { selected: true })).toContain("Remove from fitting bag");
     expect(card(done, { selected: true })).toContain('aria-pressed="true"');
   });
 
-  it("in demo mode with your own photo, shows the item on our model", () => {
+  it("never substitutes a model face for an own-photo preview", () => {
     const html = card(IDLE, { subject: { isSample: false, name: "You" }, whose: "your" });
-    expect(html).toContain("Shown on our model");
+    expect(html).toContain("This look will be shown on your photo.");
+    expect(html).not.toContain("Shown on our model");
     expect(html).toContain(PREVIEW_DISCLAIMER);
     expect(html).not.toContain("Show me in this one");
   });
 
-  it("own photo in live mode: other cards wait for a tap", () => {
+  it("offers a manual retry action when requested by the parent flow", () => {
     const html = card(IDLE, { subject: { isSample: false, name: "You" }, whose: "your", onDemand: true });
-    expect(html).toContain("Show me in this one");
-    expect(card(running, { subject: { isSample: false, name: "You" }, whose: "your", onDemand: true })).not.toContain("Show me in this one");
+    expect(html).toContain("See this look on me");
+    expect(card(running, { subject: { isSample: false, name: "You" }, whose: "your", onDemand: true })).not.toContain("See this look on me");
   });
 
   it("an own photo's error is shown in plain words", () => {
@@ -138,15 +139,18 @@ describe("skippedClause", () => {
 
 describe("Landing", () => {
   const html = renderToStaticMarkup(h(Landing));
-  it("has the tagline, one primary button and the sample option", () => {
-    expect(html).toContain("Try on your next hair, before you lose this one.");
+  it("has the Ahead headline, one primary button and the sample option", () => {
+    expect(html).toContain("See your next look,");
     expect(html.match(/btn-primary/g)).toHaveLength(1);
-    expect(html).toContain("Take one photo");
-    expect(html).toContain("Try with a sample person");
+    expect(html).toContain("Start with my photo");
+    expect(html).toContain("A personal try-on for treatment-related hair loss");
+    expect(html).toContain("Explore sample previews");
+    expect(html).toContain("No upload or live API units needed");
   });
-  it("labels every image as AI-generated", () => {
-    expect(html.match(/<img /g)?.length).toBe(3);
-    expect(html.match(/AI-generated<\/figcaption>/g)?.length).toBe(3);
+  it("uses a typographic lookbook card without synthetic portrait imagery", () => {
+    expect(html.match(/<img /g)?.length ?? 0).toBe(0);
+    expect(html).toContain("Powered by YouCam Hair Transfer.");
+    expect(html).not.toContain("<figcaption");
   });
 });
 

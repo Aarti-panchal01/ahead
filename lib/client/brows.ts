@@ -36,9 +36,12 @@ export interface CardView {
 }
 
 /** What one card shows, given its render, its brows layer and the toggle. */
-export function cardView(state: RenderState, layer: BrowsLayer | undefined, browsOn: boolean): CardView {
+export function cardView(state: RenderState, layer: BrowsLayer | undefined, browsOn: boolean, previewWhileChecking = false): CardView {
   const plain: CardView = {
-    src: shownImage(state),
+    // Recorded sample try-ons are safe to show while their browser-side skin check runs. This
+    // keeps the lookbook populated immediately instead of making every card look like a loader.
+    // Live own-photo renders stay hidden until face restoration and the quality gate complete.
+    src: state.phase === "checking" && previewWhileChecking ? state.result.resultUrl : shownImage(state),
     report: state.phase === "done" ? state.report : undefined,
     checking: state.phase === "checking",
     withBrows: false,

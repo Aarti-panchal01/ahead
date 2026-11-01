@@ -1,33 +1,35 @@
 # Ahead
 
-Try on your next hair, before you lose this one.
+See your next look, on you.
+
+Ahead is a personal wig and headwear try-on for people navigating treatment-related hair loss. Preview styles on your own photo, compare favourites, and take a fitting brief to a specialist.
 
 ![tests](https://img.shields.io/badge/tests-526%20unit%20%2B%2016%20e2e%20passing-2F6F5E)
 
 ## Quick access for judges
 
 - **Live app:** https://try-ahead.vercel.app
-- **Video:** [PLACEHOLDER: video link]
-- **Try with a sample person (30 seconds, no photo, no key):** open the live app, tap "Try with a sample person", pick one of the four people (P1 to P4), choose "My hair is gone". Her hair is gone and the matched wigs and wraps appear on her, each with its skin tone check. Direct link to the result: https://try-ahead.vercel.app/results?person=P1&stage=gone
-- **Own-photo live try-on:** needs a tester code, because every live render spends YouCam units. Request a tester code privately from the project owner (the app asks for it when you use your own photo; it is kept for that visit only). Without it, your own photo still sets your hair colour and your matches on your device, and previews use the sample people.
-- **Zero-key mock run:** `npm install && npm run dev`. Mock mode is the default: it replays recorded YouCam results and spends 0 units. No API key needed.
+- **Demo video:** publish a 1–3 minute walkthrough before submission; the recording script is in `docs/DEMO-SCRIPT.md`.
+- **No-code judge path:** open the live app and choose **Explore sample previews**. It uses recorded results, requires no upload, and spends no API units.
+- **Own-photo live try-on:** review the privacy details, upload your photo, and enter the preview code if the deployment asks for it. The first look renders on your photo; each other style can be tried from its card. The code lasts for that visit only.
+- **Zero-key mock run:** `npm install && npm run dev`. Mock mode is the default and replays saved API results for test personas. No API key needed.
+- **Catalogue status:** the 12 wig and 4 wrap references are illustrative and are not live retailer products. The prototype has no verified brand, price, or availability data.
 - **Where every claim is wired:** [docs/FACTS.md](docs/FACTS.md) maps each claim in this README to the file that implements it and the test that proves it. The API measurements behind it are in [docs/api-truth-table.md](docs/api-truth-table.md), also shown in the app at `/how-we-tested`.
 
 ## What it is
 
-Ahead is for people facing treatment-related hair loss. Try wigs and head wraps on your own face, with your brows, before and after the hair goes. Every render is checked against your original photo, in your browser, so it is still you. It is a style and colour preview, not cap fit, density or comfort, and it makes no medical claims.
+Ahead helps people navigating treatment-related hair loss explore wigs and headwear on their own photo, compare the looks they like, and take a fitting brief to a specialist. Every live render is checked against the original photo in the browser. It is a style preview, not cap fit, density, comfort, medical advice, or confirmation that a product is in stock.
 
-It also plans the cosmetic side: a calendar around a first treatment date, a colour match card to bring to a stylist, and a short-lived stylist brief link.
+The core journey is own-photo preview, comparison, and a fitting-ready shortlist. The brief now gives the shopper concrete questions to ask about the closest available item, cap construction, price, care, return terms, and colour. The app also contains a treatment-date planner, secondary to the shopping experience.
 
-## YouCam APIs used
+## YouCam APIs in the product
 
-- **Hair transfer (`/s2s/v2.1/task/hair-transfer`)**: wigs and head wraps. Source photo plus an on-model reference photo, `hair_color: "ref"`, 2 units, 9 to 30 s. Works on a bald head and a buzz cut (truth table rows 1, 2, 4). A mannequin or flat-lay reference is rejected with `error_no_face` at 0 units, so the catalogue only uses photos of a person wearing the item (row 3). Built-in hairstyle templates are not used: their colour is unreliable (row 6). Hat and scarf APIs are not used: they replace the person (row 5).
-- **Makeup VTO (`/s2s/v2.0/task/makeup-vto`)**: brows and lashes. YouCam smooths skin by default; the lightening we measured on every face comes from that default (row 20). We measured it, and turned it off: the request sends `skin_smooth` with strength 0 and colour intensity 0 (recorded in `fixtures/youcam/rec__P1B__lashes_raw.meta.json`). We still composite only the brow or lash region back onto the original (`lib/image/composite.ts`) and check every render. In the app, sample people show recorded brow renders, which were made before we found the setting, so they rely on that compositing; lashes are supported by the compositor and tested, and are not yet offered in the UI. See "Known limits" in [docs/FACTS.md](docs/FACTS.md).
-- **Skin tone analysis findings**: a 20-unit call that returns a hair colour and a brow colour. We measured it (row 9): hair colour is approximate (greys read darker). The app does not spend those 20 units; it reads hair and brow colour in the browser, and the match card shows the real hair crop next to the swatch and says to bring a lock of hair to your stylist.
-- **Task delete (`/s2s/v2.0/task/delete`)**: at the end of a session every finished YouCam task, with its input and output files, is deleted (row 17, verified 22 Oct, 0 units).
-- **Beauty MCP server (`https://mcp-api-01.makeupar.com/mcp/beauty`)**: the consult agent calls `tools/list` through the Vercel AI SDK's MCP client. See "Which steps use MCP vs REST" below.
+- **Hair transfer (`/s2s/v2.1/task/hair-transfer`)** is the live try-on API for wigs and head wraps. The server sends the user's photo and an on-model product reference with `hair_color: "ref"`; it costs 2 units and took 9–30 seconds in our tests. It worked on bald heads and buzz cuts (truth table rows 1, 2, 4). Mannequin and flat-lay references fail with `error_no_face` at 0 units (row 3), so every usable reference shows a person wearing the item.
+- **Task delete (`/s2s/v2.0/task/delete`)** removes finished YouCam tasks and their files at session end (row 17, verified at 0 units).
+- **Beauty MCP server** is used for `tools/list` discovery only. Paid MCP tools are not called by the product; approved live try-ons use the REST path and its unit safeguards.
 
-Not used: hair length, hair type and density detection. The length detector reports a bald head as "above the ears" (row 10), so the app asks "Has your hair loss started?" instead of guessing.
+We also tested Makeup VTO and Skin Tone Analysis during API research. They are not called by the current product flow: brows shown for sample people are recorded/composited, lashes are not offered, and hair/brow colour is sampled in the browser. Our Makeup VTO experiments found that its default smoothing changes skin lightness, while Skin Tone Analysis colour estimates were approximate. Those findings are documented in the truth table and shaped the product's safeguards; they are not live app integrations.
+Not used: hair length, hair type and density detection. The length detector reports a bald head as "above the ears" (row 10), so the app asks where someone is in their hair-loss experience rather than guessing.
 
 ## How the integrity check works
 
@@ -53,11 +55,9 @@ The code is `lib/image/integrity.ts`; the threshold is `INTEGRITY_THRESHOLD = 2`
 
 `/how-we-tested` shows what YouCam actually did in our own tests on AI-generated faces: what worked, what failed, and what we changed because of it. It is generated from [docs/api-truth-table.md](docs/api-truth-table.md) when the app is built.
 
-## AI-generated content
+## Sample imagery
 
-All demo people, test faces and catalogue wigs and wraps in this repo are AI-generated (Google Gemini). No real person appears in any image here. Every one is shown through `components/AiImage.tsx`, which always carries an "AI-generated" label.
-
-All people and products shown are AI-generated (Gemini). Visible Gemini marks were cropped for layout; Google's invisible SynthID watermark is preserved.
+Sample recordings are kept for engineering validation. Catalogue references are generated illustrations, not product photos or retailer stock. The public own-photo flow never displays a catalogue model as the user's try-on result; the shared footer carries the single disclosure.
 
 ## Which steps use MCP vs REST
 

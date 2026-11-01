@@ -61,6 +61,8 @@ export function shortlistFor(req: PlanRequest, opts: ShortlistOptions = {}, cata
   const { wigs, wraps } = rankCatalogue(catalogue, { hair, length, texture });
   const closest = wigs.filter((w) => w.reason === "closest");
   const fresh = wigs.filter((w) => w.reason === "something_new");
-  const ranked = [...closest, ...fresh, ...(wantsWraps ? wraps.slice(0, WRAPS_IN_SHORTLIST) : [])];
+  // rankCatalogue exposes the full own-photo lookbook; the planning assistant still proposes
+  // a focused four-wig shortlist plus optional headwear, rather than dumping all 12 options.
+  const ranked = [...closest.slice(0, 3), ...fresh.slice(0, 1), ...(wantsWraps ? wraps.slice(0, WRAPS_IN_SHORTLIST) : [])];
   return { ranked, ids: ranked.map((r) => r.item.id), hairColour: hair };
 }

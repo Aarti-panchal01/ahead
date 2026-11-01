@@ -24,7 +24,7 @@ const MISSING = "We can't find this brief. Check the link, or make a new one fro
 
 export function cleanDraft(d: BriefDraft): BriefDraft {
   return {
-    items: [...new Set(d.items.filter((x) => /^[A-Z]\d{2}$/.test(x)))].slice(0, 8),
+    items: [...new Set(d.items.filter((x) => /^[A-Z]\d{2}$/.test(x)))].slice(0, 16),
     hairColour: d.hairColour && HEX.test(d.hairColour) ? d.hairColour.toUpperCase() : undefined,
     browColour: d.browColour && HEX.test(d.browColour) ? d.browColour.toUpperCase() : undefined,
     notes: d.notes?.trim().slice(0, NOTES_MAX) || undefined,

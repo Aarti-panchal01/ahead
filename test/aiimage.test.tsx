@@ -22,11 +22,11 @@ describe("AiImage", () => {
     }
   });
 
-  it("only the priority image is eager and high priority; the label always shows", () => {
+  it("only the priority image is eager and high priority; synthetic portraits have no per-image label", () => {
     const hero = renderToStaticMarkup(h(AiImage, { src: "/personas/P1A.jpg", alt: "a", width: 821, height: 1024, priority: true }));
     expect(hero).toContain('loading="eager"');
     expect(hero).toContain('fetchPriority="high"');
-    expect(hero).toContain("AI-generated");
+    expect(hero).not.toContain("AI-generated");
     const other = renderToStaticMarkup(h(AiImage, { src: "/personas/P1A.jpg", alt: "a", width: 821, height: 1024 }));
     expect(other).toContain('loading="lazy"');
     expect(other).toContain('decoding="async"');

@@ -6,6 +6,7 @@
 # dependencies and builds
 node_modules/
 .next/
+.next-e2e/
 out/
 .vercel/
 
@@ -27,6 +28,7 @@ cache/
 !.yarn/versions
 /coverage
 /.next/
+/.next-e2e/
 /out/
 /build
 .DS_Store
@@ -40,3 +42,4 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+.gstack/

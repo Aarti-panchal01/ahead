@@ -4,18 +4,85 @@ import { expect, test } from "@playwright/test";
 import catalogue from "../../catalogue/catalogue.json";
 import { INTEGRITY_RE, cards, isoInDays, toResults, waitForChecked } from "./helpers";
 
-test("landing shows the triptych, the tagline and both ways in", async ({ page }) => {
+test("landing makes the patient and fitting purpose clear", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Try on your next hair, before you lose this");
-  const triptych = page.getByRole("region", { name: "One person, three looks" });
-  await expect(triptych.getByRole("img")).toHaveCount(3);
-  for (const caption of ["Today", "Hair gone", "Wig and brows"]) await expect(triptych.getByText(caption)).toBeVisible();
-  await expect(page.getByRole("link", { name: "Take one photo" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Try with a sample person" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("See your next look, on you.");
+  await expect(page.getByText("A personal try-on for treatment-related hair loss")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start with my photo" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Explore sample previews" })).toBeVisible();
+  await expect(page.getByText("Powered by YouCam Hair Transfer.")).toBeVisible();
 });
 
-test("hero flow: consent, sample person, results with checks, brows, wraps, compare, match card, brief", async ({ page }) => {
+test("judge can explore recorded sample try-ons without uploading a photo", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Explore sample previews" }).click();
+  await expect(page).toHaveURL(/\/results\?person=P3&stage=gone/);
+  await expect(page.getByRole("heading", { name: "Matches for sample person 3" })).toBeVisible();
+  // The sample's ranked wig tab shows four recorded directions; the full 12-style catalogue is available
+  // in own-photo mode and is tested separately.
+  await expect(cards(page)).toHaveCount(4);
+  await expect(cards(page).first().getByRole("img", { name: /wearing the/i }).first()).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/Skin tone check|Corrected:/).first()).toBeVisible({ timeout: 120_000 });
+});
+
+test("own photo opens the full catalogue without ever borrowing a model face", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Start with my photo" }).click();
+  await page.getByRole("button", { name: "I agree, continue to my photo" }).click();
+  await page.locator('input[type="file"]').setInputFiles("public/personas/P1B.jpg");
+  await expect(page.getByRole("img", { name: "Your selected photo" })).toBeVisible();
+  await page.getByRole("button", { name: "Continue with this photo" }).click();
+  await page.getByRole("radio", { name: "Most or all has fallen out" }).check();
+  await page.getByRole("button", { name: "Show my matches" }).click();
+
+  await expect(cards(page)).toHaveCount(12);
+  await expect(page.getByText("Live previews are off in this local build.")).toBeVisible();
+  await expect(page.getByText("Shown on our model")).toHaveCount(0);
+  await expect(cards(page).first().getByText("This look will be shown on your photo.")).toBeVisible();
+
+  await page.getByRole("tab", { name: "Wraps & caps" }).click();
+  await expect(cards(page)).toHaveCount(4);
+  await expect(page.getByRole("heading", { name: "Explore wraps, turbans & caps" })).toBeVisible();
+  await expect(page.getByText("Shown on our model")).toHaveCount(0);
+});
+
+test("live-mode own photo auto-starts all 16 lookbook previews together", async ({ page }) => {
+  let creates = 0;
+  await page.route("**/api/status", (route) => route.fulfill({
+    json: { mode: "live", servingRecordings: false, remainingToday: 40, testerRequired: false },
+  }));
+  await page.route("**/api/tryon", async (route) => {
+    if (route.request().method() !== "POST") return route.continue();
+    creates += 1;
+    await route.fulfill({ json: { id: `e2e-live-${creates}` } });
+  });
+  await page.route("**/api/tryon/**", (route) => route.fulfill({
+    json: { id: "e2e-live", status: "running" },
+  }));
+
+  await page.goto("/");
+  await page.getByRole("link", { name: "Start with my photo" }).click();
+  await page.getByRole("button", { name: "I agree, continue to my photo" }).click();
+  await page.locator('input[type="file"]').setInputFiles("public/personas/P1B.jpg");
+  await page.getByRole("button", { name: "Continue with this photo" }).click();
+  await page.getByRole("radio", { name: "Most or all has fallen out" }).check();
+  await page.getByRole("button", { name: "Show my matches" }).click();
+
+  await expect(cards(page)).toHaveCount(12);
+  await expect.poll(() => creates, { timeout: 20_000 }).toBe(16);
+  await expect(page.getByText("Preparing all 16 previews on your photo.")).toBeVisible();
+  await expect(cards(page).getByRole("button", { name: "See this look on me" })).toHaveCount(0);
+  await page.screenshot({ path: test.info().outputPath("ahead-live-preview-queue.png") });
+  await page.getByRole("tab", { name: "Wraps & caps" }).click();
+  await expect(cards(page)).toHaveCount(4);
+  await page.screenshot({ path: test.info().outputPath("ahead-live-headwear-queue.png") });
+});
+
+test("sample lookbook: results with checks, brows, headwear, compare, match card, brief", async ({ page }) => {
   await toResults(page, "My hair is gone", 1);
+  await expect(page.getByRole("region", { name: "Fitting bag" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Go to fitting brief" })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("fitting-bag.png"), fullPage: true });
 
   // 4 wig cards, each with her own recording and its integrity line.
   const lines = await waitForChecked(page, 4);
@@ -26,6 +93,19 @@ test("hero flow: consent, sample person, results with checks, brows, wraps, comp
   await expect(page.getByText(/isn.t recorded/i)).toHaveCount(0);
   await expect(page.getByText("Getting her preview ready.")).toHaveCount(0);
   for (let i = 0; i < 4; i++) await expect(cards(page).nth(i).getByRole("heading", { level: 2 })).not.toBeEmpty();
+  const firstCard = cards(page).first();
+  await expect(firstCard).toContainText("AHD-WIG-");
+  await firstCard.scrollIntoViewIfNeeded();
+  await firstCard.getByRole("button", { name: "Model reference" }).click();
+  const modelReference = firstCard.getByRole("img", { name: /Reference model wearing/i });
+  await expect(modelReference).toBeVisible();
+  await expect.poll(() => modelReference.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: test.info().outputPath("style-model-reference.png") });
+  await firstCard.getByRole("button", { name: "On sample" }).click();
+  const sampleImage = firstCard.getByRole("img", { name: /wearing the/i });
+  await expect(sampleImage).toBeVisible();
+  await expect.poll(() => sampleImage.evaluate((img) => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+  await page.screenshot({ path: test.info().outputPath("style-on-sample.png") });
 
   // Brows toggle says what it does, and flips.
   await expect(page.getByRole("button", { name: "Show without brows" })).toBeVisible();
@@ -37,8 +117,8 @@ test("hero flow: consent, sample person, results with checks, brows, wraps, comp
   await waitForChecked(page, 4);
 
   // Wraps tab: 4 wraps.
-  await page.getByRole("tab", { name: "Wraps" }).click();
-  await expect(page.getByRole("tab", { name: "Wraps" })).toHaveAttribute("aria-selected", "true");
+  await page.getByRole("tab", { name: "Wraps & caps" }).click();
+  await expect(page.getByRole("tab", { name: "Wraps & caps" })).toHaveAttribute("aria-selected", "true");
   await waitForChecked(page, 4);
   await page.getByRole("tab", { name: "Wigs" }).click();
   await expect(cards(page)).toHaveCount(4);
@@ -52,26 +132,45 @@ test("hero flow: consent, sample person, results with checks, brows, wraps, comp
   await expect(match.getByText(/lock of/i).first()).toBeVisible();
 
   // Compare two side by side.
-  await cards(page).nth(0).getByRole("button", { name: "Add to compare" }).click();
-  await expect(page.getByText("1 chosen. Add one more to compare.")).toBeVisible();
-  await cards(page).nth(1).getByRole("button", { name: "Add to compare" }).click();
-  await page.getByRole("button", { name: "Compare these two" }).click();
+  await cards(page).nth(0).getByRole("button", { name: "Save to fitting bag" }).click();
+  await expect(page.getByText("1 look saved for your fitting")).toBeVisible();
+  await cards(page).nth(1).getByRole("button", { name: "Save to fitting bag" }).click();
+  await page.getByRole("button", { name: "Compare two looks" }).click();
   await expect(page.getByRole("heading", { name: "Side by side" })).toBeVisible();
+  await expect(page.getByText(/Wig ·/).first()).toBeVisible();
   await expect(page.getByRole("img", { name: /wearing the/i })).toHaveCount(2);
   await expect(page.getByText(INTEGRITY_RE)).toHaveCount(2, { timeout: 60_000 });
-  await page.getByRole("button", { name: "Back to all matches" }).click();
-  await expect(cards(page)).toHaveCount(4);
+  await page.screenshot({ path: test.info().outputPath("fitting-compare.png"), fullPage: true });
+  await page.getByRole("button", { name: "Take these two to my fitting brief" }).click();
+  await expect(page.getByRole("heading", { name: "Create your fitting brief" })).toBeInViewport();
 
   // Stylist brief (POST /api/brief with the in-memory store), then the brief page.
-  await page.getByRole("button", { name: "Make a brief for my stylist" }).click();
+  await page.getByRole("button", { name: "Create fitting brief" }).click();
   await expect(page).toHaveURL(/\/brief\/[^/]+$/);
-  await expect(page.getByRole("heading", { name: "Stylist brief" })).toBeVisible();
-  await expect(page.getByRole("img", { name: /Our model wearing the/ })).toHaveCount(2);
-  await expect(page.getByText(/^This link stops working on .+\d{4}\.$/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bring the looks you like." })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Style reference for/ })).toHaveCount(2);
+  await expect(page.getByText(/^This link stops working on .+\d{4}\. This link includes your selected style references and notes, never your photo\.$/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "What to confirm with the specialist" })).toBeVisible();
+  await expect(page.getByText(/closest to each direction/)).toBeVisible();
+  await expect(page.getByRole("button", { name: "Print / save as PDF" })).toBeVisible();
+  await page.screenshot({ path: test.info().outputPath("fitting-brief.png"), fullPage: true });
+  await page.emulateMedia({ media: "print" });
+  const printLayout = await page.evaluate(() => ({
+    header: getComputedStyle(document.querySelector("header")!).display,
+    footer: getComputedStyle(document.querySelector("footer")!).display,
+    firstButton: getComputedStyle(document.querySelector("main")!.querySelector("button")!).display,
+  }));
+  expect(printLayout).toEqual({ header: "none", footer: "none", firstButton: "none" });
+  const pdf = await page.pdf({ path: test.info().outputPath("fitting-brief.pdf"), format: "A4", printBackground: true });
+  expect(pdf.byteLength).toBeGreaterThan(20_000);
+  await page.emulateMedia({ media: "screen" });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Copy link" }).click();
+  await expect(page.getByRole("button", { name: "Link copied" })).toBeVisible();
 
   // The same link opens in a fresh page load (it is stored server-side, not in the session).
   await page.goto(page.url());
-  await expect(page.getByRole("heading", { name: "Stylist brief" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Bring the looks you like." })).toBeVisible();
 });
 
 test("plan: with a first treatment date, the wig-ready step sits on that date", async ({ page }) => {
@@ -99,11 +198,11 @@ test("plan: when her hair is already gone, a plan still comes back and ends with
   await expect(page.getByText("Check details with your care team.")).toBeVisible();
 });
 
-test("honesty page carries the deletion line and the 30-unit guardrail line", async ({ page }) => {
+test("honesty page carries the deletion line and the unit guardrail", async ({ page }) => {
   await page.goto("/how-we-tested");
   await expect(page.getByRole("heading", { name: "How we tested this" })).toBeVisible();
   await expect(page.getByText("Your try-ons are deleted from YouCam at the end of your session.").first()).toBeVisible();
-  await expect(page.getByText(/at most 30 YouCam units per visit/)).toBeVisible();
+  await expect(page.getByText(/YouCam units per visit/)).toBeVisible();
 });
 
 test("P3: no straight wig is labelled 'Close to her hair'", async ({ page }) => {

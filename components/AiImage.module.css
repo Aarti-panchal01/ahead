@@ -1,33 +1,12 @@
 .frame {
   position: relative;
+  display: block;
   margin: 0;
   overflow: hidden;
-  border-radius: var(--radius, 14px);
-  background: #dfe3df;
+  border-radius: var(--radius, 13px);
+  background: #e3e7e1;
 }
 
-.img {
-  display: block;
-  width: 100%;
-  height: auto;
-}
-
-/* AI-generated label: clearly visible, not ashamed of it */
-.label {
-  position: absolute;
-  left: 8px;
-  bottom: 8px;
-  padding: 3px 8px;
-  border-radius: 5px;
-  background: rgba(30, 42, 42, 0.78);
-  color: #f3f5f2;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.4;
-  letter-spacing: 0.02em;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
+.img { display: block; width: 100%; height: auto; }
 .crop { aspect-ratio: 1; }
 .crop .img { position: absolute; max-width: none; height: auto; }

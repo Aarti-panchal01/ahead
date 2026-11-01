@@ -26,9 +26,10 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
   try {
     const t = await pollTask(id);
     const ctxName = t.kind === "listing" ? "listing" : context;
-    const out: TryOnResult = t.status === "success" ? { id, status: "success", resultUrl: t.url }
-      : t.status === "error" ? { id, status: "error", errorCode: t.errorCode, message: messageFor(t.errorCode, ctxName), unitsCharged: 0 }
-      : { id, status: "running" };
+    const style = t.itemId ? { itemId: t.itemId } : {};
+    const out: TryOnResult = t.status === "success" ? { id, ...style, status: "success", resultUrl: t.url }
+      : t.status === "error" ? { id, ...style, status: "error", errorCode: t.errorCode, message: messageFor(t.errorCode, ctxName), unitsCharged: 0 }
+      : { id, ...style, status: "running" };
     return NextResponse.json(out);
   } catch {
     return NextResponse.json({ id, status: "running" } satisfies TryOnResult);

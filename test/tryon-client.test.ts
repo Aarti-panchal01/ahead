@@ -70,15 +70,23 @@ describe("render state", () => {
     expect(s).toMatchObject({ elapsedMs: 4000 });
     s = nextRender(s, { type: "result", result: ok });
     expect(s.phase).toBe("checking");
-    expect(shownImage(s)).toBe("/r.jpg");
+    expect(shownImage(s)).toBeUndefined();
     s = nextRender(s, { type: "checked", report });
     expect(s.phase).toBe("done");
+    expect(shownImage(s)).toBe("/r.jpg");
   });
 
   it("shows the corrected image when the check fixed the render", () => {
     let s = nextRender(nextRender(IDLE, { type: "start" }), { type: "result", result: ok });
     s = nextRender(s, { type: "checked", report: { ...report, status: "corrected", correctedImage: "data:fixed" } });
     expect(shownImage(s)).toBe("data:fixed");
+  });
+
+  it("turns a failed face quality check into an explicit retryable error", () => {
+    const checking = nextRender(nextRender(IDLE, { type: "start" }), { type: "result", result: ok });
+    const failed = nextRender(checking, { type: "qualityFailed", result: { ...ok, status: "error", errorCode: "quality_check", message: "Retry this style." } });
+    expect(failed).toMatchObject({ phase: "error", attempts: 1, result: { errorCode: "quality_check" } });
+    expect(canRetry(failed)).toBe(true);
   });
 
   it("allows one retry after a real error, none for no_recording or a timeout", () => {

@@ -47,6 +47,15 @@ describe("brows", () => {
     expect(v.report).toBeUndefined();
   });
 
+  it("shows a saved sample render during its skin check, but keeps live renders gated", () => {
+    expect(cardView(checking, undefined, false, true)).toMatchObject({
+      src: "/api/fixtures/rec__P2B__W04",
+      checking: true,
+      report: undefined,
+    });
+    expect(cardView(checking, undefined, false, false).src).toBeUndefined();
+  });
+
   it("brows that failed: plain render, said plainly", () => {
     const v = cardView(done, { status: "failed" }, true);
     expect(v.withBrows).toBe(false);

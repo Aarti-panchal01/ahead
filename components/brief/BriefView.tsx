@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import AiImage from "@/components/AiImage";
-import { getItem } from "@/lib/catalogue";
+import { getItem, referenceSku } from "@/lib/catalogue";
 import { expiryLine, getBrief, type GetResult } from "@/lib/client/briefApi";
 import { PREVIEW_DISCLAIMER, SCREEN_COLOUR_NOTE } from "@/lib/client/copy";
 import styles from "./brief.module.css";
@@ -23,6 +23,8 @@ function Swatch({ hex, label }: { hex: string; label: string }) {
 
 export default function BriefView({ id }: { id: string }) {
   const [res, setRes] = useState<GetResult>();
+  const [copied, setCopied] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   useEffect(() => {
     let live = true;
     getBrief(id).then((r) => live && setRes(r));
@@ -42,12 +44,58 @@ export default function BriefView({ id }: { id: string }) {
 
   const { brief } = res;
   const items = brief.items.map((x) => getItem(x)).filter((x) => x !== undefined);
+
+  const copyLink = async () => {
+    setShareMessage("");
+    try {
+      const url = window.location.href;
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = url;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const success = document.execCommand("copy");
+        field.remove();
+        if (!success) throw new Error("Copy unavailable");
+      }
+      setCopied(true);
+    } catch {
+      setShareMessage("Copy this page address to share your fitting brief.");
+    }
+  };
+
+  const shareBrief = async () => {
+    if (!navigator.share) {
+      await copyLink();
+      return;
+    }
+    try {
+      await navigator.share({ title: "Ahead fitting shortlist", text: "Here are the styles I would like to discuss at my fitting.", url: window.location.href });
+      setShareMessage("Your fitting brief is ready to share.");
+    } catch (error) {
+      if (error instanceof Error && error.name !== "AbortError") setShareMessage("You can copy the brief link or print it for your fitting.");
+    }
+  };
+
   return (
     <main className={`stack-lg ${styles.brief}`}>
       <section className="stack">
-        <h1>Stylist brief</h1>
-        <p className="lede">Wigs and wraps chosen with Ahead, with the colours to match.</p>
-        <p className="note">{expiryLine(brief.expiresAt)}</p>
+        <p className={styles.eyebrow}>Ahead · your fitting shortlist</p>
+        <h1>Bring the looks you like.</h1>
+        <p className="lede">A simple starting point for a more useful fitting conversation.</p>
+        <p className={styles.expiry}>{expiryLine(brief.expiresAt)} This link includes your selected style references and notes, never your photo.</p>
+        <div className={styles.actions} aria-label="Share or print this fitting shortlist">
+          <button type="button" className="btn btn-primary" onClick={shareBrief}>Share shortlist</button>
+          <button type="button" className="btn btn-quiet" onClick={copyLink}>{copied ? "Link copied" : "Copy link"}</button>
+          <button type="button" className="btn btn-quiet" onClick={() => window.print()}>Print / save as PDF</button>
+        </div>
+        <p className={styles.printHint}>Choose “Save as PDF” in your browser’s print window for a downloadable copy.</p>
+        {shareMessage && <p className="note" role="status">{shareMessage}</p>}
       </section>
 
       {(brief.hairColour || brief.browColour) && (
@@ -60,20 +108,36 @@ export default function BriefView({ id }: { id: string }) {
       )}
 
       <section className="stack" aria-labelledby="items-h">
-        <h2 id="items-h" className="h3">Chosen styles</h2>
+        <h2 id="items-h" className="h3">Style directions <span className={styles.count}>{items.length} looks</span></h2>
+        <p className={styles.catalogueNote}>These references help describe the look you have in mind. The Ahead style SKU is an internal matching code, not a retailer SKU. Confirm the real product, price and stock with your retailer or specialist.</p>
         <ul className={styles.items}>
           {items.map((it) => (
             <li key={it.id} className={styles.item}>
-              <AiImage src={it.image} alt={`Our model wearing the ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.itemPhoto} sizes="(max-width: 34rem) 36vw, 12rem" />
+              <div className={styles.referenceWrap}>
+                <AiImage src={it.image} alt={`Style reference for ${it.name.toLowerCase()}`} width={821} height={1024} className={styles.itemPhoto} sizes="(max-width: 34rem) 36vw, 12rem" />
+                <span className={styles.referenceLabel}>Style direction · {it.id}</span>
+              </div>
               <div className={styles.itemBody}>
                 <p className={styles.itemName}>{it.name}</p>
-                <p className="note">{it.kind === "wig" ? `Wig, ${it.length}, ${it.texture}` : `Wrap, ${it.texture}`}</p>
+                <p className={styles.itemSku}>Ahead style SKU <strong>{referenceSku(it)}</strong></p>
+                <p className={styles.itemMeta}>{it.kind === "wig" ? `Wig · ${it.length} · ${it.texture}` : `Headwear · ${it.texture}`}</p>
                 <Swatch hex={it.colour} label={it.kind === "wig" ? "Wig colour" : "Fabric colour"} />
               </div>
             </li>
           ))}
         </ul>
         <p className="note">{PREVIEW_DISCLAIMER}</p>
+      </section>
+
+      <section className={styles.checklist} aria-labelledby="fitting-checks-h">
+        <p className={styles.eyebrow}>At your fitting</p>
+        <h2 id="fitting-checks-h" className="h3">What to confirm with the specialist</h2>
+        <ul>
+          <li><span aria-hidden="true">□</span><span>Which in-stock style is closest to each direction?</span></li>
+          <li><span aria-hidden="true">□</span><span>Can I try the actual cap construction and size?</span></li>
+          <li><span aria-hidden="true">□</span><span>What are the price, care needs and return terms?</span></li>
+          <li><span aria-hidden="true">□</span><span>Can I compare the colour in natural light?</span></li>
+        </ul>
       </section>
 
       {brief.notes && (
@@ -83,7 +147,6 @@ export default function BriefView({ id }: { id: string }) {
         </section>
       )}
 
-      <button type="button" className="btn btn-quiet" onClick={() => window.print()}>Print this brief</button>
     </main>
   );
 }

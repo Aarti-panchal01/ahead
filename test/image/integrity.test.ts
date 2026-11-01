@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
-import { INTEGRITY_THRESHOLD, PLAIN, hairShadedRegions, integrityCheck, measureSkin, restoreInnerFace } from "@/lib/image/integrity";
+import { INTEGRITY_THRESHOLD, PLAIN, faceLandmarkDrift, hairShadedRegions, integrityCheck, measureSkin, restoreInnerFace } from "@/lib/image/integrity";
 import { hairMaskFromCategories } from "@/lib/image/sample";
 import { resize, type RawImage } from "@/lib/image/raw";
 import type { Landmarks } from "@/lib/image/landmarks";
@@ -58,6 +58,30 @@ describe("full look: brows (composited) then hair-transfer W01", () => {
     expect(changedHair).toBe(0);
   });
 
+  it("restores the feathered inner face even where the try-on hair mask covers it", async () => {
+    // A dense synthetic mask covers even the visible face, as if the provider's hair crossed the forehead/eyes.
+    const hairMask = new Uint8Array(full.width * full.height).fill(1);
+    const { image, mask } = restoreInnerFace(src, full, lm);
+    const maskedRestore = restoreInnerFace(src, full, lm, { result: hairMask }).image;
+    const base = resize(src, full.width, full.height);
+    let protectedPixels = 0;
+    let underHairPixels = 0;
+    for (let i = 0; i < mask.length; i++) {
+      if (mask[i] < 0.98) continue;
+      protectedPixels++;
+      if (hairMask[i]) underHairPixels++;
+      for (let c = 0; c < 3; c++) expect(Math.abs(image.data[i * 3 + c] - base.data[i * 3 + c])).toBeLessThanOrEqual(2);
+      for (let c = 0; c < 3; c++) expect(maskedRestore.data[i * 3 + c]).toBe(full.data[i * 3 + c]);
+    }
+    expect(protectedPixels).toBeGreaterThan(1000);
+    expect(underHairPixels).toBeGreaterThan(0);
+  });
+
+  it("measures zero drift for the same face and rejects missing landmarks", () => {
+    expect(faceLandmarkDrift(lm, lm)).toBe(0);
+    expect(faceLandmarkDrift(lm, null)).toBe(Infinity);
+  });
+
   it("has no visible seam", async () => {
     const masks = { original: await hair("hero__P1B__browsB"), result: await hair("hero__P1B_browsB__W01") };
     const { image, mask } = restoreInnerFace(src, full, lm, masks);
@@ -70,6 +94,26 @@ describe("full look: brows (composited) then hair-transfer W01", () => {
 
 describe("plain wig renders p1__F{1..4}__W{1..4}", () => {
   const cases = [1, 2, 3, 4].flatMap((F) => [1, 2, 3, 4].map((W) => [F, W] as const));
+
+  it("does not paste the original hairline over the try-on around the temples", async () => {
+    const [original, result] = await Promise.all([loadImage("assets/ai/faces/F1.jpg"), loadImage("fixtures/youcam/p1__F1__W1.jpg")]);
+    const sourceHair = await hair("F1");
+    const lm = loadLandmarks("F1").landmarks;
+    const { image, mask } = restoreInnerFace(original, result, lm, { original: sourceHair });
+    const withoutSourceMask = restoreInnerFace(original, result, lm).image;
+    let protectedHairPixels = 0;
+    let pixelsLessOverwritten = 0;
+    for (let i = 0; i < mask.length; i++) {
+      if (!sourceHair[i] || mask[i] <= 0.05) continue;
+      protectedHairPixels++;
+      const withMask = Math.abs(image.data[i * 3] - result.data[i * 3]) + Math.abs(image.data[i * 3 + 1] - result.data[i * 3 + 1]) + Math.abs(image.data[i * 3 + 2] - result.data[i * 3 + 2]);
+      const withoutMask = Math.abs(withoutSourceMask.data[i * 3] - result.data[i * 3]) + Math.abs(withoutSourceMask.data[i * 3 + 1] - result.data[i * 3 + 1]) + Math.abs(withoutSourceMask.data[i * 3 + 2] - result.data[i * 3 + 2]);
+      expect(withMask).toBeLessThanOrEqual(withoutMask + 1);
+      if (withMask < withoutMask) pixelsLessOverwritten++;
+    }
+    expect(protectedHairPixels).toBeGreaterThan(50);
+    expect(pixelsLessOverwritten).toBeGreaterThan(5);
+  });
 
   it.each(cases)("F%i x W%i passes or is corrected, and a forced paste leaves no visible seam", async (F, W) => {
     const [original, result] = await Promise.all([loadImage(`assets/ai/faces/F${F}.jpg`), loadImage(`fixtures/youcam/p1__F${F}__W${W}.jpg`)]);

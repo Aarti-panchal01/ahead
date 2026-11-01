@@ -41,6 +41,18 @@ export async function integrityCheck(originalUrl: string, renderUrl: string): Pr
   }
 }
 
+/** Feather the original inner face over a try-on after checking that the detected faces still align. */
+export async function restoreFace(originalUrl: string, renderUrl: string): Promise<string> {
+  const { restoreFace: restoreFaceInBrowser } = await import("@/lib/image/browser");
+  return serial(() => restoreFaceInBrowser(originalUrl, renderUrl));
+}
+
+/** Restore the face and run the skin check in one worker pass, without re-segmenting the render. */
+export async function protectFaceAndCheck(originalUrl: string, renderUrl: string): Promise<{ image: string; report: IntegrityReport; fingerprint: string }> {
+  const { protectFaceAndCheck: protect } = await import("@/lib/image/browser");
+  return serial(() => protect(originalUrl, renderUrl));
+}
+
 /**
  * Puts the brows from her brows photo onto a wig or wrap render (lab's applyBrowsInBrowser). Returns a data URL.
  * On any failure (models, face not found, helper missing before lab's branch is merged) returns the plain render,

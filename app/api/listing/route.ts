@@ -45,7 +45,7 @@ export async function POST(req: Request) {
   try {
     const ref = listingFile ?? (await prepareUpload(await fetchRemoteImage(url)));
     const src = selfie;
-    const r = await startHairTransfer({ src, ref, ip: clientIp(req), sessionId: sessionId(req), kind: "listing" });
+    const r = await startHairTransfer({ itemId: "listing", src, ref, ip: clientIp(req), sessionId: sessionId(req), kind: "listing" });
     if (r.ok) {
       return NextResponse.json({ id: r.taskId, mode: "live", kind: "listing", createdAt: new Date().toISOString(), pollUrl: `/api/tryon/${encodeURIComponent(r.taskId)}` });
     }

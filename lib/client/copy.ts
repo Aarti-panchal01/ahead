@@ -1,27 +1,27 @@
 // Copy used on more than one screen or checked by tests. Plain sentence case, cosmetic language only.
-export const PREVIEW_DISCLAIMER = "Style and colour preview, not cap fit, density or comfort.";
+export const PREVIEW_DISCLAIMER = "Style preview only—not fit, density, or comfort.";
 
 /** Warm intro line above the results carousel. No outcomes, no promises. */
-export const RESULTS_INTRO = "So many options. Pick the one that feels like you.";
+export const RESULTS_INTRO = "Choose a style to see it on your photo.";
 
 /** Intro line for the wraps tab. */
-export const WRAPS_INTRO = "Head wraps are a soft, versatile choice. See which one feels right.";
+export const WRAPS_INTRO = "Explore head wraps and soft-cover options on your photo.";
 
 export const CONSENT_LINES = [
-  "We use your photo only to show you wigs and head wraps on yourself.",
-  "Nothing is stored after this session. Close the tab and your photo is gone.",
-  "Previews show style and colour only, not cap fit, density or comfort.",
-  "When live previews are on, your photo is sent to YouCam to make them. Your try-ons are deleted from YouCam at the end of your session.",
+  "In live mode, choosing “Show my matches” sends your photo to YouCam to generate the wig and headwear previews available today.",
+  "Your photo remains in this browser until you close the tab.",
+  "A preview helps you explore style and colour; it cannot confirm fit, comfort, or product availability.",
+  "YouCam try-on tasks are deleted when your session ends.",
 ];
 
 
 /** docs/api-truth-table.md row 10: the length detector reports a bald head as "above the ears". */
-export const WHY_WE_ASK = "Our hair detector can't tell short hair from no hair, so we ask you instead.";
+export const WHY_WE_ASK = "We won't guess from a photo. Choose the answer that feels right; you can change it later.";
 
 export const STAGES = [
-  { value: "not_yet", label: "Not yet" },
-  { value: "started", label: "It has started" },
-  { value: "gone", label: "My hair is gone" },
+  { value: "not_yet", label: "I’m preparing ahead" },
+  { value: "started", label: "It’s thinning or changing" },
+  { value: "gone", label: "Most or all has fallen out" },
 ] as const;
 
 /** docs/api-truth-table.md row 17: task delete verified 22 Oct, 0 units. */

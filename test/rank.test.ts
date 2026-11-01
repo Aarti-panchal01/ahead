@@ -10,11 +10,11 @@ const wig = (id: string, colour: string, length: string, extra: Partial<Catalogu
 });
 
 describe("rankCatalogue", () => {
-  it("returns 3 closest wigs and 1 something new, all distinct", () => {
+  it("returns the full own-photo wig catalogue, with 3 closest and 1 something new first", () => {
     const r = rankCatalogue(CATALOGUE, { hair: "#6E5A4A", length: "shoulder" });
-    expect(r.wigs).toHaveLength(4);
-    expect(r.wigs.map((x) => x.reason)).toEqual(["closest", "closest", "closest", "something_new"]);
-    expect(new Set(r.wigs.map((x) => x.item.id)).size).toBe(4);
+    expect(r.wigs).toHaveLength(12);
+    expect(r.wigs.slice(0, 4).map((x) => x.reason)).toEqual(["closest", "closest", "closest", "something_new"]);
+    expect(new Set(r.wigs.map((x) => x.item.id)).size).toBe(12);
     expect(r.wigs.every((x) => x.item.kind === "wig")).toBe(true);
   });
 
@@ -48,7 +48,7 @@ describe("rankCatalogue", () => {
 
   it("with no hair colour, gives a dark-to-light spread", () => {
     const r = rankCatalogue(CATALOGUE, {});
-    expect(r.wigs).toHaveLength(4);
+    expect(r.wigs).toHaveLength(12);
     const closest = r.wigs.slice(0, 3).map((x) => x.item.id);
     expect(closest).toContain("W05"); // the lightest wig, silver grey
     expect(r.wigs.every((x) => x.colourDistance === 0)).toBe(true);

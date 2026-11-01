@@ -20,6 +20,7 @@ export const servesRecording = (r: RefusalReason) => r === "daily_cap" || r === 
 const refuse = (reason: RefusalReason, code: string, status: number): StartResult => ({ ok: false, reason, code, message: messageFor(code), status });
 
 export interface StartInput {
+  itemId: string;
   src: Buffer;
   ref: Buffer;
   ip: string;
@@ -27,9 +28,10 @@ export interface StartInput {
   kind?: LedgerCall["kind"];
 }
 
-export async function startHairTransfer({ src, ref, ip, sessionId, kind = "tryon" }: StartInput): Promise<StartResult> {
+export async function startHairTransfer({ itemId, src, ref, ip, sessionId, kind = "tryon" }: StartInput): Promise<StartResult> {
   const params = { hair_color: "ref" as const };
-  const ck = cacheKey(src, ref, JSON.stringify(params));
+  // Cache scope is explicit: one photo/session + one catalogue style + exact source/reference bytes + API options.
+  const ck = cacheKey(itemId, sessionId ?? "session:none", src, ref, JSON.stringify(params));
   const hit = await cacheGet(ck);
   if (hit) { await trackSession(sessionId, hit); return { ok: true, taskId: hit, cached: true }; }
 
@@ -52,7 +54,7 @@ export async function startHairTransfer({ src, ref, ip, sessionId, kind = "tryon
     // One retry, only when YouCam explicitly answered with a transient error (so nothing was started).
     if (out.kind === "error" && out.retryable) out = await createTask("hair-transfer", payload);
     if (out.kind === "task") {
-      await recordCall({ at: new Date().toISOString(), feature: "hair-transfer", taskId: out.taskId, units, day, kind, cacheKey: ck });
+      await recordCall({ at: new Date().toISOString(), feature: "hair-transfer", taskId: out.taskId, units, day, kind, itemId, cacheKey: ck });
       await cachePut(ck, out.taskId);
       await trackSession(sessionId, out.taskId);
       return { ok: true, taskId: out.taskId, cached: false };
@@ -72,12 +74,12 @@ export async function startHairTransfer({ src, ref, ip, sessionId, kind = "tryon
 }
 
 /** One status check. A task that ends in error is refunded in the ledger and forgotten by the cache. */
-export async function pollTask(taskId: string): Promise<TaskState & { kind: LedgerCall["kind"] }> {
+export async function pollTask(taskId: string): Promise<TaskState & { kind: LedgerCall["kind"]; itemId?: string }> {
   const t = await getTask("hair-transfer", taskId);
   if (t.status === "error") {
     await refundTask(taskId);
     await cacheForgetTask(taskId);
   }
   const call = await getCall(taskId);
-  return { ...t, kind: call?.kind ?? "tryon" };
+  return { ...t, kind: call?.kind ?? "tryon", itemId: call?.itemId };
 }

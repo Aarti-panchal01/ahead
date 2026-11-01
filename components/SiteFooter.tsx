@@ -7,7 +7,7 @@ export default function SiteFooter() {
   return (
     <footer className={styles.foot}>
       <Link href="/how-we-tested">How we tested this</Link>
-      <p>{DELETION_LINE} All people and products shown are AI-generated samples.</p>
+      <p>{DELETION_LINE} Sample previews and catalogue references are AI-generated illustrations, not real product photos.</p>
     </footer>
   );
 }

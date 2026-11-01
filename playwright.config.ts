@@ -23,7 +23,7 @@ export default defineConfig({
   use: { baseURL: BASE, trace: "retain-on-failure", screenshot: "only-on-failure" },
   projects: [
     { name: "mobile", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: false, hasTouch: true } },
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } } },
   ],
   webServer: {
     // E2E_SKIP_BUILD=1 reuses an existing .next build (CI builds in an earlier step).
@@ -32,6 +32,7 @@ export default defineConfig({
     timeout: 300_000,
     reuseExistingServer: !process.env.CI,
     env: {
+      AHEAD_NEXT_DIST_DIR: ".next-e2e",
       YOUCAM_MODE: "mock",
       YOUCAM_API_KEY: "",
       GOOGLE_GENERATIVE_AI_API_KEY: "",

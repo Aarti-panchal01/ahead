@@ -105,6 +105,17 @@ export function rankCatalogue(catalogue: CatalogueItem[], input: RankInput): Ran
 
   const ranked: RankedItem[] = closest.map((item) => ({ item, colourDistance: dist(item), reason: "closest" }));
   if (fresh) ranked.push({ item: fresh, colourDistance: dist(fresh), reason: "something_new" });
+  // A real-photo lookbook exposes the full usable wig range. The first four remain the
+  // strongest matches; the rest are browseable alternatives, not silently discarded.
+  if (!input.pool) {
+    const included = new Set(ranked.map((x) => x.item.id));
+    const score = (x: CatalogueItem) =>
+      TEXTURE_STEP_PENALTY * textureSteps(input.texture, x.texture) +
+      LENGTH_STEP_PENALTY * lengthSteps(input.length, x.length) + dist(x);
+    ranked.push(...wigs.filter((x) => !included.has(x.id))
+      .sort((a, b) => score(a) - score(b) || byId(a, b))
+      .map((item) => ({ item, colourDistance: dist(item), reason: "closest" as const })));
+  }
 
   return {
     wigs: ranked,

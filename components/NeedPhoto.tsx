@@ -5,7 +5,7 @@ export default function NeedPhoto() {
   return (
     <main className="stack-lg">
       <h1>Choose a photo first</h1>
-      <p className="lede">Nothing is kept between visits, so we need a photo again. Take one, or pick a sample person.</p>
+      <p className="lede">Nothing is saved between visits, so choose your photo again to continue your try-on.</p>
       <Link href="/capture" className="btn btn-primary">Choose a photo</Link>
     </main>
   );

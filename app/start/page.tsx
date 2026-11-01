@@ -11,19 +11,25 @@ export default function Consent() {
   const { setConsented } = useSession();
   const router = useRouter();
   return (
-    <main className="stack-lg">
+    <main className={`${styles.consent} stack-lg`}>
       <Link href="/" className="back">Back to the start</Link>
-      <h1>Before you take a photo</h1>
+      <header className={styles.intro}>
+        <p className={styles.eyebrow}>A personal try-on during treatment-related hair loss</p>
+        <h1>Before you use your photo</h1>
+        <p>Here is what happens to your photo, in plain terms.</p>
+      </header>
       <ul className={styles.lines}>
         {CONSENT_LINES.map((l) => <li key={l}>{l}</li>)}
       </ul>
-      <button
-        type="button"
-        className="btn btn-primary"
-        onClick={() => { setConsented(true); router.push("/capture"); }}
-      >
-        I agree, continue to my photo
-      </button>
+      <div className={styles.action}>
+        <button
+          type="button"
+          className="btn btn-primary"
+          onClick={() => { setConsented(true); router.push("/capture"); }}
+        >
+          I agree, continue to my photo
+        </button>
+      </div>
     </main>
   );
 }

@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 afterEach(() => { vi.unstubAllGlobals(); vi.unstubAllEnvs(); setStore(null); });
 
-const start = async (ip = "9.9.9.9") => startHairTransfer({ src: await jpeg(), ref: await jpeg(), ip });
+const start = async (ip = "9.9.9.9", itemId = "W01", sessionId?: string) => startHairTransfer({ itemId, src: await jpeg(), ref: await jpeg(), ip, sessionId });
 
 describe("live hair-transfer safety", () => {
   it("runs a paid call and records it", async () => {
@@ -25,19 +25,29 @@ describe("live hair-transfer safety", () => {
 
   it("serves a repeat from the cache with no YouCam call at all", async () => {
     const src = await jpeg(), ref = await jpeg();
-    const a = await startHairTransfer({ src, ref, ip: "1.1.1.1" });
+    const a = await startHairTransfer({ itemId: "W04", src, ref, ip: "1.1.1.1", sessionId: "session-one" });
     const before = fy.calls.length;
-    const b = await startHairTransfer({ src, ref, ip: "1.1.1.1" });
+    const b = await startHairTransfer({ itemId: "W04", src, ref, ip: "1.1.1.1", sessionId: "session-one" });
     expect(b).toMatchObject({ ok: true, cached: true });
     expect(b.ok && a.ok && b.taskId === a.taskId).toBe(true);
     expect(fy.calls.length).toBe(before);
   });
 
-  it("stops at the daily cap (default 20 units = 10 calls)", async () => {
-    for (let i = 0; i < 10; i++) expect((await start(`10.0.0.${i}`)).ok).toBe(true);
+  it("never shares a cached task across style ids or sessions for identical photo/reference bytes", async () => {
+    const src = await jpeg(), ref = await jpeg();
+    const a = await startHairTransfer({ itemId: "W04", src, ref, ip: "1.1.1.1", sessionId: "session-one" });
+    const b = await startHairTransfer({ itemId: "W10", src, ref, ip: "1.1.1.1", sessionId: "session-one" });
+    const c = await startHairTransfer({ itemId: "W04", src, ref, ip: "1.1.1.1", sessionId: "session-two" });
+    expect(a.ok && b.ok && c.ok).toBe(true);
+    expect(new Set([a.ok && a.taskId, b.ok && b.taskId, c.ok && c.taskId]).size).toBe(3);
+    expect(fy.creates()).toBe(3);
+  });
+
+  it("stops at the daily cap (default 80 units = 40 calls)", async () => {
+    for (let i = 0; i < 40; i++) expect((await start(`10.0.${Math.floor(i / 250)}.${i % 250 + 1}`)).ok).toBe(true);
     const r = await start("10.0.1.1");
     expect(r).toMatchObject({ ok: false, reason: "daily_cap" });
-    expect(fy.creates()).toBe(10);
+    expect(fy.creates()).toBe(40);
   });
 
   it("never goes below the 150-unit reserve and creates nothing", async () => {
@@ -70,7 +80,7 @@ describe("live hair-transfer safety", () => {
 
   it("refunds when the task ends in error (HTTP 200, task_status error) and forgets the cache entry", async () => {
     const src = await jpeg(), ref = await jpeg();
-    const r = await startHairTransfer({ src, ref, ip: "2.2.2.2" });
+    const r = await startHairTransfer({ itemId: "W01", src, ref, ip: "2.2.2.2", sessionId: "session-err01" });
     if (!r.ok) throw new Error("expected ok");
     expect(await usedToday()).toBe(2);
     fy.taskStatus[r.taskId] = { task_status: "error", error: "error_no_face", results: null };
@@ -79,7 +89,7 @@ describe("live hair-transfer safety", () => {
     await pollTask(r.taskId); // polling again must not refund twice
     expect(await totalSpent()).toBe(0);
     expect(await usedToday()).toBe(0);
-    const again = await startHairTransfer({ src, ref, ip: "2.2.2.2" });
+    const again = await startHairTransfer({ itemId: "W01", src, ref, ip: "2.2.2.2", sessionId: "session-err01" });
     expect(again).toMatchObject({ ok: true, cached: false });
   });
 

@@ -13,7 +13,7 @@
 .items > li + li { margin-top: 16px; }
 .item {
   display: grid;
-  grid-template-columns: 38% 1fr;
+  grid-template-columns: minmax(190px, 30%) 1fr;
   gap: 14px;
   align-items: start;
   background: var(--surface);
@@ -24,6 +24,8 @@
 .itemPhoto figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
 .itemBody > * + * { margin-top: 8px; }
 .itemName { font-weight: 700; }
+.itemSku { color: var(--ink-soft); font-size: .8rem; font-variant-numeric: tabular-nums; }
+.itemSku strong { color: var(--ink); letter-spacing: .035em; }
 .notes {
   white-space: pre-wrap;
   background: var(--surface);
@@ -35,6 +37,56 @@
 }
 
 @media print {
-  .brief button { display: none; }
-  .item { break-inside: avoid; }
+  @page { size: A4; margin: 14mm; }
+  :global(body) { background: #fff !important; color: #17231f !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  :global(header), :global(footer) { display: none !important; }
+  :global(main) { margin: 0 !important; }
+  .brief { width: 100%; max-width: none; padding: 0; gap: 18px; }
+  .brief button { display: none !important; }
+  .actions { display: none !important; }
+  .printHint { display: none !important; }
+  .item { break-inside: avoid; grid-template-columns: 42mm 1fr; gap: 12px; margin: 0 !important; padding: 8px; box-shadow: none; border: 1px solid #d7ddd6; }
+  .itemPhoto { max-height: 52mm; }
+  .itemPhoto img { max-height: 52mm; object-fit: contain; }
+  .referenceLabel { border: 1px solid #ddd; }
+  .checklist, .catalogueNote, .notes { box-shadow: none; }
+  .checklist { break-inside: avoid; padding: 14px; }
+  .checklist ul { grid-template-columns: 1fr 1fr; gap: 8px 16px; }
+  .swatch { width: 28px; height: 28px; }
+  .expiry { padding-bottom: 8px; }
+}
+.brief { width: min(100%, 76rem); max-width: none; margin-inline: auto; padding-inline: clamp(20px, 5vw, 72px); }
+.eyebrow { color: var(--integrity); font-size: .72rem; font-weight: 700; letter-spacing: .12em; }
+.expiry { color: var(--ink-soft); font-size: .9rem; padding-bottom: 20px; border-bottom: 1px solid var(--line); }
+.count { display: inline-block; margin-left: 8px; color: var(--ink-soft); font: 500 .78rem/1.2 var(--font-sans); letter-spacing: 0; }
+.referenceWrap { position: relative; }
+.referenceLabel { position: absolute; left: 10px; bottom: 10px; padding: 5px 9px; border-radius: 999px; background: rgba(251,252,249,.92); color: var(--ink-soft); font-size: .68rem; }
+.itemMeta { color: var(--ink-soft); font-size: .85rem; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 2px; }
+.actions button { width: auto; min-width: 130px; }
+.printHint { color: var(--ink-soft); font-size: .8rem; }
+.catalogueNote {
+  padding: 14px 16px;
+  border-left: 3px solid var(--integrity);
+  background: var(--brand-quiet);
+  color: var(--ink);
+  font-size: .88rem;
+  line-height: 1.55;
+}
+.checklist {
+  padding: clamp(20px, 4vw, 34px);
+  border: 1px solid var(--line);
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+.checklist h2 { margin-top: 10px; font-family: var(--font-sans); font-weight: 650; letter-spacing: -.02em; }
+.checklist ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 22px; margin: 22px 0 0; padding: 0; list-style: none; }
+.checklist li { display: flex; align-items: flex-start; gap: 10px; color: var(--ink-soft); font-size: .91rem; line-height: 1.5; }
+.checklist li > span:first-child { flex: none; color: var(--integrity); font-size: 1.2rem; line-height: 1.2; }
+
+@media (max-width: 620px) {
+  .item { grid-template-columns: minmax(0, 1fr); }
+  .itemPhoto { max-height: 340px; }
+  .actions > button { flex: 1 1 100%; width: 100%; }
+  .checklist ul { grid-template-columns: 1fr; }
 }

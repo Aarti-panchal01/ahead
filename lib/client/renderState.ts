@@ -5,14 +5,15 @@ export type RenderState =
   | { phase: "idle"; attempts: number }
   | { phase: "running"; attempts: number; elapsedMs: number }
   | { phase: "checking"; attempts: number; result: TryOnResult }
-  | { phase: "done"; attempts: number; result: TryOnResult; report: IntegrityReport }
+  | { phase: "done"; attempts: number; result: TryOnResult; report: IntegrityReport; displayUrl?: string; fingerprint?: string }
   | { phase: "error"; attempts: number; result: TryOnResult };
 
 export type RenderEvent =
   | { type: "start" }
   | { type: "tick"; elapsedMs: number }
   | { type: "result"; result: TryOnResult }
-  | { type: "checked"; report: IntegrityReport };
+  | { type: "checked"; report: IntegrityReport; displayUrl?: string; fingerprint?: string }
+  | { type: "qualityFailed"; result: TryOnResult };
 
 export const IDLE: RenderState = { phase: "idle", attempts: 0 };
 
@@ -28,12 +29,14 @@ export function nextRender(s: RenderState, e: RenderEvent): RenderState {
         ? { phase: "checking", attempts: s.attempts, result: e.result }
         : { phase: "error", attempts: s.attempts, result: e.result };
     case "checked":
-      return s.phase === "checking" ? { phase: "done", attempts: s.attempts, result: s.result, report: e.report } : s;
+      return s.phase === "checking" ? { phase: "done", attempts: s.attempts, result: s.result, report: e.report, displayUrl: e.displayUrl, fingerprint: e.fingerprint } : s;
+    case "qualityFailed":
+      return s.phase === "checking" ? { phase: "error", attempts: s.attempts, result: e.result } : s;
   }
 }
 
 /** Codes where trying again can't help (nothing to retry, or units are being saved). */
-const FINAL = new Set(["no_recording", "unknown_item", "no_photo", "reserve", "error_no_face", "aborted"]);
+const FINAL = new Set(["no_recording", "unknown_item", "no_photo", "reserve", "daily_cap", "error_no_face", "aborted"]);
 
 /**
  * A create that returned an error may be retried once (CLAUDE.md, YouCam truth). A timeout
@@ -52,7 +55,6 @@ export function progressFraction(elapsedMs: number): number {
 
 /** The image a card shows: the corrected render when the integrity check fixed something. */
 export function shownImage(s: RenderState): string | undefined {
-  if (s.phase === "done") return s.report.correctedImage ?? s.result.resultUrl;
-  if (s.phase === "checking") return s.result.resultUrl;
+  if (s.phase === "done") return s.displayUrl ?? s.report.correctedImage ?? s.result.resultUrl;
   return undefined;
 }

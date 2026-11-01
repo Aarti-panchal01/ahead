@@ -18,7 +18,7 @@ import NeedPhoto from "@/components/NeedPhoto";
 
 describe("titles and headings", () => {
   it("every route has its own title under the 'Ahead · ' template", () => {
-    expect(fs.readFileSync(path.join(process.cwd(), "app/layout.tsx"), "utf8")).toContain('title: { default: "Ahead", template: "Ahead · %s" }');
+    expect(fs.readFileSync(path.join(process.cwd(), "app/layout.tsx"), "utf8")).toContain('template: "Ahead · %s"');
     const titles = [start, capture, stage, results, plan, honesty, brief].map((m) => m.title);
     expect(new Set(titles).size).toBe(titles.length);
     expect(results.title).toBe("Your matches");

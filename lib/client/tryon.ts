@@ -63,6 +63,9 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
     } catch {
       r = { id, status: "running" };
     }
+    if (r.itemId && r.itemId !== itemId) {
+      return failed(id, "result_mismatch", "This result belongs to a different style, so it wasn't shown. Retry this style.");
+    }
     if (r.status === "success" && r.resultUrl) return r;
     if (r.status === "error") return { ...r, message: r.message || FALLBACK };
     const elapsed = now() - start;

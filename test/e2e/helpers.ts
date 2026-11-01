@@ -6,16 +6,11 @@ export type StageLabel = "Not yet" | "It has started" | "My hair is gone";
 /** Matches the integrity line on a card: "Skin tone check: ..." or "Corrected: ...". */
 export const INTEGRITY_RE = /^(Skin tone check|Corrected):/;
 
-/** Landing -> consent -> sample person -> "Has your hair loss started?" -> results (client-side navigation only,
- *  because the session lives in memory and a full page load starts over). */
+/** Open a deterministic sample lookbook directly; the sample selector was removed from the product journey. */
 export async function toResults(page: Page, stage: StageLabel, person = 1) {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Take one photo" }).click();
-  await page.getByRole("button", { name: "I agree, continue to my photo" }).click();
-  await page.getByRole("button", { name: new RegExp(`^Choose Sample person ${person},`) }).click();
-  await expect(page.getByRole("heading", { name: "Has your hair loss started?" })).toBeVisible();
-  await page.getByRole("radio", { name: stage }).check();
-  await page.getByRole("button", { name: "Show my matches" }).click();
+  const id = `P${person}`;
+  const stageValue = stage === "Not yet" ? "not_yet" : stage === "It has started" ? "started" : "gone";
+  await page.goto(`/results?person=${id}&stage=${stageValue}`);
   await expect(page.getByRole("heading", { name: /^Matches for sample person/i })).toBeVisible();
 }
 
@@ -30,7 +25,9 @@ export async function waitForChecked(page: Page, count = 4): Promise<string[]> {
     const card = cards(page).nth(i);
     // Lower cards load their image and run their check only near the viewport (lazy loading), so scroll to each.
     await card.scrollIntoViewIfNeeded();
-    await expect(card.getByRole("img", { name: /wearing the/i }).first()).toBeVisible();
+    // The result is deliberately hidden while the face restore and skin integrity pass run.
+    // MediaPipe is serialized across cards and can take >20 s on a loaded desktop runner.
+    await expect(card.getByRole("img", { name: /wearing the/i }).first()).toBeVisible({ timeout: 120_000 });
     const line = card.getByText(INTEGRITY_RE);
     await expect(line).toBeVisible({ timeout: 120_000 });
     lines.push((await line.first().innerText()).trim());

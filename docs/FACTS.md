@@ -10,9 +10,10 @@ Three parts: the only statistics we use (with sources), the API truth table (our
 - Clinical advice: choose a wig before hair loss, save a lock of hair, photograph your current style (MedlinePlus; Oncolink; American Cancer Society tips).
 - Eyelashes and eyebrows can fall out too; hair may grow back curlier and a different colour (Oncolink).
 - Wigs are hygiene-sensitive and usually returnable only unopened (retailer return policies).
+- In one 2025 survey of 800 people receiving systemic therapy, 202 responded; 157 of 202 respondents experienced hair loss (77.7%), and 109 of those 157 purchased wigs (69.4%). This is one survey, not a population-wide estimate (PubMed PMID 39891884).
 - Everything in docs/api-truth-table.md (our own measurements).
 
-Where these appear in the product: the 1 to 3 week window and the "choose a wig before hair loss" advice in `lib/agent/timeline.ts` (source named in the note, MedlinePlus); the unopened-return note in the same file (`RETURNS_NOTE`); the landing note naming MedlinePlus, Oncolink and the American Cancer Society in `app/page.tsx`; the brows and lashes timeline step in `lib/client/planApi.ts`. The 47%, 8% and 77% figures are used only in the submission text and the demo voice-over, never in the app.
+Where these appear in the product: the 1 to 3 week window and the "choose a wig before hair loss" advice in `lib/agent/timeline.ts` (source named in the note, MedlinePlus); the unopened-return note in the same file (`RETURNS_NOTE`); the landing note naming MedlinePlus, Oncolink and the American Cancer Society in `app/page.tsx`; the 78% survey figure and its one-study caveat in `app/page.tsx`; the brows and lashes timeline step in `lib/client/planApi.ts`. The 47%, 8% and 77% historical claims are used only in submission/demo text, never in the app.
 
 ## 2. API truth table (docs/api-truth-table.md, rows 1 to 23)
 
@@ -58,7 +59,7 @@ One line per user-visible claim: the file(s) that implement it, then the test(s)
 | A sample person never goes live, in any mode; only an uploaded photo can spend units | `app/api/tryon/route.ts` | `test/platform/routes.test.ts` ("live mode: demo faces never go live") |
 | Persistent ledger of every paid call | `lib/youcam/safety.ts` (`recordCall`) | `test/platform/tryon-live.test.ts`, `test/platform/store-safety.test.ts` |
 | Repeat requests are served from the cache with no YouCam call | `lib/youcam/safety.ts` (`cacheGet`, `cachePut`), `lib/youcam/tryon.ts` | `test/platform/tryon-live.test.ts` ("serves a repeat from the cache") |
-| Daily unit cap (default 20) | `lib/youcam/safety.ts` (`claimDaily`, `limits`) | `test/platform/store-safety.test.ts`, `test/platform/tryon-live.test.ts` ("stops at the daily cap") |
+| Daily unit cap (default 80; enough for two 16-look passes at 2 units each) | `lib/youcam/safety.ts` (`claimDaily`, `limits`) | `test/platform/store-safety.test.ts`, `test/platform/tryon-live.test.ts` ("stops at the daily cap") |
 | Per-IP hourly limit | `lib/youcam/safety.ts` (`allowIp`) | `test/platform/tryon-live.test.ts` ("rate limits per IP") |
 | 150 units always kept in reserve; the real balance is read before every paid call; `AHEAD_RESERVE_UNITS` can only raise it | `lib/youcam/safety.ts` (`RESERVE_UNITS`, `effectiveReserve`), `lib/youcam/tryon.ts` | `test/platform/tryon-live.test.ts` ("never goes below the 150-unit reserve", "reads the real balance"), `test/platform/wave2.test.ts` ("AHEAD_RESERVE_UNITS can only raise the judging reserve") |
 | Errors that arrive inside HTTP 200 cost 0 units and are refunded | `lib/youcam/safety.ts` (`refundTask`), `lib/youcam/tryon.ts` (`pollTask`) | `test/platform/tryon-live.test.ts` ("refunds when the task ends in error") |
@@ -109,7 +110,7 @@ One line per user-visible claim: the file(s) that implement it, then the test(s)
 | The match card shows the real hair crop next to the swatch and says to bring a lock of hair | `components/results/MatchCard.tsx`, `lib/client/copy.ts` (`lockLine`, `SCREEN_COLOUR_NOTE`), `lib/client/image.ts` (`hairCrop`) | `test/markdown.test.ts` ("hairCropBox"), `test/agent/shortlist-brief.test.ts` ("draft_brief") |
 | The app asks "Has your hair loss started?" because length detection cannot tell short hair from none | `app/stage/page.tsx`, `lib/client/copy.ts` (`WHY_WE_ASK`, `STAGES`) | none dedicated (see "Known limits"); truth table row 10 |
 | The measured hair colour becomes the accent colour, darkened until it passes 4.5:1 contrast; fallback `#5B4636` | `lib/client/accent.ts`, `lib/image/colour.ts` (`accentFromHair`) | `test/accent.test.ts`, `test/image/colour.test.ts` ("accentFromHair", "contrastRatio") |
-| Every person and product image carries an "AI-generated" label | `components/AiImage.tsx`, `components/SiteFooter.tsx` | `test/catalogue.test.ts` ("every item is labelled AI-generated"), `test/components.test.tsx` ("Landing ... labels every image as AI-generated") |
+| Sample people and products are synthetic; one disclosure appears in the shared footer, with no per-image label | `components/SiteFooter.tsx`, `components/AiImage.tsx` | `test/components.test.tsx` (footer disclosure; landing lookbook has no synthetic portrait) |
 | Every preview says it is style and colour, not cap fit, density or comfort | `lib/client/copy.ts` (`PREVIEW_DISCLAIMER`, `CONSENT_LINES`), `lib/agent/brief.ts` (`PREVIEW_LINE`) | `test/components.test.tsx` ("shows the render, the AI label, the name, the check and the disclaimer") |
 | The honesty page is generated from the truth table | `app/how-we-tested/page.tsx`, `lib/client/markdown.ts` | `test/markdown.test.ts` ("reads the real truth table", "honesty page") |
 

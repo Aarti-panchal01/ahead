@@ -28,10 +28,10 @@ describe("store", () => {
 });
 
 describe("safety", () => {
-  it("daily cap defaults to 20 units and never goes over", async () => {
-    for (let i = 0; i < 10; i++) expect(await claimDaily(2)).toBe(true);
+  it("daily cap defaults to 80 units and never goes over", async () => {
+    for (let i = 0; i < 40; i++) expect(await claimDaily(2)).toBe(true);
     expect(await claimDaily(2)).toBe(false);
-    expect(await usedToday()).toBe(20);
+    expect(await usedToday()).toBe(80);
   });
   it("daily cap follows the env", async () => {
     vi.stubEnv("AHEAD_DAILY_UNIT_CAP", "4");
@@ -64,6 +64,10 @@ describe("safety", () => {
     expect(await cacheGet(k)).toBe("t9");
     await cacheForgetTask("t9");
     expect(await cacheGet(k)).toBeNull();
+  });
+  it("hashes multipart cache components with length and type boundaries", () => {
+    expect(cacheKey("ab", "c")).not.toBe(cacheKey("a", "bc"));
+    expect(cacheKey(Buffer.from("same"))).not.toBe(cacheKey("same"));
   });
   it("tracks and clears a session", async () => {
     await trackSession("session-abc123", "t1");

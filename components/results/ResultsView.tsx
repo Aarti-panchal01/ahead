@@ -3,9 +3,8 @@
 // by side, a colour match card, and a stylist brief. Every render is polled to the end (CLAUDE.md: poll every task)
 // and then checked for skin tone drift.
 //
-// Units: sample people replay recordings (0 units), so every card renders by itself. An own photo renders live
-// only when /api/status says live and not serving recordings, and then only the #1 wig by itself; every other card
-// waits for a tap on "Show me in this one".
+// Units: sample people replay recordings (0 units). In live mode, own-photo results queue the affordable lookbook
+// automatically. Render tasks start together; heavier browser-side image checks wait until their card is near view.
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,14 +15,14 @@ import { CATALOGUE } from "@/lib/catalogue";
 import { browsAvailable, browsToggleLabel, cardView, type BrowsLayer } from "@/lib/client/brows";
 import type { Whose } from "@/lib/client/copy";
 import { RESULTS_INTRO, WRAPS_INTRO } from "@/lib/client/copy";
-import { applyBrows, integrityCheck } from "@/lib/client/image";
-import { demoNote, fetchMode, ownPhotoCanRender } from "@/lib/client/mode";
+import { applyBrows, integrityCheck, protectFaceAndCheck } from "@/lib/client/image";
+import { fetchMode, ownPhotoCanRender } from "@/lib/client/mode";
 import { browsImage, getSample, goneImage, tryOnFace, type SamplePerson } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
 import { IDLE, nextRender, type RenderEvent, type RenderState } from "@/lib/client/renderState";
 import { parseStage } from "@/lib/client/routes";
 import { endSession, resetSessionId, sessionHeaders } from "@/lib/client/session";
-import { NearViewport, afterImagePainted } from "@/lib/client/visibility";
+import { NearViewport } from "@/lib/client/visibility";
 import { forgetCode, needsTesterCode, storedCode, testerHeaders, type StatusWithTester } from "@/lib/client/tester";
 import { renderSrc, runTryOn } from "@/lib/client/tryon";
 import { matchLabel, rankCatalogue } from "@/lib/rank";
@@ -84,6 +83,8 @@ export default function ResultsView() {
   const [matchOpen, setMatchOpen] = useState<string>();
   const [comparing, setComparing] = useState(false);
   const started = useRef(new Set<string>());
+  const imageOwners = useRef(new Map<string, string>());
+  const autoQueueRunning = useRef(false);
   const [near] = useState(() => new NearViewport("200px"));
   useEffect(() => () => near.disconnect(), [near]);
   // Cards that have come within 200 px of the viewport show their image; the top card always does.
@@ -110,6 +111,7 @@ export default function ResultsView() {
     [hair, sample],
   );
   const whose: Whose = sample ? "her" : "your";
+  const allRanked = useMemo(() => [...ranking.wigs, ...ranking.wraps], [ranking.wigs, ranking.wraps]);
   // Production may ask for a tester code before live try-ons on your own photo (lib/client/tester.ts).
   const liveAllowed = photo?.kind === "own" && status !== undefined && ownPhotoCanRender(status);
   const needCode = liveAllowed && needsTesterCode(status as StatusWithTester) && !hasCode;
@@ -132,6 +134,15 @@ export default function ResultsView() {
     return upload.current.blob;
   }, []);
 
+  const refreshStatus = useCallback(() => {
+    void fetchMode().then((next) => setStatus((current) =>
+      current && current.mode === next.mode && current.servingRecordings === next.servingRecordings &&
+      current.remainingToday === next.remainingToday && current.reason === next.reason && current.testerRequired === next.testerRequired
+        ? current
+        : next,
+    ));
+  }, []);
+
   const start = useCallback(
     async (r: RankedItem) => {
       if (!photo) return;
@@ -147,6 +158,9 @@ export default function ResultsView() {
       }
       const headers = { ...sessionHeaders(), ...(photo.kind === "own" ? testerHeaders() : {}) };
       const raw = await runTryOn(r.item.id, face, { headers, onRunning: (ms) => dispatch(key, { type: "tick", elapsedMs: ms }) });
+      if (["daily_cap", "reserve", "unavailable"].includes(raw.errorCode ?? "")) {
+        refreshStatus();
+      }
       if (raw.errorCode === "tester_code") {
         // The stored code stopped working: ask again, and let this card start over once a new code is in.
         forgetCode();
@@ -158,26 +172,52 @@ export default function ResultsView() {
       dispatch(key, { type: "result", result });
       if (result.status !== "success" || !src) return;
 
-      // The heavy on-device work waits for the first paint, and (except for the top card) until the card is
-      // near the viewport. The render itself is already showing. Same checks, same order, just later.
-      await afterImagePainted(() => near.element(key)?.querySelector("img"));
-      const top = r === ranking.wigs[0] || r === ranking.wraps[0];
-      if (!top) await near.whenNear(key);
+      void (async () => {
+        const original = photo.kind === "sample" ? goneImage(photo.id) : photo.url;
+        try {
+          const protectedResult = photo.kind === "own" ? await protectFaceAndCheck(original, src) : undefined;
+          const protectedFace = protectedResult?.image ?? src;
+          const report = protectedResult?.report ?? await integrityCheck(original, protectedFace);
+          if (report.status === "failed") {
+            dispatch(key, { type: "qualityFailed", result: { ...result, status: "error", errorCode: "quality_check", message: report.plainText || "We couldn't verify this preview. Retry this style." } });
+            return;
+          }
+          const fingerprint = protectedResult?.fingerprint ?? result.resultUrl ?? result.id;
+          const fingerprintKey = `${faceKey}:${fingerprint}`;
+          const existingOwner = imageOwners.current.get(fingerprintKey);
+          if (existingOwner && existingOwner !== key) {
+            dispatch(key, { type: "qualityFailed", result: { ...result, status: "error", errorCode: "duplicate_result", message: "This image matches another style, so it wasn't shown. Retry this style." } });
+            return;
+          }
+          imageOwners.current.set(fingerprintKey, key);
+          const displayUrl = report.correctedImage ?? protectedFace;
+          dispatch(key, { type: "checked", report, displayUrl, fingerprint });
 
-      const original = photo.kind === "sample" ? goneImage(photo.id) : photo.url;
-      dispatch(key, { type: "checked", report: await integrityCheck(original, src) });
-
-      // Brows on top, checked against the brows photo (the brows were added on purpose). 0 units.
-      if (photo.kind === "sample" && browsAvailable("sample", stage)) {
-        const browsUrl = browsImage(photo.id);
-        setLayer(key, { status: "adding" });
-        const browed = await applyBrows(src, browsUrl);
-        if (browed === src) return setLayer(key, { status: "failed" });
-        setLayer(key, { status: "checking", image: browed });
-        setLayer(key, { status: "done", image: browed, report: await integrityCheck(browsUrl, browed) });
-      }
+          // Brows on top, checked against the brows photo (the brows were added on purpose). 0 units.
+          if (photo.kind === "sample" && browsAvailable("sample", stage)) {
+            const browsUrl = browsImage(photo.id);
+            setLayer(key, { status: "adding" });
+            const browed = await applyBrows(displayUrl, browsUrl);
+            if (browed === displayUrl) return setLayer(key, { status: "failed" });
+            setLayer(key, { status: "checking", image: browed });
+            const browsReport = await integrityCheck(browsUrl, browed);
+            if (browsReport.status === "failed") return setLayer(key, { status: "failed" });
+            setLayer(key, { status: "done", image: browed, report: browsReport });
+          }
+        } catch (error) {
+          dispatch(key, {
+            type: "qualityFailed",
+            result: {
+              ...result,
+              status: "error",
+              errorCode: "quality_check",
+              message: error instanceof Error ? error.message : "We couldn't verify this preview. Retry this style.",
+            },
+          });
+        }
+      })();
     },
-    [photo, faceKey, stage, dispatch, setLayer, ownUpload, ranking, near],
+    [photo, faceKey, stage, dispatch, setLayer, ownUpload, refreshStatus],
   );
 
   const visible = tab === "wigs" ? ranking.wigs : ranking.wraps;
@@ -193,28 +233,71 @@ export default function ResultsView() {
     return () => { live = false; };
   }, [visible, faceKey, near]);
 
-  // Start renders by themselves once per face, never again on a re-render or a tab switch (units).
-  // Sample people: every visible card. Own photo, live: only the #1 wig.
+  // Saved sample previews are free. For an own photo, start every affordable look once.
+  // A status refresh with an empty queue must not loop or retry paid work.
   useEffect(() => {
     if (!photo || !canRender) return;
-    const auto = photo.kind === "sample" ? visible : ranking.wigs.slice(0, 1);
-    for (const r of auto) {
-      const key = `${faceKey}:${r.item.id}`;
-      if (started.current.has(key)) continue;
-      void start(r);
+    if (photo.kind === "sample") {
+      for (const r of visible) {
+        const key = `${faceKey}:${r.item.id}`;
+        if (!started.current.has(key)) void start(r);
+      }
+      return;
     }
-  }, [photo, canRender, visible, ranking.wigs, faceKey, start]);
+    if (status?.mode !== "live" || autoQueueRunning.current) return;
+    const budget = Math.floor((status.remainingToday ?? 0) / 2);
+    const queue = allRanked.slice(0, budget);
+    const pending = queue.filter((r) => !started.current.has(`${faceKey}:${r.item.id}`));
+    if (!pending.length) return;
+    autoQueueRunning.current = true;
+    void (async () => {
+      await Promise.allSettled(pending.map((r) => start(r)));
+    })().finally(() => {
+      autoQueueRunning.current = false;
+      refreshStatus();
+    });
+  }, [photo, canRender, visible, allRanked, faceKey, start, status, refreshStatus]);
 
   if (!photo) return <NeedPhoto />;
 
   const stateOf = (id: string) => states[`${faceKey}:${id}`] ?? IDLE;
-  const viewOf = (id: string) => cardView(stateOf(id), layers[`${faceKey}:${id}`], withBrows && browsOn);
+  const viewOf = (id: string) => cardView(stateOf(id), layers[`${faceKey}:${id}`], withBrows && browsOn, photo.kind === "sample");
+  const renderBusy = photo.kind === "own" && Object.values(states).some((s) => s.phase === "running");
   const subject: Subject = sample ? { isSample: true, name: sample.label } : { isSample: false, name: "You" };
-  const allRanked = [...ranking.wigs, ...ranking.wraps];
-  const note = photo.kind === "own" && status ? demoNote(status) : undefined;
+  const liveBudget = photo.kind === "own" && status?.mode === "live" && !needCode
+    ? Math.min(allRanked.length, Math.floor((status.remainingToday ?? 0) / 2))
+    : 0;
+  const settledCount = allRanked.filter((r) => ["done", "error"].includes(stateOf(r.item.id).phase)).length;
+  const readyFingerprints = allRanked.flatMap((r) => {
+    const s = stateOf(r.item.id);
+    return s.phase === "done" ? [s.fingerprint ?? s.result.resultUrl ?? s.result.id] : [];
+  });
+  const readyCount = new Set(readyFingerprints).size;
+  const budgetIds = new Set(allRanked.slice(0, liveBudget).map((r) => r.item.id));
+  const ownPhotoNote = photo.kind === "own" && status
+    ? needCode
+      ? "Your photo is ready. Enter the demo code to see each style on you."
+      : !ownLive
+        ? status.reason === "daily_cap"
+          ? "Live previews have reached today's limit. Your photo stays on this device; try again tomorrow."
+          : status.reason === "reserve"
+            ? "Live previews are paused while API units are reserved. Your photo stays on this device."
+          : status.mode === "mock"
+              ? "Live previews are off in this local build. Your photo stays on this device; connect the YouCam API to see styles on yourself."
+              : "Live previews are temporarily unavailable. Your photo stays on this device."
+        : liveBudget < allRanked.length
+          ? `Today's allowance can render ${liveBudget} of ${allRanked.length} looks. The remaining styles are marked below until the allowance resets.`
+          : settledCount === allRanked.length
+            ? readyCount === allRanked.length
+              ? `All ${readyCount} previews are ready on your photo.`
+              : `${readyCount} distinct previews are ready for ${allRanked.length} styles. Retry the styles marked below.`
+          : settledCount === 0
+            ? `Preparing all ${liveBudget} previews on your photo.`
+            : `${readyCount} distinct previews ready; ${liveBudget - settledCount} still rendering.`
+    : undefined;
 
   const toggle = (id: string) =>
-    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id].slice(-2)));
+    setSelected((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id].slice(-8)));
 
   const startOver = () => {
     void endSession();
@@ -234,21 +317,25 @@ export default function ResultsView() {
           views={Object.fromEntries(pair.map((r) => [r.item.id, viewOf(r.item.id)]))}
           subject={subject}
           onClose={() => setComparing(false)}
+          onContinueToBrief={() => {
+            setComparing(false);
+            window.setTimeout(() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+          }}
         />
       </main>
     );
   }
 
-  const briefItems = selected.length ? selected : ranking.wigs.map((r) => r.item.id);
+  const briefItems = selected.length ? selected : allRanked.slice(0, 4).map((r) => r.item.id);
 
   return (
-    <main className={`stack-lg ${selected.length ? styles.withBar : ""}`}>
+    <main className={`${styles.resultsMain} stack-lg ${styles.withBar}`}>
       <Link href="/stage" className="back">Change my answer</Link>
 
       <section className={styles.header}>
         <div className={styles.headerPhoto}><YourPhoto photo={photo} stage={stage} brows={withBrows && browsOn} priority sizes="(max-width: 34rem) 32vw, 11rem" /></div>
         <div className="stack">
-          <h1>{sample ? `Matches for ${sample.label.toLowerCase()}` : "Your matches"}</h1>
+          <h1>{sample ? `Matches for ${sample.label.toLowerCase()}` : "Your fitting options"}</h1>
           <p className={styles.swatchRow}>
             {hair && <span className={styles.swatch} aria-hidden="true" />}
             <span className="note">{hairLine(photo, stage, hair)}</span>
@@ -269,18 +356,18 @@ export default function ResultsView() {
         </div>
       )}
 
-      {note && (
+      {ownPhotoNote && (
         <div className="notice stack">
-          <p>{note}</p>
-          <Link href="/capture#samples" className="btn btn-quiet">Try with a sample person</Link>
+          <p>{ownPhotoNote}</p>
+          {status?.mode === "mock" && (
+            <div className={styles.liveOptions}>
+              <a className="btn btn-primary" href="https://try-ahead.vercel.app/start">Open the live fitting room</a>
+              <Link href="/how-we-tested" className="btn btn-quiet">See how previews work</Link>
+            </div>
+          )}
         </div>
       )}
       {needCode && <TesterCode onAccepted={() => setHasCode(true)} />}
-      {ownLive && (
-        <p className="note">
-          Your closest match is going on your photo now. To see any other one on you, tap &ldquo;Show me in this one&rdquo;.
-        </p>
-      )}
 
       <div role="tablist" aria-label="What to try on" className={styles.tabs}>
         {(["wigs", "wraps"] as Tab[]).map((t) => (
@@ -293,28 +380,45 @@ export default function ResultsView() {
             className={styles.tab}
             onClick={() => setTab(t)}
           >
-            {t === "wigs" ? "Wigs" : "Wraps"}
+            {t === "wigs" ? "Wigs" : "Wraps & caps"}
           </button>
         ))}
       </div>
 
-      <p className={styles.carouselIntro} aria-hidden="true">{tab === "wigs" ? RESULTS_INTRO : WRAPS_INTRO}</p>
+      <div className={styles.railHeading}>
+        <div>
+          <h2>{tab === "wigs" ? "Explore all 12 wig styles" : "Explore wraps, turbans & caps"}</h2>
+          <p className={styles.carouselIntro}>{tab === "wigs" ? RESULTS_INTRO : WRAPS_INTRO}</p>
+        </div>
+      </div>
+      <p className={styles.catalogueNote}>Illustrative styles, not live retailer stock. Ask your wig specialist about product availability.</p>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} className={styles.cards}>
         {visible.map((r, i) => {
           const isWig = r.item.kind === "wig";
           const id = r.item.id;
+          const key = `${faceKey}:${id}`;
+          const quotaMessage = photo.kind === "own" && status?.mode === "live" && !needCode && !started.current.has(key) && (
+            status.reason === "daily_cap" || status.reason === "reserve" || (ownLive && !budgetIds.has(id))
+          )
+            ? status.reason === "reserve"
+              ? "Preview paused to protect the remaining API reserve."
+              : "Daily preview limit reached. Try this style when it resets."
+            : undefined;
           return (
             <ResultCard
               key={`${faceKey}:${id}`}
-              cardRef={near.ref(`${faceKey}:${id}`)}
-              deferImage={i > 0 && !nearKeys.has(`${faceKey}:${id}`)}
+              cardRef={near.ref(key)}
+              deferImage={i > 0 && !nearKeys.has(key)}
+              quotaMessage={quotaMessage}
               ranked={r}
               state={stateOf(id)}
               view={viewOf(id)}
               subject={subject}
               whose={whose}
               label={isWig ? matchLabel(r, { hair, texture: sample?.texture }) : undefined}
-              onDemand={ownLive}
+              onDemand={false}
+              previewUnavailable={false}
+              renderBusy={renderBusy}
               onRender={() => void start(r)}
               selected={selected.includes(id)}
               onToggleCompare={() => toggle(id)}
@@ -334,23 +438,34 @@ export default function ResultsView() {
       <BriefMaker items={briefItems} chosen={selected.length > 0} hairColour={hair} browColour={sample?.brows} whose={whose} />
 
       <section className={`stack ${styles.panel}`} aria-labelledby="next-h">
-        <h2 id="next-h" className={styles.panelHead}>What next</h2>
+        <div>
+          <h2 id="next-h" className={styles.panelHead}>Take your shortlist to a fitting.</h2>
+          <p className="note">The styles are illustrative. Your wig specialist can help confirm fit, comfort, and what is available.</p>
+        </div>
         <Link href="/plan" className="btn btn-quiet">Plan around the treatment dates</Link>
-        <button type="button" className="btn btn-quiet" onClick={startOver}>Start over</button>
-        <p className="note">Start over ends this session: your photo is cleared and your try-ons are deleted from YouCam.</p>
+        <button type="button" className="btn btn-quiet" onClick={startOver}>Start a new lookbook</button>
+        <p className="note">Starting over clears your photo and deletes your try-ons from YouCam.</p>
       </section>
 
-      {selected.length > 0 && (
-        <div className={styles.compareBar} role="region" aria-label="Compare">
-          {selected.length === 1 ? (
-            <p>1 chosen. Add one more to compare.</p>
-          ) : (
-            <button type="button" className="btn btn-primary" onClick={() => { setComparing(true); window.scrollTo(0, 0); }}>
-              Compare these two
+      <div className={styles.compareBar} role="region" aria-label="Fitting bag">
+        <div className={styles.bagDock}>
+          <div className={styles.bagSummary}>
+            <span className={styles.bagCount}>{selected.length}</span>
+            <div>
+              <strong>{selected.length === 0 ? "Your fitting bag" : selected.length === 1 ? "1 look saved for your fitting" : `${selected.length} looks saved for your fitting`}</strong>
+              <p>{selected.length === 0 ? "Save looks here to compare and take to a specialist." : "Style ideas only · availability confirmed with your specialist"}</p>
+            </div>
+          </div>
+          <div className={styles.bagActions}>
+            <button type="button" className="btn btn-quiet" disabled={selected.length < 2} onClick={() => { setComparing(true); window.scrollTo(0, 0); }}>
+              {selected.length < 2 ? "Save two to compare" : "Compare two looks"}
             </button>
-          )}
+            <button type="button" className="btn btn-primary" onClick={() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+              Go to fitting brief
+            </button>
+          </div>
         </div>
-      )}
+      </div>
     </main>
   );
 }

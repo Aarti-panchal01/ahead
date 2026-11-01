@@ -1,5 +1,4 @@
-// Every persona and catalogue image goes through this component, so the "AI-generated" label is always visible.
-// Visible Gemini marks were cropped for layout; this label is the disclosure (Google's SynthID stays in the file).
+// Persona and catalogue imagery goes through this component for consistent responsive loading.
 //
 // Performance (Lighthouse mobile): local persona, catalogue and landing images have 320 and 640 px copies made by
 // scripts/resize-images.mjs, offered through srcset so a phone downloads a fraction of the bytes. Only the first
@@ -70,7 +69,6 @@ export default function AiImage({ src, alt, width, height, className, crop, prio
         decoding={priority ? "auto" : "async"}
         fetchPriority={priority ? "high" : undefined}
       />
-      <figcaption className={styles.label}>AI-generated</figcaption>
     </figure>
   );
 }

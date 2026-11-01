@@ -39,6 +39,8 @@ export interface TryOnJob {
 
 export interface TryOnResult {
   id: string;
+  /** Catalogue style bound to the task by the server; present for live task results. */
+  itemId?: string;
   status: TryOnStatus;
   /** Present on success: where the browser can load the render. */
   resultUrl?: string;

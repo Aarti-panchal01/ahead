@@ -46,8 +46,8 @@ export const PASTE = {
   shrinkAcross: 0.9,
   /** Shrink along the face (chin side); small, the chin must stay inside. */
   shrinkAlong: 0.97,
-  /** The mask stops this far above the top of the brows: the forehead above may be under hair. */
-  aboveBrows: 0.02,
+  /** Keep the paste below the upper brow edge so the user's fringe, wig front, or wrap edge is never painted over. */
+  aboveBrows: 0,
   /** Width of the smooth edge, inside the mask. */
   feather: 0.05,
   /** Blur of the hair masks before hair is cut out of the paste (the cut fades in over about 2 blur widths). */
@@ -243,6 +243,27 @@ export function restoreInnerFace(
   }
   const mask = innerFaceMask(landmarks, W, H, hair);
   return { image: blend(result, base, mask), mask };
+}
+
+/**
+ * RMS landmark drift between the original and a try-on, in face-width units. This catches a render where the provider
+ * moved or reshaped the face so pasting the protected face back would create a visibly misaligned seam.
+ */
+export function faceLandmarkDrift(original: Landmarks | null | undefined, result: Landmarks | null | undefined): number {
+  if (!hasFace(original) || !hasFace(result)) return Infinity;
+  const a = toPixels(original, 1, 1), b = toPixels(result, 1, 1);
+  const ax = (a[FACE_LEFT][0] + a[FACE_RIGHT][0]) / 2, ay = (a[10][1] + a[CHIN][1]) / 2;
+  const bx = (b[FACE_LEFT][0] + b[FACE_RIGHT][0]) / 2, by = (b[10][1] + b[CHIN][1]) / 2;
+  const aw = faceWidth(a), bw = faceWidth(b);
+  if (!(aw > 0 && bw > 0)) return Infinity;
+  const points = [33, 133, 159, 145, 263, 362, 386, 374, 1, 2, 4, 13, 14, 61, 291, CHIN];
+  let sum = 0;
+  for (const i of points) {
+    const dx = (a[i][0] - ax) / aw - (b[i][0] - bx) / bw;
+    const dy = (a[i][1] - ay) / aw - (b[i][1] - by) / bw;
+    sum += dx * dx + dy * dy;
+  }
+  return Math.sqrt(sum / points.length);
 }
 
 const worst = (rs: IntegrityRegionResult[]) => Math.max(...rs.map((r) => r.deltaE2000));

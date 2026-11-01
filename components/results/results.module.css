@@ -1,14 +1,28 @@
+.resultsMain {
+  width: min(100%, 88rem);
+  max-width: none;
+  padding: 14px clamp(18px, 5vw, 76px) 100px;
+}
+
+.resultsMain > .back { min-height: 34px; }
+
 /* ─── Results header ────────────────────────────────────────────────── */
 .header {
   display: grid;
-  grid-template-columns: 32% 1fr;
-  gap: 14px;
-  align-items: start;
+  grid-template-columns: minmax(108px, 132px) minmax(0, 1fr);
+  gap: clamp(22px, 3vw, 40px);
+  align-items: center;
+  max-width: 76rem;
+  margin-bottom: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
 }
 
-.header h1 { font-size: 1.3rem; }
+.header h1 { max-width: none; font-family: var(--font-editorial); font-size: clamp(2.4rem, 3.8vw, 3.6rem); font-weight: 400; letter-spacing: -0.045em; line-height: 0.98; }
+.swatchRow .note { max-width: 58ch; font-size: 0.94rem; line-height: 1.6; }
 
 .headerPhoto figcaption { font-size: 0.68rem; left: 5px; bottom: 5px; padding: 1px 5px; }
+.headerPhoto > figure { width: min(100%, 8.25rem); }
 
 .swatchRow { display: flex; gap: 10px; align-items: flex-start; }
 
@@ -25,112 +39,124 @@
 /* ─── Tabs ──────────────────────────────────────────────────────────── */
 .tabs {
   display: flex;
-  gap: 4px;
-  border-bottom: 1px solid var(--line);
+  width: fit-content;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .tab {
-  min-height: 48px;
-  min-width: 96px;
-  padding: 8px 16px;
+  min-height: 42px;
+  min-width: 112px;
+  padding: 7px 16px;
   border: 0;
-  border-bottom: 3px solid transparent;
-  margin-bottom: -1px;
-  background: none;
+  border-radius: 6px;
+  background: transparent;
   font: inherit;
   font-weight: 700;
   color: var(--ink-soft);
   cursor: pointer;
-  transition: color var(--duration-fast) var(--ease-out),
-              border-bottom-color var(--duration-fast) var(--ease-out);
+  transition: color var(--duration-base) var(--ease-out), background var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out);
 }
 
 .tab[aria-selected="true"] {
   color: var(--ink);
-  border-bottom-color: var(--accent);
+  background: var(--brand);
+  color: #f8f7f1;
+  box-shadow: 0 3px 8px rgba(25, 40, 35, 0.12);
 }
 
-/* ─── Carousel intro line ───────────────────────────────────────────── */
-.carouselIntro {
-  font-size: 1rem;
-  color: var(--ink-soft);
-  font-style: italic;
-  padding: 2px 4px 0;
-}
-
-/* ─── Horizontal scroll-snap carousel ──────────────────────────────── */
-/*
- * Cards scroll horizontally with scroll-snap. On mobile they are ~82vw wide so
- * the next card peeks in from the right edge, signalling there is more to scroll.
- * On wider screens two cards are fully visible with the third peeking.
- * Negative horizontal margin bleeds the scroll container to the viewport edges
- * while the padding restores the visual gutter.
- */
-.cards {
+/* ─── Look rail heading ─────────────────────────────────────────────── */
+.railHeading {
   display: flex;
-  gap: 14px;
-  /* Bleed past the column padding so cards can peek at the edge */
-  margin-left: -16px;
-  margin-right: -16px;
-  padding-left: 16px;
-  padding-right: 16px;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scroll-padding-left: 16px;
-  -webkit-overflow-scrolling: touch;
-  /* Hide scrollbar on all browsers (design decision: edge-peeks communicate scrollability) */
-  scrollbar-width: none;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 8px;
 }
-.cards::-webkit-scrollbar { display: none; }
+
+.railHeading h2 { font-size: clamp(1.45rem, 2.2vw, 2rem); letter-spacing: -0.035em; }
+
+.carouselIntro {
+  margin-top: 5px;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.catalogueNote {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.resultsMain > .notice { margin-block: 0 12px; padding: 9px 12px; }
+.resultsMain > .notice > p { line-height: 1.45; }
+
+.liveOptions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.liveOptions > * { width: auto; }
+
+/* ─── Full catalogue grid ──────────────────────────────────────────── */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 22px;
+}
 
 /* ─── Result card ───────────────────────────────────────────────────── */
 .card {
-  flex: none;
-  /* 82 vw on 390 px → next card peeks ~14 vw. Clamp: never narrower than 220 px, never wider than 340 px. */
-  width: clamp(220px, 82vw, 340px);
-  scroll-snap-align: start;
-  background: var(--surface);
-  border-radius: calc(var(--radius) + 4px);
-  border: 2px solid transparent;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-raised);
+  border-radius: 13px;
+  border: 1px solid var(--line);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
-  transition: border-color var(--duration-fast) var(--ease-out),
-              box-shadow var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-base) var(--ease-out), box-shadow var(--duration-base) var(--ease-out), transform var(--duration-base) var(--ease-out);
 }
 
-.card:hover { box-shadow: var(--shadow-md); }
-.card[data-selected="true"] { border-color: var(--accent); box-shadow: var(--shadow-md); }
-
-/* On ≥ 600 px, show two cards + peek */
-@media (min-width: 600px) {
-  .card { width: clamp(240px, 46%, 320px); }
-}
-
-/* On ≥ 900 px (desktop), normal flow, no horizontal scroll */
-@media (min-width: 900px) {
-  .cards {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 18px;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
-    overflow-x: visible;
-    scroll-snap-type: none;
-  }
-  .card {
-    width: auto;
-    scroll-snap-align: none;
-  }
-}
+.card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+.card[data-selected="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent), var(--shadow-md); }
 
 /* ─── Card image area ───────────────────────────────────────────────── */
-.render { margin: 0; border-radius: 0; }
-.render img { display: block; width: 100%; height: auto; }
+.render {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 5;
+  margin: 0;
+  /* Keep a little breathing room around generated wraps and wigs. Some YouCam outputs
+     place the garment/hair right at the image edge; the inset prevents the card frame
+     from visually shaving off those outer strands or fabric folds. */
+  padding: clamp(8px, 1vw, 14px);
+  overflow: hidden;
+  border-radius: 0;
+  background: #e8e7e0;
+}
+.render img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center;
+}
 
-.body { padding: 16px; }
+.body { flex: 1; display: flex; flex-direction: column; padding: 17px; }
 .body > * + * { margin-top: 10px; }
+.body > h2 { min-height: 2.45em; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.styleSku { color: var(--ink-soft); font-size: .74rem; letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.styleSku span { color: var(--ink); font-weight: 750; }
+.perspectiveSwitch { display: flex; align-self: flex-start; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); }
+.perspectiveSwitch button { min-height: 32px; padding: 5px 11px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-soft); font: inherit; font-size: .76rem; font-weight: 700; cursor: pointer; }
+.perspectiveSwitch button[aria-pressed="true"] { background: var(--brand); color: #f8f7f1; }
+.disclaimer { min-height: 3.1em; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 
 /* ─── Label chips ───────────────────────────────────────────────────── */
 .chip, .chipNew, .chipNeutral {
@@ -146,7 +172,7 @@
 
 /* ─── Skeleton / pending state ──────────────────────────────────────── */
 .pending {
-  aspect-ratio: 821 / 1024;
+  aspect-ratio: 4 / 5;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -159,7 +185,7 @@
     #e4e8e4 75%
   );
   background-size: 200% 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
+  animation: shimmer 2.4s ease-in-out infinite;
 }
 
 @keyframes shimmer {
@@ -168,6 +194,64 @@
 }
 
 .pendingText { font-size: 1rem; color: var(--ink-soft); }
+.pendingLive { justify-content: center; text-align: center; }
+.pendingLive .bar { width: 100%; }
+.skeletonLines { display: grid; gap: 8px; width: min(100%, 15rem); margin-inline: auto; }
+.skeletonLines span { display: block; height: 8px; border-radius: 99px; background: rgba(30, 42, 42, 0.11); }
+.skeletonLines span:nth-child(2) { width: 82%; margin-inline: auto; }
+.skeletonLines span:nth-child(3) { width: 58%; margin-inline: auto; }
+.quotaBlocked { justify-content: center; text-align: center; color: var(--ink-soft); font-size: 0.94rem; line-height: 1.5; background: linear-gradient(145deg, #efeee8, #e6e8df); animation: none; }
+
+/* An own-photo card never borrows a model's face. This quiet tile is replaced by the
+   personalized render as soon as the shopper requests one. */
+.selfPreview {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(18px, 2.4vw, 28px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,0.56) 0 14%, transparent 14.4%),
+    radial-gradient(ellipse at 50% 70%, rgba(23,61,52,0.08) 0 34%, transparent 34.5%),
+    linear-gradient(145deg, #ece9dc, #f5f2e9 53%, #e6e8df);
+}
+
+.selfPreview::before,
+.selfPreview::after {
+  position: absolute;
+  left: 50%;
+  top: 42%;
+  width: 48%;
+  aspect-ratio: 1;
+  border: 1px solid rgba(23,61,52,0.15);
+  border-radius: 50%;
+  content: "";
+  transform: translate(-50%, -50%);
+}
+
+.selfPreview::after { width: 62%; border-color: rgba(23,61,52,0.08); }
+
+.selfPreviewMark,
+.selfPreviewCopy { position: relative; z-index: 1; }
+
+.selfPreviewMark span {
+  display: inline-block;
+  padding: 6px 10px;
+  border: 1px solid rgba(23,61,52,0.18);
+  border-radius: 999px;
+  background: rgba(250,249,244,0.72);
+  color: var(--brand);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+}
+
+.selfPreviewCopy { max-width: 25ch; }
+.selfPreviewCopy p { color: var(--ink); font-family: var(--font-editorial); font-size: clamp(1.35rem, 2.2vw, 1.85rem); letter-spacing: -0.035em; line-height: 1.08; }
+.selfPreviewCopy > span:last-child { display: block; margin-top: 7px; color: var(--ink-soft); font-size: 0.78rem; line-height: 1.45; }
+.selfPreviewDot { display: block; width: 20px; height: 20px; margin-bottom: 12px; border: 3px solid rgba(250,249,244,0.94); border-radius: 50%; box-shadow: 0 0 0 1px rgba(23,61,52,0.2); }
 
 /* ─── Progress bar ──────────────────────────────────────────────────── */
 .bar {
@@ -184,7 +268,7 @@
   transition: width 1.4s linear;
 }
 
-/* ─── Own-photo placeholder (model image) ───────────────────────────── */
+/* ─── Reference styling retained for sample comparisons ─────────────── */
 .reference { position: relative; }
 .reference figure { border-radius: 0; opacity: 0.9; }
 
@@ -202,6 +286,7 @@
 /* ─── Integrity line ────────────────────────────────────────────────── */
 /* Dot on the first line; the text wraps under itself, not under the dot. */
 .integrity { display: grid; grid-template-columns: 10px 1fr; column-gap: 8px; align-items: start; font-weight: 700; }
+.integritySlot { min-height: 3.6rem; }
 .integrityDot { width: 10px; height: 10px; margin-top: calc(0.75em - 5px); border-radius: 50%; background: currentColor; }
 .integrityText { margin: 0; }
 .integrityMore { display: block; margin-top: 4px; font-weight: 400; color: var(--ink-soft); font-size: 0.92em; }
@@ -211,27 +296,37 @@
 /* ─── Card actions ──────────────────────────────────────────────────── */
 .retry { margin-top: 10px; }
 .compareBtn { min-height: 48px; }
-.renderBtn { border-color: var(--accent); color: var(--accent); }
+.renderBtn { width: 100%; min-height: 48px; border-color: var(--brand); color: #fff; background: var(--brand); }
+.renderBtn:hover:not(:disabled) { border-color: var(--ink); background: var(--ink); color: #fff; }
+.renderBtn:disabled { opacity: 0.56; cursor: wait; }
+.cardActions { margin-top: auto; padding-top: 10px; }
 .cardActions > * + * { margin-top: 8px; }
 
 /* ─── Compare bar (sticky bottom) ───────────────────────────────────── */
-.withBar { padding-bottom: 140px; }
+.withBar { padding-bottom: 168px; }
 
 .compareBar {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  z-index: 20;
+  padding: 12px clamp(16px, 4vw, 48px) calc(12px + env(safe-area-inset-bottom));
   background: var(--bg);
   border-top: 1px solid var(--line);
-  display: flex;
-  justify-content: center;
   box-shadow: 0 -4px 16px rgba(30,42,42,0.08);
 }
 
-.compareBar > * { width: 100%; max-width: 32rem; }
-.compareBar p { min-height: var(--tap); display: flex; align-items: center; font-weight: 700; }
+.bagDock { width: min(100%, 88rem); margin-inline: auto; display: flex; align-items: center; justify-content: space-between; gap: 22px; }
+.bagSummary { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.bagCount { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--brand); color: #fff; font-weight: 750; }
+.bagSummary strong { display: block; }
+.bagSummary p { margin-top: 2px; color: var(--ink-soft); font-size: .8rem; }
+.bagActions { display: flex; gap: 10px; flex: none; }
+.bagActions button { width: auto; min-height: 46px; padding-inline: 18px; }
+.bagActions button:disabled { opacity: .58; cursor: not-allowed; }
+.bagEyebrow { color: var(--integrity); font-size: .7rem; font-weight: 750; letter-spacing: .13em; }
+.bagNotice { padding: 12px 14px; border-left: 3px solid var(--integrity); background: var(--brand-quiet); color: var(--ink-soft); font-size: .9rem; line-height: 1.5; }
 
 /* ─── Compare view ──────────────────────────────────────────────────── */
 .compare {
@@ -247,6 +342,14 @@
 .compareCol > * + * { margin-top: 8px; }
 .compareName { font-size: 0.95rem; }
 .compareCol .integrity { font-size: 0.85rem; }
+.compareSku { color: var(--ink-soft); font-size: .78rem; font-variant-numeric: tabular-nums; }
+.compareSku strong { color: var(--ink); letter-spacing: .035em; }
+.compareDetails { display: grid; grid-template-columns: 22px 1fr; gap: 3px 9px; align-items: center; }
+.compareDetails p { color: var(--ink-soft); font-size: .85rem; }
+.compareDetails strong { grid-column: 2; font-size: .76rem; letter-spacing: .04em; }
+.compareSwatch { grid-row: span 2; width: 22px; height: 22px; border: 1px solid var(--line); border-radius: 50%; }
+.compareActions { display: flex; flex-wrap: wrap; gap: 10px; }
+.compareActions > * { width: auto; }
 
 /* ─── Match card ────────────────────────────────────────────────────── */
 .match { padding: 14px; border-radius: 12px; background: var(--bg); }
@@ -264,8 +367,45 @@
 .hex { font-variant-numeric: tabular-nums; font-size: 0.95rem; }
 
 /* ─── Brows row ─────────────────────────────────────────────────────── */
-.browsRow > * + * { margin-top: 8px; }
-.browsBtn { border-color: var(--accent); }
+.browsRow { display: flex; align-items: center; gap: 14px 20px; flex-wrap: wrap; }
+.browsRow > * + * { margin-top: 0; }
+.browsBtn { width: auto; min-width: 220px; border-color: var(--accent); }
+
+@media (max-width: 600px) {
+  .resultsMain { padding: 20px 16px 100px; }
+  .header { grid-template-columns: 31% minmax(0, 1fr); gap: 14px; align-items: start; padding-bottom: 14px; }
+  .header h1 { max-width: 15ch; }
+  .headerPhoto > figure { width: 100%; }
+  .header h1 { font-size: clamp(1.9rem, 7vw, 2.5rem); letter-spacing: -0.035em; }
+  .tabs { width: 100%; }
+  .tab { flex: 1; min-width: 0; }
+  .railHeading { align-items: center; }
+  .railHeading h2 { font-size: 1.35rem; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+  .body { padding: 12px; }
+  .body > * + * { margin-top: 8px; }
+  .cardActions > * { min-height: 42px; padding-inline: 8px; font-size: 0.82rem; }
+  .bagDock { align-items: stretch; flex-direction: column; gap: 9px; }
+  .bagCount { width: 34px; height: 34px; }
+  .bagSummary p { font-size: .72rem; }
+  .bagActions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bagActions button { min-width: 0; padding: 8px; font-size: .82rem; }
+  .withBar { padding-bottom: 194px; }
+  .compareActions > * { width: 100%; }
+  .browsRow { display: block; }
+  .browsBtn { width: 100%; }
+  .browsRow > * + * { margin-top: 8px; }
+}
+
+@media (max-width: 390px) {
+  .railHeading { align-items: flex-start; }
+  .cards { gap: 9px; }
+  .body { padding: 10px; }
+}
+
+@media (min-width: 601px) and (max-width: 1100px) {
+  .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+}
 
 /* ─── "What next" panel ─────────────────────────────────────────────── */
 .panel { padding-top: 24px; border-top: 1px solid var(--line); }

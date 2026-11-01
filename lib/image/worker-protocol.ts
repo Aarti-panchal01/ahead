@@ -17,6 +17,8 @@ import {
   getModels,
   isFaceRead,
   readFace,
+  restoreFaceRaw,
+  protectFaceAndCheckRaw,
   sampleColoursInBrowser,
   toDataUrl,
   type AssetPaths,
@@ -33,7 +35,7 @@ export type WireSource =
   | { k: "ref"; ref: number }
   | { k: "face"; face: FaceRead };
 
-export type Op = "init" | "readFace" | "checkRender" | "applyBrows" | "compositeFeature" | "sampleColours";
+export type Op = "init" | "readFace" | "checkRender" | "restoreFace" | "protectFace" | "applyBrows" | "compositeFeature" | "sampleColours";
 
 export interface Request {
   id: number;
@@ -137,6 +139,13 @@ export function serveLab(port: Port, deps: HandlerDeps = {}): void {
         const rep = await checkRenderRaw(await face(a, o), await face(b, o), opts);
         const out: IntegrityReport = await encodeReport(rep, encode);
         return { value: out };
+      }
+      case "restoreFace": {
+        return { value: await encode(await restoreFaceRaw(await face(a, o), decode(b, false) as ImageSource, o)) };
+      }
+      case "protectFace": {
+        const checked = await protectFaceAndCheckRaw(await face(a, o), decode(b, false) as ImageSource, o);
+        return { value: { image: await encode(checked.image), report: await encodeReport(checked.report, encode), fingerprint: checked.fingerprint } };
       }
       case "applyBrows": {
         const brows = await face(b, o);

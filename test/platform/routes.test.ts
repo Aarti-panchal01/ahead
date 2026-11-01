@@ -68,8 +68,8 @@ describe("GET /api/status", () => {
   it("live mode reports remaining units and flips to recordings at the cap", async () => {
     vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k");
     fakeYoucam(300);
-    expect(await (await statusRoute()).json()).toEqual({ mode: "live", servingRecordings: false, remainingToday: 20, testerRequired: false });
-    for (let i = 0; i < 10; i++) await claimDaily(2);
+    expect(await (await statusRoute()).json()).toEqual({ mode: "live", servingRecordings: false, remainingToday: 80, testerRequired: false });
+    for (let i = 0; i < 40; i++) await claimDaily(2);
     expect(await (await statusRoute()).json()).toMatchObject({ servingRecordings: true, remainingToday: 0, reason: "daily_cap" });
   });
   it("live mode flips to recordings when the balance is at the reserve", async () => {

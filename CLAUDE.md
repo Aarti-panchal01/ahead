@@ -1,14 +1,15 @@
 # Ahead
-Try on your next hair, before you lose this one.
-For people facing treatment-related hair loss: wigs, head wraps, brows
-and lashes on your own face, before and after the hair goes, with every
-render checked so it is still you. Never describe the product as
+See your next look, on you.
+For people navigating treatment-related hair loss: preview wigs and
+headwear on your own photo, compare favourites, and take a fitting brief
+to a specialist. The demo also offers recorded sample previews without
+an upload or live API units. Never describe the product as
 "refusing to change who you are" (too close to a past winner).
 YouCam API Skin AI & eCommerce VTO Hackathon, eCommerce VTO track.
 Target finish Oct 30 2026. Hard deadline Nov 2 2026, 10:15 pm IST.
 
 ## Stack
-Next.js (App Router) + TypeScript on Vercel, mobile-first. All YouCam
+Next.js (App Router) + TypeScript on Vercel, desktop-first for the judging demo, responsive on mobile. All YouCam
 calls in server routes. Server creates the task and returns task_id;
 the browser polls. Key in env YOUCAM_API_KEY, never sent to the
 client, never logged.
@@ -59,30 +60,33 @@ result card shows the check result.
   A claim linter in CI blocks medical wording, including agent output.
 - Every preview says: style and colour preview, not cap fit, density
   or comfort.
+- Never imply the photo stays only in the browser during a live render;
+  it is sent to YouCam only after the person requests the preview.
 - Privacy: consent before the camera, nothing stored after the session,
   YouCam tasks deleted at the end with POST /s2s/v2.0/task/delete
   (verified 22 Oct, 0 units), images never logged. Stylist brief links expire.
-- All demo people and catalogue items are AI-generated and labelled
-  in the UI and README. Every persona or catalogue image renders through
-  components/AiImage.tsx, which always shows an "AI-generated" label.
+- All demo people and catalogue items are AI-generated. Disclose this
+  once in the shared footer; do not repeat a label on individual images.
+  Every persona and catalogue image renders through components/AiImage.tsx
+  for responsive loading and consistent framing.
 - Global framing: no country-specific insurance or charity claims in
   the core flow.
 - First-time user must get the value in 30 seconds: one selfie, then
   themselves in matched wigs. Everything else comes after.
 
 ## Design
-- Feel: a private fitting mirror at home. Not clinical, not glossy
-  beauty, no pink ribbons.
-- The one bold thing: the user's measured hair colour becomes the accent
-  colour across the app. Everything else stays quiet. If it fails 4.5:1
-  contrast on the background, darken or lighten it until it passes.
+- Feel: a personal fitting mirror at home. Editorial and memorable, never
+  clinical, glossy beauty, or pink-ribbon themed.
+- Identity: deep pine, porcelain, and the user's measured hair colour as a
+  restrained accent. The accent must keep 4.5:1 contrast against --bg.
   Fallback accent #5B4636.
-- Palette: background #F3F5F2, ink #1E2A2A, integrity green #2F6F5E,
-  warning amber #A86B12.
-- Type: Atkinson Hyperlegible everywhere; Newsreader only for the
-  landing headline.
-- Layout: mobile-first, single column, left-aligned, big tap targets.
-  The user's own photo is the hero on every screen.
+- Palette: background #F2F3EE, ink #192823, pine #173D34, integrity green
+  #2F6F5E, warning amber #9B671C.
+- Type: DM Sans for interface copy; Instrument Serif for editorial titles
+  and the Ahead wordmark.
+- Layout: desktop-first, generous editorial spacing, clear tap targets.
+  Keep desktop composition intentional; adapt gracefully to mobile.
+  The user's own photo is the hero on every screen after capture.
 - Avoid: cream plus terracotta, all-caps labels, 01/02 markers unless
   it's a real sequence, fade-in on every section, arrows on buttons.
 - Copy: plain sentence case, buttons say exactly what happens, errors

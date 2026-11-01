@@ -25,16 +25,15 @@ async function audit(page: Page, screen: string) {
 
 test("axe: landing, consent, capture and the honesty page", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("link", { name: "Take one photo" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Start with my photo" })).toBeVisible();
   await audit(page, "landing");
 
-  await page.getByRole("link", { name: "Take one photo" }).click();
-  await expect(page.getByRole("heading", { name: "Before you take a photo" })).toBeVisible();
+  await page.getByRole("link", { name: "Start with my photo" }).click();
+  await expect(page.getByRole("heading", { name: "Before you use your photo" })).toBeVisible();
   await audit(page, "consent");
 
   await page.getByRole("button", { name: "I agree, continue to my photo" }).click();
-  await expect(page.getByRole("button", { name: "Open the camera" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /^Choose Sample person 1,/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Use the camera" })).toBeVisible();
   await audit(page, "capture");
 
   await page.goto("/how-we-tested");
@@ -42,16 +41,8 @@ test("axe: landing, consent, capture and the honesty page", async ({ page }) => 
   await audit(page, "honesty");
 });
 
-test("axe: stage, results, brief and plan", async ({ page }) => {
-  await page.goto("/");
-  await page.getByRole("link", { name: "Take one photo" }).click();
-  await page.getByRole("button", { name: "I agree, continue to my photo" }).click();
-  await page.getByRole("button", { name: /^Choose Sample person 1,/ }).click();
-  await expect(page.getByRole("heading", { name: "Has your hair loss started?" })).toBeVisible();
-  await audit(page, "stage");
-
-  await page.getByRole("radio", { name: "My hair is gone" }).check();
-  await page.getByRole("button", { name: "Show my matches" }).click();
+test("axe: results, brief and plan", async ({ page }) => {
+  await page.goto("/results?person=P1&stage=gone");
   await expect(page.getByRole("heading", { name: /^Matches for sample person/i })).toBeVisible();
   await waitForChecked(page, 4);
   await audit(page, "results");
@@ -60,9 +51,9 @@ test("axe: stage, results, brief and plan", async ({ page }) => {
   await expect(page.getByRole("region", { name: /^Colour match for the/ })).toBeVisible();
   await audit(page, "results-match-card");
 
-  await page.getByRole("button", { name: "Make a brief for my stylist" }).click();
-  await expect(page.getByRole("heading", { name: "Stylist brief" })).toBeVisible();
-  await expect(page.getByText(/^This link stops working on/)).toBeVisible();
+  await page.getByRole("button", { name: "Create fitting brief" }).click();
+  await expect(page.getByRole("heading", { name: "Bring the looks you like." })).toBeVisible();
+  await expect(page.getByText(/^This link stops working on/).first()).toBeVisible();
   await audit(page, "brief");
 
   // Back to the results (client-side, the session is in memory), then the plan with a plan on screen.

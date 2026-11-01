@@ -19,21 +19,16 @@ export async function fetchMode(fetchFn: typeof fetch = fetch): Promise<UnitStat
 
 /** The user's own photo gets real try-ons only in live mode with units to spend. */
 export function ownPhotoCanRender(s: UnitStatus): boolean {
-  return s.mode === "live" && !s.servingRecordings;
+  return s.mode === "live" && !s.servingRecordings && s.reason !== "daily_cap" && s.reason !== "reserve";
 }
 
-/**
- * Why own-photo previews use sample people right now, in plain words. Undefined when live try-ons are on
- * (then the demo line must not appear at all).
- */
+/** Plain status for the own-photo capture screen. Undefined when live try-ons are on. */
 export function demoNote(s: UnitStatus): string | undefined {
   if (ownPhotoCanRender(s)) return undefined;
-  const lead = "In this demo, previews use our sample people.";
-  const tail = "Your own photo stays on this device and sets your colour and your matches.";
   const why =
-    s.mode === "mock" ? "Live try-ons are switched off in this version."
+    s.mode === "mock" ? "Live previews are off in this environment."
     : s.reason === "daily_cap" ? "Today's live try-ons are used up; they come back tomorrow."
     : s.reason === "reserve" ? "We are keeping our last try-ons in reserve for judging."
     : "Live try-ons aren't available right now.";
-  return `${lead} ${why} ${tail}`;
+  return `${why} Your photo stays on this device and will not be sent.`;
 }
