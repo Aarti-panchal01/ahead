@@ -26,11 +26,11 @@ interface ImageProps {
   subject: Subject;
   /** True while the card is far below the fold: hold the image back so the top card's image loads first (LCP). */
   deferImage?: boolean;
-  /** Explanation when this style was withheld because the live allowance is exhausted. */
-  quotaMessage?: string;
+  /** A live preview is unavailable for this card; keep the recording frame free of quota copy. */
+  previewWithheld?: boolean;
 }
 
-export function RenderImage({ ranked, state, view, subject, deferImage, quotaMessage, perspective = "you" }: ImageProps & { perspective?: "you" | "model" }) {
+export function RenderImage({ ranked, state, view, subject, deferImage, previewWithheld, perspective = "you" }: ImageProps & { perspective?: "you" | "model" }) {
   const { item } = ranked;
   const who = subject.isSample ? subject.name : "You";
   if (view.src && deferImage) {
@@ -52,8 +52,8 @@ export function RenderImage({ ranked, state, view, subject, deferImage, quotaMes
       </figure>
     );
   }
-  if (quotaMessage && state.phase === "idle") {
-    return <div className={`${styles.pending} ${styles.quotaBlocked}`} role="status">{quotaMessage}</div>;
+  if (previewWithheld && state.phase === "idle") {
+    return <div className={`${styles.selfPreview} ${styles.previewWithheld}`} role="img" aria-label={`Personalized preview unavailable for ${item.name}`} />;
   }
   if (state.phase === "checking") {
     return (
@@ -123,7 +123,7 @@ interface Props extends ImageProps {
 }
 
 export default function ResultCard(props: Props) {
-  const { ranked, state, view, subject, deferImage, quotaMessage, label, whose, onDemand, previewUnavailable, renderBusy, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match, cardRef } = props;
+  const { ranked, state, view, subject, deferImage, previewWithheld, label, whose, onDemand, previewUnavailable, renderBusy, onRender, selected, onToggleCompare, onRetry, matchOpen, onToggleMatch, match, cardRef } = props;
   const { item } = ranked;
   const errored = state.phase === "error";
   const [perspective, setPerspective] = useState<"you" | "model">("you");
@@ -138,7 +138,7 @@ export default function ResultCard(props: Props) {
       data-result-style-id={state.phase === "checking" || state.phase === "done" || state.phase === "error" ? state.result.itemId : undefined}
       aria-labelledby={`n-${item.id}`}
     >
-      <RenderImage ranked={ranked} state={state} view={view} subject={subject} deferImage={deferImage} quotaMessage={quotaMessage} perspective={perspective} />
+      <RenderImage ranked={ranked} state={state} view={view} subject={subject} deferImage={deferImage} previewWithheld={previewWithheld} perspective={perspective} />
       <div className={styles.body}>
         {label && (
           <p className={label === "close" || label === "colour" ? styles.chip : label === "new" ? styles.chipNew : styles.chipNeutral}>

@@ -200,7 +200,6 @@
 .skeletonLines span { display: block; height: 8px; border-radius: 99px; background: rgba(30, 42, 42, 0.11); }
 .skeletonLines span:nth-child(2) { width: 82%; margin-inline: auto; }
 .skeletonLines span:nth-child(3) { width: 58%; margin-inline: auto; }
-.quotaBlocked { justify-content: center; text-align: center; color: var(--ink-soft); font-size: 0.94rem; line-height: 1.5; background: linear-gradient(145deg, #efeee8, #e6e8df); animation: none; }
 
 /* An own-photo card never borrows a model's face. This quiet tile is replaced by the
    personalized render as soon as the shopper requests one. */
@@ -217,6 +216,8 @@
     radial-gradient(ellipse at 50% 70%, rgba(23,61,52,0.08) 0 34%, transparent 34.5%),
     linear-gradient(145deg, #ece9dc, #f5f2e9 53%, #e6e8df);
 }
+
+.previewWithheld { cursor: default; }
 
 .selfPreview::before,
 .selfPreview::after {

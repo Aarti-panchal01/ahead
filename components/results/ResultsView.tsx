@@ -291,7 +291,7 @@ export default function ResultsView() {
               ? "Live previews are off in this local build. Your photo stays on this device; connect the YouCam API to see styles on yourself."
               : "Live previews are temporarily unavailable. Your photo stays on this device."
         : liveBudget < allRanked.length
-          ? `Today's allowance can render ${liveBudget} of ${allRanked.length} looks. The remaining styles are marked below until the allowance resets.`
+          ? undefined
           : settledCount === allRanked.length
             ? readyCount === allRanked.length
               ? `All ${readyCount} previews are ready on your photo.`
@@ -402,19 +402,15 @@ export default function ResultsView() {
           const isWig = r.item.kind === "wig";
           const id = r.item.id;
           const key = `${faceKey}:${id}`;
-          const quotaMessage = photo.kind === "own" && status?.mode === "live" && !needCode && !started.current.has(key) && (
+          const previewWithheld = photo.kind === "own" && status?.mode === "live" && !needCode && !started.current.has(key) && (
             status.reason === "daily_cap" || status.reason === "reserve" || (ownLive && !budgetIds.has(id))
-          )
-            ? status.reason === "reserve"
-              ? "Preview paused to protect the remaining API reserve."
-              : "Daily preview limit reached. Try this style when it resets."
-            : undefined;
+          );
           return (
             <ResultCard
               key={`${faceKey}:${id}`}
               cardRef={near.ref(key)}
               deferImage={i > 0 && !nearKeys.has(key)}
-              quotaMessage={quotaMessage}
+              previewWithheld={previewWithheld}
               ranked={r}
               state={stateOf(id)}
               view={viewOf(id)}
