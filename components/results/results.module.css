@@ -133,7 +133,7 @@
   /* Keep a little breathing room around generated wraps and wigs. Some YouCam outputs
      place the garment/hair right at the image edge; the inset prevents the card frame
      from visually shaving off those outer strands or fabric folds. */
-  padding: clamp(8px, 1vw, 14px);
+  padding: clamp(8px, 1vw, 14px) clamp(18px, 2vw, 28px);
   overflow: hidden;
   border-radius: 0;
   background: #e8e7e0;

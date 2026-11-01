@@ -32,7 +32,7 @@ For an own-photo try-on, choose **Use your photo**, review the consent, upload a
 
 ## Ahead in the browser
 
-Upload one portrait to explore 12 wig styles or 4 wraps and caps. These screenshots are from the working results page after all 16 saved YouCam Hair Transfer renders finished. Each card keeps the complete render in frame and shows its style code, model reference, skin-tone check, comparison action, and fitting-brief path.
+Upload one portrait to explore 12 wig styles or 4 wraps and caps. These screenshots are from the working results page after all 16 saved YouCam Hair Transfer renders finished. A generous side inset keeps the full hair silhouette visible in every card; style codes, model references, skin-tone checks, comparison, and fitting actions stay close at hand.
 
 ### Wig lookbook · 12 styles
 
