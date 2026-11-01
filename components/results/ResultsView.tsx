@@ -4,7 +4,7 @@
 // and then checked for skin tone drift.
 //
 // Units: sample people replay recordings (0 units). In live mode, own-photo results queue the affordable lookbook
-// automatically. Render tasks start together; heavier browser-side image checks wait until their card is near view.
+// automatically, one at a time; heavier browser-side image checks wait until their card is near view.
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -251,7 +251,12 @@ export default function ResultsView() {
     if (!pending.length) return;
     autoQueueRunning.current = true;
     void (async () => {
-      await Promise.allSettled(pending.map((r) => start(r)));
+      // Keep paid calls sequential. A 16-call burst can hit API or per-IP limits
+      // and leave otherwise valid styles failed while daily units remain.
+      for (const r of pending) {
+        if (!alive.current) break;
+        await start(r);
+      }
     })().finally(() => {
       autoQueueRunning.current = false;
       refreshStatus();

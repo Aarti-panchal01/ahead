@@ -21,6 +21,8 @@ export interface TryOnOptions {
   headers?: Record<string, string>;
 }
 
+const retryableRefundedErrors = new Set(["error_inference", "unknown_internal_error", "error_upload"]);
+
 const defaultSleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve) => {
     const t = setTimeout(resolve, ms);
@@ -35,8 +37,8 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
   const sleep = opts.sleep ?? defaultSleep;
   const now = opts.now ?? Date.now;
   let res: Response;
+  let init: RequestInit;
   try {
-    let init: RequestInit;
     if (typeof face === "string") {
       init = { method: "POST", headers: { "Content-Type": "application/json", ...opts.headers }, body: JSON.stringify({ itemId, faceId: face }) };
     } else {
@@ -52,9 +54,9 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
   const body = await res.json().catch(() => ({}));
   if (!res.ok || !body.id) return failed("", body.errorCode ?? "create_failed", body.message);
 
-  const id: string = body.id;
-  const start = now();
-  for (;;) {
+  const poll = async (id: string): Promise<TryOnResult> => {
+    const start = now();
+    for (;;) {
     if (opts.signal?.aborted) return failed(id, "aborted", "Stopped.");
     let r: TryOnResult;
     try {
@@ -72,7 +74,23 @@ export async function runTryOn(itemId: string, face: string | Blob, opts: TryOnO
     if (elapsed > (opts.giveUpMs ?? GIVE_UP_MS)) return failed(id, "timeout", "This is taking much longer than usual. Try this one again in a minute.");
     opts.onRunning?.(elapsed);
     await sleep(opts.pollMs ?? POLL_MS, opts.signal);
+    }
+  };
+
+  let result = await poll(String(body.id));
+  if (!opts.signal?.aborted && result.status === "error" && result.retrySafe && retryableRefundedErrors.has(result.errorCode ?? "")) {
+    // The first task was explicitly refunded by the server, so one new paid attempt
+    // is safe. A failed/lost create is never retried because its charge is unknown.
+    try {
+      res = await f("/api/tryon", { ...init, signal: opts.signal });
+      const retryBody = await res.json().catch(() => ({}));
+      if (res.ok && retryBody.id) result = await poll(String(retryBody.id));
+      else result = { ...result, message: retryBody.message || result.message || FALLBACK };
+    } catch {
+      result = { ...result, message: result.message || FALLBACK };
+    }
   }
+  return result;
 }
 
 /**

@@ -74,12 +74,13 @@ export async function startHairTransfer({ itemId, src, ref, ip, sessionId, kind 
 }
 
 /** One status check. A task that ends in error is refunded in the ledger and forgotten by the cache. */
-export async function pollTask(taskId: string): Promise<TaskState & { kind: LedgerCall["kind"]; itemId?: string }> {
+export async function pollTask(taskId: string): Promise<TaskState & { kind: LedgerCall["kind"]; itemId?: string; refunded?: boolean }> {
   const t = await getTask("hair-transfer", taskId);
+  let refunded = false;
   if (t.status === "error") {
-    await refundTask(taskId);
+    refunded = await refundTask(taskId);
     await cacheForgetTask(taskId);
   }
   const call = await getCall(taskId);
-  return { ...t, kind: call?.kind ?? "tryon", itemId: call?.itemId };
+  return { ...t, kind: call?.kind ?? "tryon", itemId: call?.itemId, refunded };
 }

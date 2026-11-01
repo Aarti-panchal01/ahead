@@ -28,7 +28,7 @@ export async function GET(req: Request, ctx: { params: Promise<{ id: string }> }
     const ctxName = t.kind === "listing" ? "listing" : context;
     const style = t.itemId ? { itemId: t.itemId } : {};
     const out: TryOnResult = t.status === "success" ? { id, ...style, status: "success", resultUrl: t.url }
-      : t.status === "error" ? { id, ...style, status: "error", errorCode: t.errorCode, message: messageFor(t.errorCode, ctxName), unitsCharged: 0 }
+      : t.status === "error" ? { id, ...style, status: "error", errorCode: t.errorCode, message: messageFor(t.errorCode, ctxName), unitsCharged: 0, retrySafe: t.refunded }
       : { id, ...style, status: "running" };
     return NextResponse.json(out);
   } catch {

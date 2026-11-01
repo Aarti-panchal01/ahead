@@ -34,6 +34,27 @@ describe("runTryOn", () => {
     expect(r).toMatchObject({ status: "error", errorCode: "error_no_shoulder", message: "We need to see your shoulders." });
   });
 
+  it("retries one transient terminal task only after the server confirms its refund", async () => {
+    const answers = [
+      json({ id: "paid-1" }),
+      json({ id: "paid-1", status: "error", errorCode: "error_inference", retrySafe: true, message: "The preview didn't finish." }),
+      json({ id: "paid-2" }),
+      json({ id: "paid-2", status: "success", resultUrl: "/result-2.jpg" }),
+    ];
+    const fetchFn = vi.fn(async () => answers.shift()!) as unknown as typeof fetch;
+    const r = await runTryOn("W01", "P1B", { fetchFn, sleep: noSleep });
+    expect(r).toMatchObject({ id: "paid-2", status: "success", resultUrl: "/result-2.jpg" });
+    expect(vi.mocked(fetchFn).mock.calls.filter(([url]) => url === "/api/tryon")).toHaveLength(2);
+  });
+
+  it("does not retry a terminal task unless the server confirms its refund", async () => {
+    const answers = [json({ id: "paid-1" }), json({ id: "paid-1", status: "error", errorCode: "error_inference" })];
+    const fetchFn = vi.fn(async () => answers.shift()!) as unknown as typeof fetch;
+    const r = await runTryOn("W01", "P1B", { fetchFn, sleep: noSleep });
+    expect(r.errorCode).toBe("error_inference");
+    expect(vi.mocked(fetchFn).mock.calls.filter(([url]) => url === "/api/tryon")).toHaveLength(1);
+  });
+
   it("never creates twice: gives up polling after the time limit", async () => {
     let t = 0;
     const fetchFn = vi.fn(async (url: string) => (url === "/api/tryon" ? json({ id: "t2" }) : json({ id: "t2", status: "running" }))) as unknown as typeof fetch;

@@ -91,8 +91,8 @@ export function RenderImage({ ranked, state, view, subject, deferImage, quotaMes
       <div className={styles.selfPreviewMark} aria-hidden="true"><span>YOUR PHOTO</span></div>
       <div className={styles.selfPreviewCopy}>
         <span className={styles.selfPreviewDot} style={{ background: item.colour }} aria-hidden="true" />
-        <p>{state.phase === "error" ? "This look did not render on your photo." : "This look will be shown on your photo."}</p>
-        <span>{state.phase === "error" ? "Try again or choose another style." : "Your personalized preview will appear here."}</span>
+        <p>{state.phase === "error" ? "This preview needs another try." : "This look will be shown on your photo."}</p>
+        <span>{state.phase === "error" ? state.result.message : "Your personalized preview will appear here."}</span>
       </div>
     </div>
   );

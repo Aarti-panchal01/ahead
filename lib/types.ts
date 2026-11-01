@@ -49,6 +49,8 @@ export interface TryOnResult {
   /** Plain words for the user: what happened and what to do next. */
   message?: string;
   unitsCharged?: number;
+  /** True only when the server confirmed this terminal task was refunded and is safe to retry once. */
+  retrySafe?: boolean;
   /** True when the result is a saved recording, labelled as such in the UI. */
   recording?: boolean;
 }
