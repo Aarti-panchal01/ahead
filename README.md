@@ -9,11 +9,9 @@ The product is positioned as **assisted shopping before a fitting**: help a pers
 ## Try Ahead
 
 - **Live app:** [try-ahead.vercel.app](https://try-ahead.vercel.app)
-- **Repository:** [github.com/Aarti-panchal01/ahead](https://github.com/Aarti-panchal01/ahead)
 - **How we tested the API:** [/how-we-tested](https://try-ahead.vercel.app/how-we-tested)
 - **Recorded judge path:** choose **Explore sample previews** on the landing page. It needs no upload or access code and uses saved API results at no unit cost.
 - **Live own-photo path:** choose **Use your photo**, review the consent and privacy details, upload a photo, and continue to matches. The app starts the available previews together after the user asks to see matches. The public deployment may request a judge access code for fresh YouCam calls; never share the API key.
-- **Demo video:** add the public 1–3 minute video URL here after recording. The shot list and narration are in [`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md).
 
 **Current checks:** 535 unit tests pass; TypeScript and ESLint pass. The sample journey, compare, and fitting brief have also passed Playwright in mobile and desktop viewports.
 
@@ -100,8 +98,6 @@ Never commit `.env.local` or put the YouCam key in browser code. `TESTER_CODE` c
 - `components/results/` — results grid, fitting bag, comparison, and fitting brief.
 - `docs/api-truth-table.md` — measured API behaviour and implementation decisions.
 - `docs/FACTS.md` — implementation and test references for product claims.
-- `docs/DEMO-SCRIPT.md` — demo narration and recording plan.
-- [`docs/SUBMISSION.md`](docs/SUBMISSION.md) — copy-ready Devpost answers and links.
 
 ## Image disclosure
 

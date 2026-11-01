@@ -3,9 +3,9 @@
 // "above the ears" (docs/api-truth-table.md row 10).
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import NeedPhoto from "@/components/NeedPhoto";
-import { useSession } from "@/components/SessionProvider";
+import { useSampleFromRoute, useSession } from "@/components/SessionProvider";
 import YourPhoto from "@/components/YourPhoto";
 import { STAGES, WHY_WE_ASK } from "@/lib/client/copy";
 import { resultsHref } from "@/lib/client/routes";
@@ -13,9 +13,12 @@ import type { HairLossStage } from "@/lib/types";
 import styles from "./stage.module.css";
 
 export default function Stage() {
+  useSampleFromRoute();
   const { photo, stage, setStage } = useSession();
   const router = useRouter();
   const [choice, setChoice] = useState<HairLossStage | undefined>(stage);
+
+  useEffect(() => setChoice(stage), [stage]);
 
   if (!photo) return <NeedPhoto />;
 

@@ -20,7 +20,7 @@ import { fetchMode, ownPhotoCanRender } from "@/lib/client/mode";
 import { browsImage, getSample, goneImage, tryOnFace, type SamplePerson } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
 import { IDLE, nextRender, type RenderEvent, type RenderState } from "@/lib/client/renderState";
-import { parseStage } from "@/lib/client/routes";
+import { parseStage, planHref, stageHref } from "@/lib/client/routes";
 import { endSession, resetSessionId, sessionHeaders } from "@/lib/client/session";
 import { NearViewport } from "@/lib/client/visibility";
 import { forgetCode, needsTesterCode, storedCode, testerHeaders, type StatusWithTester } from "@/lib/client/tester";
@@ -330,7 +330,7 @@ export default function ResultsView() {
 
   return (
     <main className={`${styles.resultsMain} stack-lg ${styles.withBar}`}>
-      <Link href="/stage" className="back">Change my answer</Link>
+      <Link href={stageHref(photo.kind, stage, photo.kind === "sample" ? photo.id : undefined)} className="back">Change my answer</Link>
 
       <section className={styles.header}>
         <div className={styles.headerPhoto}><YourPhoto photo={photo} stage={stage} brows={withBrows && browsOn} priority sizes="(max-width: 34rem) 32vw, 11rem" /></div>
@@ -442,7 +442,7 @@ export default function ResultsView() {
           <h2 id="next-h" className={styles.panelHead}>Take your shortlist to a fitting.</h2>
           <p className="note">The styles are illustrative. Your wig specialist can help confirm fit, comfort, and what is available.</p>
         </div>
-        <Link href="/plan" className="btn btn-quiet">Plan around the treatment dates</Link>
+        <Link href={planHref(photo.kind, stage, photo.kind === "sample" ? photo.id : undefined)} className="btn btn-quiet">Plan around the treatment dates</Link>
         <button type="button" className="btn btn-quiet" onClick={startOver}>Start a new lookbook</button>
         <p className="note">Starting over clears your photo and deletes your try-ons from YouCam.</p>
       </section>

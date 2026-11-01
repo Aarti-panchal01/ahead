@@ -25,6 +25,24 @@ test("judge can explore recorded sample try-ons without uploading a photo", asyn
   await expect(page.getByText(/Skin tone check|Corrected:/).first()).toBeVisible({ timeout: 120_000 });
 });
 
+test("sample journey survives change-answer and plan links on a cold URL", async ({ page }) => {
+  await page.goto("/results?person=P3&stage=gone");
+  await expect(page.getByRole("heading", { name: "Matches for sample person 3" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Change my answer" }).click();
+  await expect(page.getByRole("heading", { name: "Where are you in your hair-loss experience?" })).toBeVisible();
+  await expect(page.getByText("A sample portrait for this preview.")).toBeVisible();
+  await expect(page.getByRole("radio", { name: "Most or all has fallen out" })).toBeChecked();
+  await page.getByRole("button", { name: "Show my matches" }).click();
+  await expect(page).toHaveURL(/\/results\?stage=gone&person=P3/);
+
+  await page.getByRole("link", { name: "Plan around the treatment dates" }).click();
+  await expect(page.getByRole("heading", { name: "Plan around the treatment dates" })).toBeVisible();
+  await expect(page.getByText("First treatment date (optional)")).toBeVisible();
+  await page.getByRole("link", { name: "Back to the matches" }).click();
+  await expect(page.getByRole("heading", { name: "Matches for sample person 3" })).toBeVisible();
+});
+
 test("own photo opens the full catalogue without ever borrowing a model face", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("link", { name: "Start with my photo" }).click();

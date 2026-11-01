@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import AiImage from "@/components/AiImage";
 import NeedPhoto from "@/components/NeedPhoto";
-import { hairOf, useSession, type ChosenPhoto } from "@/components/SessionProvider";
+import { hairOf, useSampleFromRoute, useSession, type ChosenPhoto } from "@/components/SessionProvider";
 import IntegrityLine from "@/components/results/IntegrityLine";
 import { getItem } from "@/lib/catalogue";
 import { PREVIEW_DISCLAIMER } from "@/lib/client/copy";
 import { integrityCheck } from "@/lib/client/image";
+import { resultsHref } from "@/lib/client/routes";
 import { goneImage, tryOnFace } from "@/lib/client/personas";
 import { downscaleForUpload } from "@/lib/client/photo";
 import { CARE_TEAM_LINE, FALLBACK_LINE, planMessages, planSteps, requestPlan, todayIso } from "@/lib/client/planApi";
@@ -74,6 +75,7 @@ function ApprovalStep({ itemId, units, photo, isSample }: { itemId: string; unit
 }
 
 export default function PlanView() {
+  useSampleFromRoute();
   const { photo, stage } = useSession();
   const dateId = useId();
   const [date, setDate] = useState("");
@@ -103,7 +105,7 @@ export default function PlanView() {
 
   return (
     <main className="stack-lg">
-      <Link href="/results" className="back">Back to the matches</Link>
+      <Link href={resultsHref(photo.kind, stage ?? "not_yet", photo.kind === "sample" ? photo.id : undefined)} className="back">Back to the matches</Link>
       <section className="stack">
         <h1>Plan around the treatment dates</h1>
         <p className="lede">A simple calendar for trying on and choosing. It is about looks only, not about treatment.</p>

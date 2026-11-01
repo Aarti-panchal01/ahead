@@ -4,6 +4,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { accentFor, applyAccent } from "@/lib/client/accent";
 import { getSample, type SampleId } from "@/lib/client/personas";
+import { parseStage } from "@/lib/client/routes";
 import { endSession, resetSessionId } from "@/lib/client/session";
 import type { AccentColour, HairLossStage } from "@/lib/types";
 
@@ -71,4 +72,17 @@ export function useSession(): Session {
   const s = useContext(Ctx);
   if (!s) throw new Error("useSession must be used inside SessionProvider");
   return s;
+}
+
+/** Restore a shareable sample-person route after a cold load; real photos stay memory-only. */
+export function useSampleFromRoute(): void {
+  const { photo, setPhoto, setStage } = useSession();
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const sample = getSample(params.get("person"));
+    if (!sample) return;
+    if (photo?.kind !== "sample" || photo.id !== sample.id) setPhoto({ kind: "sample", id: sample.id });
+    const stage = parseStage(params.get("stage"));
+    if (stage) setStage(stage);
+  }, [photo, setPhoto, setStage]);
 }
