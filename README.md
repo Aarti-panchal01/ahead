@@ -52,7 +52,7 @@ This gallery shows the **16 successful YouCam Hair Transfer previews** on the sa
 
 ![Sixteen distinct YouCam Hair Transfer style previews on the same thinning-hair portrait, with four options per row](docs/images/sixteen-style-gallery.jpg)
 
-The [Devpost thumbnail](docs/images/devpost-thumbnail.jpg) positions Ahead as a private, confidence-building wig and headwear space for women navigating cancer-related hair loss, with six representative YouCam previews.
+The [Devpost thumbnail](docs/images/devpost-thumbnail.jpg) positions Ahead as a private, confidence-building wig and headwear space for women navigating cancer-related hair loss. Its main call to action is **Start with your photo**, supported by six representative YouCam previews.
 
 Individual preview files and their style mapping are in [`docs/images/variants/`](docs/images/variants/) and its [render manifest](docs/images/variants/manifest.json). The `AHD-*` codes are Ahead reference codes, not retailer SKUs.
 
