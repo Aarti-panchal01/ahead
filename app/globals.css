@@ -31,7 +31,9 @@
 
 * { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; }
+/* Route changes should be immediate; the browser's global smooth mode makes
+   Next navigation visibly glide from the old page position into the new page. */
+html { scroll-behavior: auto; }
 body {
   margin: 0;
   min-width: 320px;

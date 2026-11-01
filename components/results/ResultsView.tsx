@@ -324,7 +324,7 @@ export default function ResultsView() {
           onClose={() => setComparing(false)}
           onContinueToBrief={() => {
             setComparing(false);
-            window.setTimeout(() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
+            window.setTimeout(() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "auto", block: "center" }), 0);
           }}
         />
       </main>
@@ -465,7 +465,7 @@ export default function ResultsView() {
             <button type="button" className="btn btn-quiet" disabled={selected.length < 2} onClick={() => { setComparing(true); window.scrollTo(0, 0); }}>
               {selected.length < 2 ? "Save two to compare" : "Compare two looks"}
             </button>
-            <button type="button" className="btn btn-primary" onClick={() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "smooth", block: "center" })}>
+            <button type="button" className="btn btn-primary" onClick={() => document.getElementById("fitting-brief")?.scrollIntoView({ behavior: "auto", block: "center" })}>
               Go to fitting brief
             </button>
           </div>

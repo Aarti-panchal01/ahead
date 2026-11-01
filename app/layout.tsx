@@ -3,6 +3,7 @@ import "./globals.css";
 import { SessionProvider } from "@/components/SessionProvider";
 import SiteFooter from "@/components/SiteFooter";
 import SiteHeader from "@/components/SiteHeader";
+import NavigationScrollReset from "@/components/NavigationScrollReset";
 
 export const metadata: Metadata = {
   title: { default: "Ahead — wigs and wraps, on you", template: "Ahead · %s" },
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="en">
       <body>
         <SessionProvider>
+          <NavigationScrollReset />
           <SiteHeader />
           {children}
           <SiteFooter />
