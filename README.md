@@ -32,19 +32,15 @@ For an own-photo try-on, choose **Use your photo**, review the consent, upload a
 
 ## See Ahead
 
-The project gallery follows one person from her own photo to live YouCam previews. Ahead keeps her face central while she explores styles privately and decides what she wants to discuss at a fitting.
+The before and preview below use the same project-provided portrait. The after image is a successful live YouCam Hair Transfer result for the ash-brown chin-length bob. It shows the core idea: explore a possible look privately, then bring a concrete style direction to a specialist fitting.
 
-![Ahead fitting room showing four headwear previews on the supplied portrait](docs/images/live-fitting-room.jpg)
+![Ahead before-and-preview flow: a woman with thinning hair sees an ash-brown bob on her own photo, then takes a style direction to a specialist](docs/images/treatment-fitting-flow.jpg)
 
-| Her starting photo | Shoulder layers · black with grey blend | Short pixie · salt and pepper | Navy twisted turban |
-| --- | --- | --- | --- |
-| ![Portrait used as the starting photo for Ahead's try-on demo](docs/images/ahead-demo-portrait.jpg) | ![YouCam shoulder layers preview on the same portrait](docs/images/try-on-shoulder-layers.jpg) | ![YouCam short pixie preview on the same portrait](docs/images/try-on-short-pixie.jpg) | ![YouCam navy turban preview on the same portrait](docs/images/try-on-navy-turban.jpg) |
-
-The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) uses the same portrait and previews.
+The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) uses this same portrait and matching YouCam result. The full fitting room offers 12 wig styles and 4 wraps or caps.
 
 ## Why we built it
 
-Choosing a wig during treatment-related hair loss can mean making a personal decision from product photos of someone else. Ahead puts the person back into that decision: explore style and colour on your own photo, save the looks that feel right, and bring specific references to a specialist. A private preview cannot promise confidence, but it can give someone more room to explore before a fitting.
+Choosing a wig during treatment-related hair loss can mean making a personal decision from product photos of someone else. Ahead gives someone more control before a fitting: explore styles privately on their own photo, keep what feels like them, and walk into the conversation with preferences to share. The goal is to help people feel more prepared and confident without rushing them toward a choice.
 
 The specialist remains central: the preview cannot tell someone whether a wig fits, feels comfortable, suits their scalp, or is available. Ahead helps make that first fitting conversation easier to start.
 
@@ -152,7 +148,7 @@ Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can
 
 ## Image note
 
-The supplied demo portrait is the starting point for the featured YouCam previews. Catalogue reference images are illustrative style references, not live retailer products or confirmed stock; the app communicates this once in its footer.
+The before portrait is project-provided, and the after portrait is an actual YouCam Hair Transfer preview. Style previews are illustrative and do not confirm fit, comfort, products, or stock; Ahead states this once in the app footer.
 
 ## Licence
 
