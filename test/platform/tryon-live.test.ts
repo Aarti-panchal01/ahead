@@ -50,7 +50,8 @@ describe("live hair-transfer safety", () => {
     expect(fy.creates()).toBe(40);
   });
 
-  it("never goes below the 150-unit reserve and creates nothing", async () => {
+  it("honors the configured balance reserve and creates nothing below it", async () => {
+    vi.stubEnv("AHEAD_RESERVE_UNITS", "150");
     fy.setBalance(151); // 151 - 2 = 149 < 150
     const r = await start();
     expect(r).toMatchObject({ ok: false, reason: "reserve" });

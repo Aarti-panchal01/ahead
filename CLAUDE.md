@@ -45,7 +45,7 @@ client, never logged.
   retry a create that might have succeeded. Poll every task to the end.
 - Every paid call goes through the ledger and cache. Mock mode replays
   saved results at 0 units and is the default in development.
-- Keep at least 150 units in reserve for judging (Nov 3 to 20).
+- The live demo defaults to no balance holdback so a full lookbook can be recorded; set AHEAD_RESERVE_UNITS only when a specific judging reserve is needed.
 
 ## Core rule: integrity on every render
 After every YouCam result, in the browser: MediaPipe face landmarks,

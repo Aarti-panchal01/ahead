@@ -18,7 +18,7 @@ describe("mode", () => {
     expect(demoNote({ mode: "live", servingRecordings: false })).toBeUndefined();
     expect(demoNote({ mode: "mock", servingRecordings: true })).toMatch(/^Live previews are off in this environment\./);
     expect(demoNote({ mode: "live", servingRecordings: true, reason: "daily_cap" })).toMatch(/Today's live try-ons are used up/);
-    expect(demoNote({ mode: "live", servingRecordings: true, reason: "reserve" })).toMatch(/reserve for judging/);
+    expect(demoNote({ mode: "live", servingRecordings: true, reason: "reserve" })).toMatch(/configured reserve/);
     expect(demoNote({ mode: "live", servingRecordings: false, reason: "daily_cap", remainingToday: 0 })).toMatch(/Today's live try-ons are used up/);
   });
 

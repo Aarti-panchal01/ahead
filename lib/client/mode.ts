@@ -28,7 +28,7 @@ export function demoNote(s: UnitStatus): string | undefined {
   const why =
     s.mode === "mock" ? "Live previews are off in this environment."
     : s.reason === "daily_cap" ? "Today's live try-ons are used up; they come back tomorrow."
-    : s.reason === "reserve" ? "We are keeping our last try-ons in reserve for judging."
+    : s.reason === "reserve" ? "Live previews are paused because the available YouCam balance is at its configured reserve."
     : "Live try-ons aren't available right now.";
   return `${why} Your photo stays on this device and will not be sent.`;
 }

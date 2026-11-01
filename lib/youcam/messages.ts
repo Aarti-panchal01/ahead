@@ -38,7 +38,7 @@ const MESSAGES: Record<string, string> = {
   unknown_item: "We don't know that wig or wrap. Pick one from the list.",
   no_photo: "Add a photo of yourself first, or choose a demo face.",
   unknown_task: "We couldn't find that try-on. Start it again.",
-  reserve: "Live try-on is paused to keep units for judging. The demo still works.",
+  reserve: "Live try-on is paused because the available YouCam balance is at its configured reserve. Add units or try a sample person.",
   daily_cap: "Live try-ons are paused for today. You can still try our sample people, or come back tomorrow.",
   rate_limit: "You've reached the hourly limit for live try-ons. Try again a bit later.",
   unavailable: "Live try-on is resting right now. You can still try our sample people, or try again later.",

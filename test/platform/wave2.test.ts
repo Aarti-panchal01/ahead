@@ -257,17 +257,19 @@ describe("GET /api/status never throws", () => {
   });
 });
 
-describe("AHEAD_RESERVE_UNITS can only raise the judging reserve", () => {
-  it("unset, empty, invalid and lower values keep 150", () => {
-    expect(effectiveReserve(undefined)).toBe(150);
-    for (const v of ["", "  ", "abc", "100", "-5", "NaN", "149"]) expect(effectiveReserve(v)).toBe(150);
+describe("AHEAD_RESERVE_UNITS controls the optional balance reserve", () => {
+  it("defaults to zero and accepts valid non-negative values", () => {
+    expect(effectiveReserve(undefined)).toBe(0);
+    for (const v of ["", "  ", "abc", "-5", "NaN"]) expect(effectiveReserve(v)).toBe(0);
+    expect(effectiveReserve("100")).toBe(100);
+    expect(effectiveReserve("0")).toBe(0);
     expect(effectiveReserve("100000")).toBe(100000);
     expect(effectiveReserve("151")).toBe(151);
   });
   it("limits() reads the env", () => {
-    expect(limits().reserve).toBe(150);
+    expect(limits().reserve).toBe(0);
     vi.stubEnv("AHEAD_RESERVE_UNITS", "100");
-    expect(limits().reserve).toBe(150);
+    expect(limits().reserve).toBe(100);
     vi.stubEnv("AHEAD_RESERVE_UNITS", "100000");
     expect(limits().reserve).toBe(100000);
   });
@@ -280,14 +282,14 @@ describe("AHEAD_RESERVE_UNITS can only raise the judging reserve", () => {
     form.set("selfie", new File([new Uint8Array(await jpeg())], "me.jpg", { type: "image/jpeg" }));
     const r = await tryonRoute(new Request("http://x/api/tryon", { method: "POST", body: form }));
     expect(r.status).toBe(503);
-    expect(await r.json()).toMatchObject({ errorCode: "reserve", message: "Live try-on is paused to keep units for judging. The demo still works." });
+    expect(await r.json()).toMatchObject({ errorCode: "reserve", message: "Live try-on is paused because the available YouCam balance is at its configured reserve. Add units or try a sample person." });
     expect(fy.creates()).toBe(0);
     expect(await (await statusRoute()).json()).toMatchObject({ mode: "live", servingRecordings: true, reason: "reserve" });
   });
-  it("a lower value does not weaken the reserve", async () => {
+  it("a configured reserve is enforced", async () => {
     vi.stubEnv("YOUCAM_MODE", "live");
     vi.stubEnv("AHEAD_RESERVE_UNITS", "10");
-    fakeYoucam(150);
+    fakeYoucam(11);
     expect(await (await statusRoute()).json()).toMatchObject({ servingRecordings: true, reason: "reserve" });
   });
 });

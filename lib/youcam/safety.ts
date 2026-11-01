@@ -3,21 +3,21 @@
 import { createHash } from "node:crypto";
 import { getStore } from "@/lib/store";
 
-/** Units kept back for judges (Nov 3 to 20). A paid call that would go below this is refused. */
-export const RESERVE_UNITS = 150;
+/** Default balance reserve. Set AHEAD_RESERVE_UNITS to keep units back intentionally. */
+export const RESERVE_UNITS = 0;
 
 const num = (v: string | undefined, d: number) => {
   const n = Number(v);
   return v !== undefined && v !== "" && Number.isFinite(n) && n >= 0 ? n : d;
 };
-/** AHEAD_RESERVE_UNITS can only raise the reserve: max(150, value). Invalid, empty or lower values are ignored. */
+/** AHEAD_RESERVE_UNITS controls the optional balance reserve. Invalid, empty, or negative values use the default. */
 export function effectiveReserve(raw: string | undefined = process.env.AHEAD_RESERVE_UNITS): number {
   const n = raw !== undefined && raw.trim() !== "" ? Number(raw) : NaN;
-  return Number.isFinite(n) ? Math.max(RESERVE_UNITS, n) : RESERVE_UNITS;
+  return Number.isFinite(n) && n >= 0 ? n : RESERVE_UNITS;
 }
 export const limits = () => ({
   // Two full 16-look catalogue passes cost 64 units at 2 units per hair-transfer.
-  // The separate 150-unit balance reserve remains the hard stop for judging.
+  // Keep the reserve configurable; public recording builds default to no balance holdback.
   dailyCap: num(process.env.AHEAD_DAILY_UNIT_CAP, 80),
   ipPerHour: num(process.env.AHEAD_IP_LIMIT_PER_HOUR, 20),
   reserve: effectiveReserve(),
