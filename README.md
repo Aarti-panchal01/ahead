@@ -32,9 +32,15 @@ For an own-photo try-on, choose **Use your photo**, review the consent, upload a
 
 ## See Ahead
 
-| Explore styles | Compare references | Take a fitting brief |
+The project gallery uses one consistent portrait throughout: the supplied demo portrait, styled with live YouCam Hair Transfer results. The first image is the real desktop fitting room with all 16 previews ready; the remaining images show distinct wig and headwear directions on the same person.
+
+![Ahead fitting room showing four headwear previews on the supplied portrait](docs/images/live-fitting-room.jpg)
+
+| Long soft curls · salt and pepper | Shoulder layers · black with grey blend | Navy twisted turban |
 | --- | --- | --- |
-| ![Ahead results with wig previews](docs/screenshots/final/05-results-P1-brows-on.png) | ![Ahead side-by-side style comparison](docs/screenshots/final/14-compare.png) | ![Ahead fitting brief](docs/screenshots/final/08-brief.png) |
+| ![Long soft curls preview on the supplied portrait](docs/images/try-on-long-curls.jpg) | ![Shoulder layers preview on the supplied portrait](docs/images/try-on-shoulder-layers.jpg) | ![Navy twisted turban preview on the supplied portrait](docs/images/try-on-navy-turban.jpg) |
+
+The [Devpost project thumbnail](docs/images/devpost-thumbnail.jpg) uses the same portrait and previews.
 
 ## Why we built it
 
@@ -146,7 +152,7 @@ Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can
 
 ## Image note
 
-Sample people and catalogue references are illustrative AI-generated images, not customers, retailer listings, or confirmed stock. This is disclosed once in the app footer.
+The same supplied demo portrait appears across these example previews. Catalogue reference images are illustrative style references, not live retailer products or confirmed stock; the app communicates this once in its footer.
 
 ## Licence
 
