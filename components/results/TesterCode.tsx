@@ -1,5 +1,5 @@
 "use client";
-// A quiet way in for testers: live try-ons on your own photo need a tester code in Production.
+// Optional gate for private live deployments. Public demos are open by default.
 // Everything else (colour matching, the match card) works without one.
 import { useId, useState } from "react";
 import { TESTER_PROMPT, submitTesterCode } from "@/lib/client/tester";
@@ -27,8 +27,10 @@ export default function TesterCode({ onAccepted }: { onAccepted: () => void }) {
       <div className={styles.testerRow}>
         <input
           id={id}
+          type="text"
           value={code}
           onChange={(e) => setCode(e.target.value)}
+          placeholder="Preview access code"
           autoComplete="off"
           autoCapitalize="off"
           spellCheck={false}

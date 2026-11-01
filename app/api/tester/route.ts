@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 import { getStore } from "@/lib/store";
 import { clientIp, fail } from "@/lib/youcam/http";
 import { ipHash } from "@/lib/youcam/safety";
-import { codeMatches } from "@/lib/youcam/tester";
+import { codeMatches, testerRequired } from "@/lib/youcam/tester";
 
 export const runtime = "nodejs";
 
@@ -17,7 +17,7 @@ const limit = () => {
 };
 
 export async function POST(req: Request) {
-  if (!process.env.TESTER_CODE) return NextResponse.json({ ok: true });
+  if (!testerRequired()) return NextResponse.json({ ok: true });
   let code = "";
   try {
     const j = (await req.json()) as { code?: unknown };

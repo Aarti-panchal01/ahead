@@ -1,5 +1,5 @@
 // GET /api/status: live-mode budget as UnitStatus ({ mode, servingRecordings, remainingToday?, reason? }).
-// testerRequired: true when TESTER_CODE is set and mode is live (uploaded-selfie try-ons need a code).
+// testerRequired: true only when a private live deployment explicitly enables its tester-code gate.
 // Never throws: if the store (Upstash) or YouCam is briefly unreachable, answer with the mock-safe status
 // (recordings, reason "unavailable") so the UI keeps working.
 import { NextResponse } from "next/server";

@@ -23,6 +23,7 @@ beforeEach(() => {
   seen = []; bodies = [];
   for (const k of ["log", "info", "warn", "error", "debug"] as const) vi.spyOn(console, k).mockImplementation((...a) => { seen.push(a.map(String).join(" ")); });
   vi.stubEnv("YOUCAM_MODE", "live"); vi.stubEnv("YOUCAM_API_KEY", "k"); vi.stubEnv("TESTER_CODE", CODE);
+  vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "true");
 });
 afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); setStore(null); });
 
@@ -124,12 +125,28 @@ describe("POST /api/tester", () => {
     vi.stubEnv("TESTER_CODE", "");
     expect((await testerRoute(json({ code: "x" }))).status).toBe(200);
   });
+  it("does not reject public demo access when a legacy code remains configured", async () => {
+    vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "false");
+    const r = await testerRoute(json({ code: "old-deployment-code" }));
+    expect(r.status).toBe(200);
+    expect(await r.json()).toEqual({ ok: true });
+  });
+  it("a configured code does not gate the public demo unless explicitly enabled", async () => {
+    vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "false");
+    const fy = fakeYoucam(300);
+    const r = await tryonRoute(await selfieReq());
+    expect(await r.json()).toMatchObject({ mode: "live", id: "task1" });
+    expect(fy.creates()).toBe(1);
+  });
 });
 
 describe("status testerRequired and code matching", () => {
-  it("true only when TESTER_CODE is set and mode is live", async () => {
+  it("requires both explicit gate configuration, code, and live mode", async () => {
     fakeYoucam(300);
     expect((await (await statusRoute()).json()).testerRequired).toBe(true);
+    vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "false");
+    expect((await (await statusRoute()).json()).testerRequired).toBe(false);
+    vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "true");
     vi.stubEnv("TESTER_CODE", "");
     expect((await (await statusRoute()).json()).testerRequired).toBe(false);
     vi.stubEnv("TESTER_CODE", CODE); vi.stubEnv("YOUCAM_MODE", "mock");
@@ -138,6 +155,7 @@ describe("status testerRequired and code matching", () => {
   it("status also reports it when the store is down", async () => {
     setStore({ kind: "upstash", get: async () => { throw new Error("x"); } } as never);
     fakeYoucam(300);
+    vi.stubEnv("AHEAD_REQUIRE_TESTER_CODE", "true");
     expect(await (await statusRoute()).json()).toMatchObject({ reason: "unavailable", testerRequired: true });
   });
   it("codeMatches is exact and false without a configured code", () => {

@@ -118,7 +118,7 @@ export interface UnitStatus {
   servingRecordings: boolean;
   remainingToday?: number;
   reason?: "daily_cap" | "reserve" | "unavailable";
-  /** True when live mode needs a tester code for try-ons on the user's own photo (TESTER_CODE is set). */
+  /** True when a private live deployment explicitly enables its tester-code gate. */
   testerRequired?: boolean;
 }
 

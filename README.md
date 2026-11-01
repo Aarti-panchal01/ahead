@@ -143,7 +143,7 @@ YOUCAM_MODE=live
 YOUCAM_API_KEY=your_server_side_key
 ```
 
-Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can gate live calls on a public deployment. Planner provider keys are optional; the rule-based planner fallback still works without them.
+Never commit `.env.local` or place the API key in client code. Public live previews are ungated by default and remain protected by balance reserve, daily-unit cap, and per-IP limits. For a private deployment, set both `AHEAD_REQUIRE_TESTER_CODE=true` and `TESTER_CODE`. Planner provider keys are optional; the rule-based planner fallback still works without them.
 
 ## Project map
 

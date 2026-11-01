@@ -1,6 +1,6 @@
-// Tester code gate for live try-on on an uploaded selfie. When env TESTER_CODE is set, such a request needs the code
-// in header x-ahead-tester (or form/JSON field testerCode). Compared in constant time. The code is never logged
-// or returned. Demo faces and recordings never need it. Unset TESTER_CODE: no gate.
+// Optional tester-code gate for live try-on on an uploaded selfie. Public demos are open by default;
+// set AHEAD_REQUIRE_TESTER_CODE=true and TESTER_CODE to protect a private deployment.
+// Codes are compared in constant time and are never logged or returned.
 import { createHash, timingSafeEqual } from "node:crypto";
 import { mode } from "./index";
 import { fail } from "./http";
@@ -8,8 +8,9 @@ import type { Fields } from "./http";
 
 const configured = () => process.env.TESTER_CODE || "";
 
-/** True when a code is required: TESTER_CODE is set and the app is live. */
-export const testerRequired = (): boolean => configured() !== "" && mode() === "live";
+/** True only when the deployment explicitly enables the gate and live mode has a configured code. */
+export const testerRequired = (): boolean =>
+  process.env.AHEAD_REQUIRE_TESTER_CODE === "true" && configured() !== "" && mode() === "live";
 
 const digest = (s: string) => createHash("sha256").update(s).digest();
 

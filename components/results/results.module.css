@@ -133,7 +133,7 @@
   /* Keep a little breathing room around generated wraps and wigs. Some YouCam outputs
      place the garment/hair right at the image edge; the inset prevents the card frame
      from visually shaving off those outer strands or fabric folds. */
-  padding: clamp(8px, 1vw, 14px) clamp(18px, 2vw, 28px);
+  padding: clamp(8px, 1vw, 14px) clamp(26px, 3vw, 40px);
   overflow: hidden;
   border-radius: 0;
   background: #e8e7e0;
@@ -422,11 +422,11 @@
 
 /* ─── Tester code ───────────────────────────────────────────────────── */
 .tester > * + * { margin-top: 8px; }
-.testerRow { display: flex; gap: 8px; }
+.testerRow { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .testerRow input {
-  flex: 1; min-width: 0; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
+  width: 100%; min-width: 0; min-height: var(--tap); padding: 10px 12px; border-radius: 10px;
   border: 2px solid var(--line); background: var(--surface); color: var(--ink); font: inherit;
 }
 .testerRow input:focus-visible { border-color: var(--ink); }
-.testerRow .btn { width: auto; flex: none; }
+.testerRow > :global(.btn) { width: auto; min-width: 112px; white-space: nowrap; }
 .testerError { color: var(--warning); font-weight: 700; font-size: 0.95rem; }

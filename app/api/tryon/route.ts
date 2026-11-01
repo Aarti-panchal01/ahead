@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ ...job, mode: "mock", id: mockTaskId(rec), recording: true });
   }
 
-  // Live on an uploaded selfie: needs the tester code when TESTER_CODE is set (before any YouCam call).
+  // Live on an uploaded selfie: private deployments may require a code (before any YouCam call).
   const denied = testerGate(req, { get: () => testerCode });
   if (denied) return denied;
 

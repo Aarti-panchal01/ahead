@@ -112,7 +112,7 @@ export default function ResultsView() {
   );
   const whose: Whose = sample ? "her" : "your";
   const allRanked = useMemo(() => [...ranking.wigs, ...ranking.wraps], [ranking.wigs, ranking.wraps]);
-  // Production may ask for a tester code before live try-ons on your own photo (lib/client/tester.ts).
+  // Private deployments may ask for a tester code before live try-ons (lib/client/tester.ts).
   const liveAllowed = photo?.kind === "own" && status !== undefined && ownPhotoCanRender(status);
   const needCode = liveAllowed && needsTesterCode(status as StatusWithTester) && !hasCode;
   const ownLive = liveAllowed && !needCode;
