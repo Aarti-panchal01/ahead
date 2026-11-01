@@ -160,14 +160,6 @@ Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can
 | `docs/ARCHITECTURE.md` | System boundaries and request sequences. |
 | `docs/api-truth-table.md` | API experiments, results, and product decisions. |
 
-## Project tags
-
-`virtual-try-on` · `youcam-api` · `wig-shopping` · `headwear` · `cancer-support` · `beauty-tech` · `Next.js` · `React` · `TypeScript` · `Playwright`
-
-## Image note
-
-The before portrait is project-provided, and all 16 after images are individual live YouCam Hair Transfer results. Style previews are illustrative and do not confirm fit, comfort, products, or stock; Ahead states this once in the app footer.
-
 ## Licence
 
 MIT
