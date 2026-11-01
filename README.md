@@ -1,77 +1,113 @@
 # Ahead
 
-**See your next look, on you.**
+<p align="center">
+  <strong>A private fitting room for the next look.</strong><br />
+  Explore wigs and headwear on your own photo, compare the styles that feel right, and take a useful brief to a specialist.
+</p>
 
-Ahead is a personal try-on and fitting companion for people navigating treatment-related hair loss. It lets someone preview wig and headwear styles on their own photo, compare the looks they like, and take a focused shortlist to a wig specialist.
+<p align="center">
+  <a href="https://try-ahead.vercel.app"><img alt="Try Ahead" src="https://img.shields.io/badge/Try-Ahead-17483d?style=for-the-badge" /></a>
+  <img alt="Next.js 15" src="https://img.shields.io/badge/Next.js-15-111111?logo=next.js&logoColor=white" />
+  <img alt="React 19" src="https://img.shields.io/badge/React-19-149eca?logo=react&logoColor=white" />
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178c6?logo=typescript&logoColor=white" />
+  <img alt="YouCam Hair Transfer" src="https://img.shields.io/badge/YouCam-Hair%20Transfer-287564" />
+  <img alt="Playwright" src="https://img.shields.io/badge/E2E-Playwright-2ead69?logo=playwright&logoColor=white" />
+</p>
 
-The product is positioned as **assisted shopping before a fitting**: help a person describe what they want, then help a specialist match that direction to an actual product. Ahead is not a wig retailer, a medical tool, or a live inventory catalogue.
+Ahead is a photo-first wig and headwear try-on for people navigating treatment-related hair loss. It makes space to explore a look privately before a fitting, then turns favourites into a practical conversation with a wig specialist.
 
-## Try Ahead
+**The product promise:** see a style direction on yourself; take the details to someone who can help find the right real product.
 
-- **Live app:** [try-ahead.vercel.app](https://try-ahead.vercel.app)
-- **How we tested the API:** [/how-we-tested](https://try-ahead.vercel.app/how-we-tested)
-- **Recorded judge path:** choose **Explore sample previews** on the landing page. It needs no upload or access code and uses saved API results at no unit cost.
-- **Live own-photo path:** choose **Use your photo**, review the consent and privacy details, upload a photo, and continue to matches. The app starts the available previews together after the user asks to see matches. The public deployment may request a judge access code for fresh YouCam calls; never share the API key.
+> Ahead is a shopping companion, not a medical tool or a retailer. Its catalogue is illustrative: it does not show verified products, prices, stock, or confirmed availability.
 
-**Current checks:** 535 unit tests pass; TypeScript and ESLint pass. The sample journey, compare, and fitting brief have also passed Playwright in mobile and desktop viewports.
+## Try it
 
-## The shopper journey
+| Link | What to expect |
+| --- | --- |
+| [Open Ahead](https://try-ahead.vercel.app) | The live web app. |
+| [Open the sample fitting room](https://try-ahead.vercel.app/capture#samples) | Explore saved sample previews without uploading a photo or spending API units. |
+| [See how the YouCam API was tested](https://try-ahead.vercel.app/how-we-tested) | The measured API behaviour and why specific capabilities were chosen. |
 
-1. **Start privately.** The person reviews consent and chooses a photo or explores recorded sample previews.
-2. **See style directions on their photo.** The current catalogue contains 12 wig styles and 4 wraps/caps. After the person requests matches, Ahead starts the available live renders in parallel and keeps each task attached to its requested style.
-3. **Compare and save.** The shopper can switch between their result and its model reference, compare two looks side by side, and save favourites to a fitting brief.
-4. **Bring a useful brief to a specialist.** The brief includes the selected styles, colour references, Ahead matching codes, notes, and questions about fit, construction, price, care, returns, and availability. It does not include the person's photo.
+For an own-photo try-on, choose **Use your photo**, review the consent, upload a photo, and ask to see matches. A public deployment can require a judge access code for fresh live API calls. Sample previews remain available without it.
 
-The preview explores style and colour. It does not confirm fit, density, comfort, medical suitability, product availability, or a purchase.
+## See Ahead
 
-## How YouCam is integrated
+| Explore styles | Compare references | Take a fitting brief |
+| --- | --- | --- |
+| ![Ahead results with wig previews](docs/screenshots/final/05-results-P1-brows-on.png) | ![Ahead side-by-side style comparison](docs/screenshots/final/14-compare.png) | ![Ahead fitting brief](docs/screenshots/final/08-brief.png) |
 
-**The live product uses YouCam Hair Transfer v2.1** for wig and head-wrap virtual try-on. This is the functional YouCam API integration in the shopper flow.
+## Why we built it
 
-```text
-Browser photo + chosen style (only after the user asks for matches)
-        │
-        ▼
-POST /api/tryon ── server validates/re-encodes the photo
-        │             uploads it with the style reference
-        │             POST /s2s/v2.1/task/hair-transfer
-        │             hair_color: "ref" + on-model style reference
-        ▼
-Poll task → bind result to its style → same-origin image proxy
-        │
-        ▼
-Browser face/skin check → compare → fitting brief / PDF
+Choosing a wig during treatment-related hair loss can mean making a personal decision from product photos of someone else. Ahead gives people a private place to explore style and colour on their own photo, save the looks they prefer, and bring specific references to a specialist.
+
+The specialist remains central: the preview cannot tell someone whether a wig fits, feels comfortable, suits their scalp, or is available. Ahead helps make that first fitting conversation easier to start.
+
+## The experience
+
+1. **Choose how to begin.** Review the photo-use details and upload a photo, or explore a recorded sample person.
+2. **Explore 16 directions.** Browse 12 wigs and 4 wraps or caps. When requested, live renders start together; each result remains attached to its own style.
+3. **Compare and shortlist.** Flip a card between the try-on and its reference model, compare two saved looks, and note what you like.
+4. **Take the conversation with you.** Create a shareable fitting brief with style references, colour notes, questions, and Ahead reference codes. The brief never contains the photo.
+
+The preview is for exploring style and colour. It does not establish fit, density, comfort, medical suitability, retailer availability, or purchase readiness.
+
+## Architecture
+
+```mermaid
+flowchart LR
+  person[Person] -->|photo or sample choice| browser[Next.js browser app]
+  browser -->|request matches: sample ID or uploaded photo| tryon[POST /api/tryon]
+  tryon -->|sample ID or mock mode| fixture[Recorded YouCam result fixtures]
+  fixture --> card[Style cards and comparison]
+  tryon -->|live own-photo request| guard[Validate image, session, limits, credit reserve, cache]
+  guard -->|source photo + on-model style reference| youcam[YouCam Hair Transfer v2.1]
+  youcam -->|task ID| poll[GET /api/tryon/:id]
+  poll -->|style-bound finished task| proxy[GET /api/result]
+  proxy -->|same-origin image bytes| image[Browser face and skin integrity checks]
+  image --> card
+  card --> compare[Compare and shortlist]
+  compare --> brief[Shareable fitting brief / print to PDF]
+  browser -->|style preferences only| planner[POST /api/agent/plan]
+  planner -->|optional text planning| llm[Groq or Gemini, with rule-based fallback]
+  planner --> brief
+
+  classDef external fill:#f1eee4,stroke:#b7b3a5,color:#24352f;
+  class youcam,llm external;
 ```
 
-- The server sends the user's photo and a **person-wearing-the-style reference** to Hair Transfer with `hair_color: "ref"`. Our tests found mannequin and flat-lay references fail with `error_no_face`, so the usable references show a person wearing the style.
-- A live Hair Transfer render costs **2 YouCam units**. The server owns the API key, checks its unit safeguards, polls the task, and streams the finished result through Ahead rather than exposing YouCam's result URL to the browser.
-- After a result returns, Ahead uses **our own browser-side image processing** (MediaPipe face landmarks plus a feathered composite) to restore the inner face when needed and check skin-tone consistency. This is not a YouCam feature. The result card reports whether skin tone was unchanged, corrected, or could not be verified.
-- At session end, Ahead asks YouCam to delete the session's finished tasks. Unit caps, a persistent ledger, caching, and a judging reserve protect live API access.
-- **Skin Tone Analysis and Makeup VTO are not live product integrations.** We tested them during API research; their measured limitations and the reason they were not added to the main journey are documented in [`docs/api-truth-table.md`](docs/api-truth-table.md). Beauty MCP is used for tool discovery only; paid try-ons go through the guarded REST path.
+The detailed component map, API boundaries, and request sequences are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The API evidence page is still available at [`/how-we-tested`](https://try-ahead.vercel.app/how-we-tested); it complements the architecture by documenting measured behaviour.
 
-## Privacy and safety
+### YouCam integration
 
-- Photo selection and hair-colour sampling happen in the browser. Ahead sends the image to its server and YouCam only when the person requests live previews; uploaded images are re-encoded as JPEG with metadata removed.
-- Ahead does not put the photo in the shareable fitting brief. Briefs contain style IDs, colour references, and optional notes, and expire after seven days.
-- The YouCam API key remains server-side. The try-on API uses daily and per-session limits, duplicate-request caching, and an API-credit reserve; uncertain create requests are not silently retried.
-- The optional planning assistant receives style preferences and sampled colours, not the photo, treatment date, hair-loss stage, or health details. Its timeline is planning support, not medical guidance.
+The live own-photo flow uses **YouCam Hair Transfer v2.1** for wigs and headwear. The browser does not call YouCam directly and never receives the API key or a YouCam-hosted result URL.
 
-## Consumer and retail value
+- The server checks the selected style, photo, session, balance, daily limit, reserve, and cache before starting a paid render.
+- A live Hair Transfer render costs **2 units**. The server uploads the source photo and the style’s person-wearing-the-item reference, using `hair_color: "ref"`.
+- The browser polls the task, then loads the finished image from Ahead’s same-origin result proxy.
+- Ahead’s browser image pipeline uses MediaPipe landmarks for an optional feathered inner-face composite and checks skin-tone consistency. These are Ahead’s checks; they are not YouCam capabilities.
+- The session cleanup path asks YouCam to delete completed tasks. Uncertain create requests are not silently retried.
 
-Wig shopping during treatment-related hair loss can begin with product photos of someone else. Ahead lets a shopper explore how style directions look on their own photo, then carry specific preferences into a fitting. A specialist gets a more concrete starting point for discussing construction, fit, and the closest suitable item.
+Recorded sample previews are saved results and cost no units. Only a person's own uploaded photo can start a live call. **Skin Tone Analysis and Makeup VTO are not live integrations in this product.** The measured reasons are documented in the [API truth table](docs/api-truth-table.md). The YouCam Beauty MCP is used for capability discovery; paid try-ons use the guarded REST integration.
 
-The prototype has **no retailer partnership, verified retailer SKUs, live prices, stock, checkout, or measured conversion/return results**. Codes such as `AHD-WIG-001` and `AHD-WRP-001` are Ahead reference codes for communicating a style direction; they are not retailer SKUs. A pilot would connect a retailer's licensed product catalogue and inventory, then measure preview completion, shortlist-to-fitting or purchase, consultation time, and returns against a baseline. These are proposed measures, not claimed outcomes.
+## Privacy and boundaries
+
+- Consent appears before photo capture or upload. The browser holds the selected photo in session memory; the shareable brief contains no photo.
+- Ahead re-encodes uploaded photos as JPEG and strips metadata before sending them to the server/API.
+- The YouCam key stays server-side. Live calls are protected by a unit ledger, caching, per-session and daily caps, a reserve, and rate limits.
+- The optional planning assistant receives style preferences, notes after health-related details are removed, and sampled colours. It does not receive the photo, hair-loss stage, treatment date, or health details.
+- Planner suggestions do not start paid try-ons. A person must approve a proposed live action.
+- This prototype has no verified retailer SKUs, live inventory, prices, checkout, retailer partnership, or measured sales/return results. Ahead codes such as `AHD-WIG-001` are style reference codes, not retailer SKUs.
 
 ## Run locally
 
-Requirements: Node.js and npm. The default local mode replays saved YouCam results for sample people and does not need a YouCam key or spend units.
+Requirements: Node.js and npm. In the default local mode, sample people use saved YouCam recordings. No API key or credits are needed to explore that path.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). To run the local checks:
+Open [http://localhost:3000](http://localhost:3000). To check the app:
 
 ```bash
 npm test
@@ -80,28 +116,37 @@ npm run lint
 npm run test:e2e
 ```
 
-For fresh live previews, configure the server-side values in `.env.local` using [`.env.example`](.env.example):
+The Playwright suite builds and runs the app in mock mode in mobile and desktop browser viewports; it does not make paid YouCam calls. For fresh own-photo renders, set these server-side values in `.env.local` using [`.env.example`](.env.example):
 
 ```dotenv
 YOUCAM_MODE=live
 YOUCAM_API_KEY=your_server_side_key
 ```
 
-Never commit `.env.local` or put the YouCam key in browser code. `TESTER_CODE` can optionally gate live own-photo calls on a public deployment. Without live mode, the sample journey remains available. Planner API keys are optional; the app has a rule-based planner fallback.
+Never commit `.env.local` or place the API key in client code. `TESTER_CODE` can gate live calls on a public deployment. Planner provider keys are optional; the rule-based planner fallback still works without them.
 
-## Project structure
+## Project map
 
-- `app/api/tryon/` — create and poll try-on tasks through the server.
-- `lib/youcam/` — YouCam REST client, Hair Transfer request, cache, unit ledger, and cleanup.
-- `catalogue/catalogue.json` — 12 wig and 4 headwear style directions and their on-model references.
-- `lib/image/` — browser face landmarks, skin check, feathered face restore, and feature compositing.
-- `components/results/` — results grid, fitting bag, comparison, and fitting brief.
-- `docs/api-truth-table.md` — measured API behaviour and implementation decisions.
-- `docs/FACTS.md` — implementation and test references for product claims.
+| Area | Owns |
+| --- | --- |
+| `app/` | Next.js pages and server API routes. |
+| `components/results/` | Results, model/you comparison, shortlist, and brief creation. |
+| `catalogue/catalogue.json` | The 12 wig and 4 wrap/cap directions, identifiers, and reference images. |
+| `lib/youcam/` | Server-side REST client, task lifecycle, unit safeguards, cache, and cleanup. |
+| `lib/image/` | Browser image checks, face landmarks, face restoration, and feature compositing. |
+| `lib/agent/` | Optional text planning, shortlist tools, approval flow, and claim/privacy guardrails. |
+| `lib/store/` | Shareable brief storage with Redis or the configured local fallback. |
+| `test/e2e/` | Playwright browser flows across desktop and mobile viewports. |
+| `docs/ARCHITECTURE.md` | System boundaries and request sequences. |
+| `docs/api-truth-table.md` | API experiments, results, and product decisions. |
 
-## Image disclosure
+## Project tags
 
-Sample people and catalogue reference images are illustrative, AI-generated images—not real customers, retailer products, or confirmed stock. The app makes this disclosure once in its shared footer.
+`virtual-try-on` · `youcam-api` · `wig-shopping` · `headwear` · `cancer-support` · `beauty-tech` · `Next.js` · `React` · `TypeScript` · `Playwright`
+
+## Image note
+
+Sample people and catalogue references are illustrative AI-generated images, not customers, retailer listings, or confirmed stock. This is disclosed once in the app footer.
 
 ## Licence
 
