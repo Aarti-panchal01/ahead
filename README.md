@@ -14,7 +14,7 @@
   <img alt="Playwright" src="https://img.shields.io/badge/E2E-Playwright-2ead69?logo=playwright&logoColor=white" />
 </p>
 
-Ahead is a private wig and headwear fitting room for people navigating treatment-related hair loss. It lets someone explore options on their own photo, keep the looks that feel like them, and take a shortlist to a specialist.
+Ahead is a private wig and headwear fitting room for people navigating treatment-related hair loss. Instead of asking someone to imagine a style on themselves from a model photo, Ahead lets them explore options on their own photo, compare what feels right, and take a shortlist to a specialist.
 
 **The product promise:** more choice, more agency, and a more prepared fitting conversation. Ahead is designed to help people feel more confident exploring options, without pressuring them to choose.
 
@@ -97,17 +97,23 @@ flowchart LR
 
 The detailed component map, API boundaries, and request sequences are in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). The API evidence page is still available at [`/how-we-tested`](https://try-ahead.vercel.app/how-we-tested); it complements the architecture by documenting measured behaviour.
 
-### YouCam integration
+### YouCam integration: one product API, one key
 
-The live own-photo flow uses **YouCam Hair Transfer v2.1** for wigs and headwear. The browser does not call YouCam directly and never receives the API key or a YouCam-hosted result URL.
+Ahead's live image transformation uses one YouCam product API: **Hair Transfer v2.1**. It transfers a selected wig or headwear style onto the person's uploaded photo. This is the hair API used by the product; there is no separate `HAIR_API_KEY` because YouCam authenticates Hair Transfer requests with the same `YOUCAM_API_KEY`.
 
-- The server checks the selected style, photo, session, balance, daily limit, reserve, and cache before starting a paid render.
-- A live Hair Transfer render costs **2 units**. The server uploads the source photo and the style’s person-wearing-the-item reference, using `hair_color: "ref"`.
-- The browser polls the task, then loads the finished image from Ahead’s same-origin result proxy.
-- Ahead’s browser image pipeline uses MediaPipe landmarks for an optional feathered inner-face composite and checks skin-tone consistency. These are Ahead’s checks; they are not YouCam capabilities.
-- The session cleanup path asks YouCam to delete completed tasks. Uncertain create requests are not silently retried.
+| Setting or capability | What it does |
+| --- | --- |
+| `YOUCAM_MODE` | Selects `mock` (saved sample results, no paid request) or `live` (send an approved own-photo request to YouCam). |
+| `YOUCAM_API_KEY` | Server-only bearer credential for the YouCam account. Available credits come from the account that issued the key. |
+| Hair Transfer v2.1 | The only live YouCam image API in Ahead. The server sends the source photo and the selected style's person-wearing reference, then tracks the returned task. Each live render costs **2 units**. |
+| Hair-colour estimate | Ahead's own on-device image analysis; it does not call YouCam or spend API units. |
+| Optional text planner | Uses Groq or Gemini when configured, with a rule-based fallback. It does not render images or receive the photo. |
 
-Recorded sample previews are saved results and cost no units. Only a person's own uploaded photo can start a live call. **Skin Tone Analysis and Makeup VTO are not live integrations in this product.** The measured reasons are documented in the [API truth table](docs/api-truth-table.md). The YouCam Beauty MCP is used for capability discovery; paid try-ons use the guarded REST integration.
+The implementation makes the API selection explicit in [`lib/youcam/client.ts`](lib/youcam/client.ts): the feature is `hair-transfer`, version `v2.1`, and the request endpoint is `/s2s/v2.1/task/hair-transfer`. [`lib/youcam/tryon.ts`](lib/youcam/tryon.ts) applies the credit and request safeguards. The browser never calls YouCam directly and never receives the API key or a YouCam-hosted result URL.
+
+Before a paid render, the server checks the selected style, photo, session, live balance, daily limit, reserve, and cache. It uploads the source photo and style reference using `hair_color: "ref"`, polls the exact task, and serves the finished image through Ahead's same-origin result proxy. Ahead's browser image pipeline uses MediaPipe landmarks for an optional feathered inner-face composite and checks skin-tone consistency; these are Ahead's safeguards, not YouCam capabilities. Uncertain task creation is not silently retried, and completed tasks are sent for deletion during session cleanup.
+
+Recorded sample previews are saved results and cost no units. Only a person's own uploaded photo can start a live Hair Transfer request. **Skin AI and Makeup VTO are not live integrations in this product.** The measured reasons for this scope are in the [API truth table](docs/api-truth-table.md). The YouCam Beauty MCP was used for capability discovery; paid previews use the guarded YouCam REST API.
 
 ## Privacy and boundaries
 
@@ -140,10 +146,12 @@ The Playwright suite builds and runs the app in mock mode in mobile and desktop 
 
 ```dotenv
 YOUCAM_MODE=live
-YOUCAM_API_KEY=your_server_side_key
+YOUCAM_API_KEY=your_private_server_side_key
 ```
 
-Never commit `.env.local` or place the API key in client code. Public live previews are ungated by default and remain protected by balance reserve, daily-unit cap, and per-IP limits. For a private deployment, set both `AHEAD_REQUIRE_TESTER_CODE=true` and `TESTER_CODE`. Planner provider keys are optional; the rule-based planner fallback still works without them.
+`YOUCAM_MODE` controls whether requests use free saved examples or live Hair Transfer renders; it does not name the API. `YOUCAM_API_KEY` is the credential shared by YouCam requests. The key itself does not reveal the account email, and Ahead cannot identify which email issued it; check the YouCam developer account where the key was created. A balance check reads that key's YouCam account and does not create a try-on.
+
+Never commit `.env.local` or put the key in client code, screenshots, or public project files. Public live previews are ungated by default and remain protected by the balance reserve, daily-unit cap, and per-IP limits. For a private deployment, set both `AHEAD_REQUIRE_TESTER_CODE=true` and `TESTER_CODE`. Planner provider keys are optional; the rule-based planner fallback still works without them.
 
 ## Project map
 
